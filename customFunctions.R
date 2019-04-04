@@ -552,5 +552,54 @@ summarySEwithin <- function(data=NULL, measurevar, betweenvars=NULL, withinvars=
 
 
 
+prep_plot_grw <- function(...){
+    x <- bind_rows(...)
+    x %>% 
+        select(1:3,
+               Network,
+               CP = Cp, 
+               LP = Lp, 
+               SW = sigma, 
+               EG = E.global, 
+               EL = E.local,
+               D = density,
+               S = strength) %>% 
+        gather(key = "Metric", value = "Val", CP:S) %>% 
+        summarySEwithin(measurevar = "Val", betweenvars = "Group", 
+                        withinvars = c("Stage", "Network", "Metric"), 
+                        idvar = "Study.ID", na.rm = T)
+}
 
+prep_plot_gr <- function(...){
+    x <- bind_rows(...)
+    x %>% 
+        select(1:2,
+               Network,
+               CP = Cp, 
+               LP = Lp, 
+               SW = sigma, 
+               EG = E.global, 
+               EL = E.local,
+               D = density,
+               S = strength) %>% 
+        gather(key = "Metric", value = "Val", CP:S) %>% 
+        summarySE(measurevar = "Val", 
+                  groupvars = c("Stage", "Network", "Metric"),
+                  na.rm = T)
+    
+}
+
+prep_plot_cl <- function(x, ...){
+    gather(x, key = "Scale", value = "Score", ...) %>% 
+        select(1:3, Scale, Score) %>% 
+        summarySEwithin(measurevar = "Score", betweenvars = "Group",
+                        withinvars = c("Stage", "Scale"), idvar = "Study.ID", na.rm = T)
+}
+
+prep_plot_cl2 <- function(x, ...){
+    gather(x, key = "Scale", value = "Score", ...) %>% 
+        select(1:3, Scale, Score) %>% 
+        summarySEwithin(measurevar = "Score", 
+                        withinvars = c("Stage", "Scale"), idvar = "Study.ID", na.rm = T)
+}
 

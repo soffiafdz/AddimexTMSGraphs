@@ -1,16 +1,6 @@
 
 # Demographics --------------------------------------------------------------------------------
 
-sd <- read_csv("inData/tms_socdem_311018.csv") %>% 
-    select(1:2, 5:7, 16:17, 25:28) %>% 
-    filter(rid %in% c(1:4, 6:8, 10:13, 15:27, 30:32)) %>% 
-    mutate(rid = factor(rid), 
-           group = factor(group, labels = c("Sham", "Tx")),
-           q1_sex = factor(q1_sex, labels = c("Male", "Female")),
-           consumption = factor(consumption, labels = c("No", "Yes")))
-names(sd) <- sd_names <- c("RID", "Group", "Sex", "Age", "Education_years", 
-                           "Starting_age", "Years_consumption", "Tobaco_consumption", 
-                           "Tobaco_start", "Tobaco_years", "Cigs_day") 
 
 sdTbl <- mytable(Group ~ . -RID, data = sd, method = 3)
 mycsv(sdTbl, file = "outData/tables/sdTbl.csv")
@@ -32,10 +22,15 @@ sdPairing <- sd %>%
 # saveRDS(sdTbl, "outData/sdTbl.RDS")
 
 # Clinical ------------------------------------------------------------------------------------
-clinTbl <- clin1 %>% 
-    mytable2(Group + Stage ~ . -Study.ID,
+clin1 %>% 
+    mutate(Stage = factor(Stage, levels = levels(Stage), labels = c("T0", "T1")),
+           Group = factor(Group, labels = c("Sham rTMS", "Real rTMS"))) %>% 
+    select(1:13) %>% 
+    filter(Stage == "T0") %>% 
+    select(-Stage) %>% 
+    mytable(Group ~ . -Study.ID,
          data = .,
-         method = 1)
+         method = 1) 
 mycsv(clinTbl, file = "outData/tables/clTbl.csv")
 
 clinTbl2 <- clin2 %>% 

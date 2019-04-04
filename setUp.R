@@ -1,8 +1,8 @@
 
 # Packages and functions ----------------------------------------------------------------------
 
-pacman::p_load(brainGraph, data.table, tidyverse, reshape2, moonBook, xtable, 
-               foreach, doParallel, plyr, afex, GGally, ggpubr, effsize, WRS2)
+pacman::p_load(brainGraph, data.table, tidyverse, reshape2, moonBook, xtable,
+               foreach, doParallel, afex, GGally, ggpubr, effsize, WRS2, readxl)
 
 registerDoParallel(cores=1)
 
@@ -12,10 +12,10 @@ source('customFunctions.R')
 # Location dependencies -----------------------------------------------------------------------
 
 #Tango
-home <- '/run/media/sofdez/Alpha/TMS/derivatives/graphs/'
+home <- '/run/media/sofdez/Omega/TMS/derivatives/graphs/'
 
 #Huasteca
-# home <- '/media/neuroimagen/Alpha/TMS/derivatives/graphs/'
+# home <- '/media/neuroimagen/Omega/TMS/derivatives/graphs/'
 
 #Constants  ==========================
 today <- format(Sys.Date(), '%m-%y')

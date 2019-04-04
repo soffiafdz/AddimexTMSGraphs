@@ -1,0 +1,461 @@
+---
+title: "Clinical Report (updated)"
+author: "SoF"
+date: "March 11, 2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, paged.print=FALSE)
+library(tidyverse)
+library(data.table)
+library(knitr)
+library(effsize)
+library(Hotelling)
+source('customFunctions.R')
+
+clin1 <- data.table(read_rds("outData/cl1.RDS"))
+
+theme_set(theme_linedraw(base_size = 12))
+pd <- position_dodge(0.25)          
+```
+
+## Correlation between Craving and Impulsivity
+
+```{r}
+corrClin <- melt(clin1, id.vars = c(1, 3, 10), measure.vars = 4:6, 
+                 variable.name = "Craving_measure", value.name = "Craving_value")
+corrClin[Stage == "t0", cor.test(Craving_value, B11_Tot), by = Craving_measure]
+corrClin[Stage == "t1", cor.test(Craving_value, B11_Tot), by = Craving_measure]
+```
+
+### Plot 
+
+```{r}
+ggplot(mutate(corrClin, Stage = factor(Stage, labels = c("Pre-", "Post-"))),
+       aes(B11_Tot, Craving_value)) +
+    geom_point() + 
+    geom_smooth(method = lm, alpha = .3, col = "black", linetype = 5) + 
+    labs(y = "Craving score", x = "Impulsivity score", 
+         title = "Clinical relationship: Craving v Impulsivity") +
+    facet_grid(Craving_measure ~ Stage, scales = "free")
+```
+
+
+## Baseline comparison by results of Urine testing (Cocaine)
+
+```{r}
+utClin <- melt(clin1, id.vars = c(1,3,12), measure.vars = c(4:6, 10),
+               variable.name = "Scale", value.name = "Score")
+
+utClin[Stage == "t0", t.test(Score ~ UT_coc), by = Scale]
+utClin[Stage == "t0", cohen.d(Score ~ UT_coc), by = Scale]
+```
+
+### Plot
+
+```{r}
+ggplot(utClin[Stage == "t0"], aes(UT_coc, Score, fill = UT_coc)) +
+    geom_boxplot() +
+    scale_fill_hue(name="UT results",
+                   breaks=c("positive", "negative"),
+                   labels=c("Pos", "Neg"),
+                   l=25) +
+    labs(x = NULL, title = "Clinical scores by cocaine urine testing") +
+    scale_x_discrete(labels = c("Pos", "Neg")) +
+    facet_wrap(Scale ~ ., scales = "free")
+```
+
+## Clinical results (T1) with Real rTMS group separation by baseline scores
+
+### Set-up
+
+#### Extracting median scores
+
+```{r}
+grMedClin <- melt(clin1, id.vars = 1:3, measure.vars = c(4:6, 10),
+                  variable.name = "Scale", value.name = "Score")
+
+mediansClinTx <- grMedClin[Group == "tx" & Stage == "t0", 
+                           .(Median = median(Score)), 
+                           by = Scale]
+
+mediansClinSham <- grMedClin[Group == "sham" & Stage == "t0", 
+                             .(Median = median(Score)), 
+                             by = Scale]
+
+```
+
+#### Separating Pre- and Post- Scores
+
+```{r }
+grMedClin[, Stage_Scale := ifelse(Stage == "t0",
+                                  paste0("Pre_", Scale),
+                                  paste0("Post_", Scale))]
+
+grMedClin <- dcast.data.table(grMedClin, Study.ID + Group ~ Stage_Scale, value.var = "Score")
+
+```
+
+#### Create median-separated groups 
+
+```{r}
+grMedClin[, `:=` (GroupVAS = as.factor(ifelse(Group == "sham", "sham", 
+                                              ifelse(Pre_VAS < mediansClinTx[[1,2]], "real_<", 
+                                                     "real_>"))),
+                  GroupCCQG = as.factor(ifelse(Group == "sham", "sham", 
+                                               ifelse(Pre_CCQ_G < mediansClinTx[[2,2]], "real_<", 
+                                                      "real_>"))),
+                  GroupCCQN = as.factor(ifelse(Group == "sham", "sham", 
+                                               ifelse(Pre_CCQ_N < mediansClinTx[[3,2]], "real_<", 
+                                                      "real_>"))),
+                  GroupBIS = as.factor(ifelse(Group == "sham", "sham", 
+                                              ifelse(Pre_B11_Tot < mediansClinTx[[4,2]], "real_<", 
+                                                     "real_>"))))]
+
+grMedClin[, `:=` (GroupVAS2 = as.factor(case_when(GroupVAS == "real_<" ~ "r_<",    
+                                                  GroupVAS == "real_>" ~ "r_>",
+                                                  GroupVAS == "sham" & 
+                                                      Pre_VAS <= mediansClinSham[[1,2]] ~ "s_<",
+                                                  GroupVAS == "sham" & 
+                                                      Pre_VAS > mediansClinSham[[1,2]] ~ "s_>")),
+                  GroupCCQG2 = as.factor(case_when(GroupCCQG == "real_<" ~ "r_<",    
+                                                   GroupCCQG == "real_>" ~ "r_>",
+                                                   GroupCCQG == "sham" & 
+                                                       Pre_CCQ_G <= mediansClinSham[[2,2]] ~ "s_<",
+                                                   GroupCCQG == "sham" & 
+                                                       Pre_CCQ_G > mediansClinSham[[2,2]] ~ "s_>")),
+                  GroupCCQN2 = as.factor(case_when(GroupCCQN == "real_<" ~ "r_<",    
+                                                   GroupCCQN == "real_>" ~ "r_>",
+                                                   GroupCCQN == "sham" & 
+                                                       Pre_CCQ_N <= mediansClinSham[[3,2]] ~ "s_<",
+                                                   GroupCCQN == "sham" & 
+                                                       Pre_CCQ_N > mediansClinSham[[3,2]] ~ "s_>")),
+                  GroupBIS2 = as.factor(case_when(GroupBIS == "real_<" ~ "r_<",    
+                                                  GroupBIS == "real_>" ~ "r_>",
+                                                  GroupBIS == "sham" & 
+                                                      Pre_B11_Tot <= mediansClinSham[[4,2]] ~ "s_<",
+                                                  GroupBIS == "sham" & 
+                                                      Pre_B11_Tot > mediansClinSham[[4,2]] ~ "s_>")))]
+
+grMedClin[, `:=` (GroupVAS3 = as.factor(ifelse(str_detect(GroupVAS2, ">"), ">", "<")),
+                  GroupCCQG3 = as.factor(ifelse(str_detect(GroupCCQG2, ">"), ">", "<")),
+                  GroupCCQN3 = as.factor(ifelse(str_detect(GroupCCQN2, ">"), ">", "<")),
+                  GroupBIS3 = as.factor(ifelse(str_detect(GroupBIS2, ">"), ">", "<")))]
+
+grMedClin[, `:=` (DeltaVAS = Post_VAS - Pre_VAS,
+                  DeltaCCQG = Post_CCQ_G - Pre_CCQ_G,
+                  DeltaCCQN = Post_CCQ_N - Pre_CCQ_N,
+                  DeltaBIS = Post_B11_Tot - Pre_B11_Tot)]
+
+head(grMedClin)
+```
+
+#### Casting data.table 
+
+```{r}
+grMedClinLong <- melt(grMedClin, 
+                      measure.vars = 3:10, 
+                      variable.name = "Scale", 
+                      value.name = "Score")
+
+grMedClinLong[, c("Stage", "Scale") := tstrsplit(Scale, "[te]_")]
+grMedClinLong[, `:=` (Scale = factor(Scale),
+                      Stage = factor(Stage, levels = c("Pr", "Pos"),
+                                     labels = c("t0", "t1")),
+                      Delta = Score - rep(grMedClinLong[Stage == "Pr", Score],2))]
+grMedClinLong
+```
+
+
+#### Setting up planned comparisons' contrasts
+
+
+First contrast: Real (high) + Real (low) vs Sham  
+Second contrast: Real (high) vs Real (low)
+
+
+```{r}
+contr1 <- c(1,1,-2)
+contr2 <- c(1,-1,0)
+
+contrasts(grMedClin$GroupVAS) <- cbind(contr1, contr2)
+contrasts(grMedClin$GroupCCQG) <- cbind(contr1, contr2)
+contrasts(grMedClin$GroupCCQN) <- cbind(contr1, contr2)
+contrasts(grMedClin$GroupBIS) <- cbind(contr1, contr2)
+
+contrasts(grMedClinLong$GroupVAS) <- cbind(contr1, contr2)
+contrasts(grMedClinLong$GroupCCQG) <- cbind(contr1, contr2)
+contrasts(grMedClinLong$GroupCCQN) <- cbind(contr1, contr2)
+contrasts(grMedClinLong$GroupBIS) <- cbind(contr1, contr2)
+
+contrasts(grMedClin$GroupVAS)
+```
+
+### Multivariate Hotelling $T^2$ test
+
+VAS, CCQ-N & BIS-11 by Group (Sham v Real rTMS)
+
+```{r}
+print(hotelling.test(DeltaVAS + DeltaCCQN + DeltaBIS ~ Group, data = grMedClin))
+```
+
+VAS, CCQ-N & BIS-11 by Group separated by VAS score (Sham v Real (high) v Real (low) )
+
+```{r}
+print(hotelling.test(DeltaVAS + DeltaCCQN + DeltaBIS ~ GroupVAS, data = grMedClin))
+```
+
+VAS, CCQ-N & BIS-11 by Group separated by CCQ-N score (Sham v Real (high) v Real (low) )
+
+```{r}
+print(hotelling.test(DeltaVAS + DeltaCCQN + DeltaBIS ~ GroupBIS, data = grMedClin))
+```
+
+VAS, CCQ-N & BIS-11 by Group separated by BIS-11 score (Sham v Real (high) v Real (low) )
+
+```{r}
+print(hotelling.test(DeltaVAS + DeltaCCQN + DeltaBIS ~ GroupCCQN, data = grMedClin))
+```
+
+
+### VAS
+
+#### Plot 
+
+##### Score change in Stages
+
+```{r}
+grMedClinLong[Scale == "VAS"] %>% 
+    summarySE(measurevar = "Delta", groupvars = c("GroupVAS2", "GroupVAS3", "Group", "Stage")) %>%
+    ggplot(aes(Stage, Delta, group = GroupVAS2)) +
+    geom_errorbar(aes(ymin = Delta - sd, ymax = Delta + sd, col = GroupVAS3),
+                  width = 0.1, position = pd) +
+    geom_line(position = pd, aes(col = GroupVAS3)) +
+    geom_point(shape = 21, size = 4, fill = "white", position = pd) +
+    scale_colour_hue(name = "Group by Median",
+                   breaks=c("<", ">"),
+                   labels=c("Low score", "High score"),
+                     l=10) +
+    labs(y = "Scores (Delta)", title = "Craving (VAS) changes after 2 weeks of rTMS",
+         x = "Stage") +
+    scale_x_discrete(labels = c("Pre-", "Post-")) +
+    facet_grid(. ~ factor(Group, labels = c("Sham rTMS", "Real rTMS")))
+```
+
+##### Detailed changes 
+
+```{r}
+grMedClinLong[Scale == "VAS" & Stage == "t1"] %>% 
+    ggplot(aes(Stage, Delta, fill = GroupVAS3)) +
+    geom_boxplot(col = "black") +
+    scale_fill_hue(name = "Group by Median",
+                   breaks=c("<", ">"),
+                   labels=c("Low score", "High score"),
+                   l=10) +
+    labs(y = "Scores (Delta)", title = "Craving (VAS) changes after 2 weeks of rTMS",
+         x = NULL) +
+    scale_x_discrete(labels = "2 weeks of treatment") +
+    facet_grid(. ~ factor(Group, labels = c("Sham rTMS", "Real rTMS")))
+```
+
+
+#### Comparing score changes between groups 
+
+```{r}
+grMedClinLong[Scale == "VAS", summary.lm(aov(Delta ~ GroupVAS))]
+```
+
+#### Multivariate regression
+
+Predicting craving (VAS) score after treatment using as covariates: 
+
+1. Stimulation group  
+2. Baseline craving score  
+3. Baseline impulsivity score  
+
+```{r}
+summary(lm(Post_VAS ~ Group + Pre_VAS + Pre_B11_Tot, data = grMedClin))
+```
+
+
+### CCQ General
+
+#### Plot 
+
+##### Score change in Stages
+
+```{r}
+grMedClinLong[Scale == "CCQ_G"] %>% 
+    summarySE(measurevar = "Delta", groupvars = c("GroupCCQG2", "GroupCCQG3", "Group", "Stage")) %>%
+    ggplot(aes(Stage, Delta, group = GroupCCQG2)) +
+    geom_errorbar(aes(ymin = Delta - sd, ymax = Delta + sd, col = GroupCCQG3),
+                  width = 0.1, position = pd) +
+    geom_line(position = pd, aes(col = GroupCCQG3)) +
+    geom_point(shape = 21, size = 4, fill = "white", position = pd) +
+    scale_colour_hue(name = "Group by Median",
+                   breaks=c("<", ">"),
+                   labels=c("Low score", "High score"),
+                     l=10) +
+    labs(y = "Scores (Delta)", title = "Craving (CCQ-G) changes after 2 weeks of rTMS",
+         x = "Stage") +
+    scale_x_discrete(labels = c("Pre-", "Post-")) +
+    facet_grid(. ~ factor(Group, labels = c("Sham rTMS", "Real rTMS")))
+```
+
+##### Detailed changes 
+
+```{r}
+grMedClinLong[Scale == "CCQ_G" & Stage == "t1"] %>% 
+    ggplot(aes(Stage, Delta, fill = GroupCCQG3)) +
+    geom_boxplot(col = "black") +
+scale_fill_hue(name = "Group by Median",
+                   breaks=c("<", ">"),
+                   labels=c("Low score", "High score"),
+                   l=10) +
+    labs(y = "Scores (Delta)", title = "Craving (CCQ-G) changes after 2 weeks of rTMS",
+         x = NULL) +
+    scale_x_discrete(labels = "2 weeks of treatment") +
+    facet_grid(. ~ factor(Group, labels = c("Sham rTMS", "Real rTMS")))
+
+```
+
+
+#### Comparing score changes between groups 
+
+```{r}
+grMedClinLong[Scale == "CCQ_G", summary.lm(aov(Delta ~ GroupCCQG))]
+```
+
+#### Multivariate regression
+
+Predicting craving (CCQ-G) score after treatment using as covariates: 
+
+1. Stimulation group
+2. Baseline craving score
+3. Baseline impulsivity score
+
+```{r}
+summary(lm(Post_CCQ_G ~ Group + Pre_CCQ_G + Pre_B11_Tot, data = grMedClin))
+```
+
+
+### CCQ Now
+
+#### Plot 
+
+##### Score change in Stages
+
+```{r}
+grMedClinLong[Scale == "CCQ_N"] %>% 
+    summarySE(measurevar = "Delta", groupvars = c("GroupCCQN2", "GroupCCQN3", "Group", "Stage")) %>%
+    ggplot(aes(Stage, Delta, group = GroupCCQN2)) +
+    geom_errorbar(aes(ymin = Delta - sd, ymax = Delta + sd, col = GroupCCQN3),
+                  width = 0.1, position = pd) +
+    geom_line(position = pd, aes(col = GroupCCQN3)) +
+    geom_point(shape = 21, size = 4, fill = "white", position = pd) +
+    scale_colour_hue(name = "Group by Median",
+                   breaks=c("<", ">"),
+                   labels=c("Low score", "High score"),
+                     l=10) +
+    labs(y = "Scores (Delta)", title = "Craving (CCQ-N) changes after 2 weeks of rTMS",
+         x = "Stage") +
+    scale_x_discrete(labels = c("Pre-", "Post-")) +
+    facet_grid(. ~ factor(Group, labels = c("Sham rTMS", "Real rTMS")))
+```
+
+##### Detailed changes 
+
+```{r}
+grMedClinLong[Scale == "CCQ_N" & Stage == "t1"] %>% 
+    ggplot(aes(Stage, Delta, fill = GroupCCQN3)) +
+    geom_boxplot(col = "black") +
+scale_fill_hue(name = "Group by Median",
+                   breaks=c("<", ">"),
+                   labels=c("Low score", "High score"),
+                   l=10) +
+    labs(y = "Scores (Delta)", title = "Craving (CCQ-N) changes after 2 weeks of rTMS",
+         x = NULL) +
+    scale_x_discrete(labels = "2 weeks of treatment") +
+    facet_grid(. ~ factor(Group, labels = c("Sham rTMS", "Real rTMS")))
+```
+
+#### Comparing score changes between groups 
+
+```{r}
+grMedClinLong[Scale == "CCQ_N", summary.lm(aov(Delta ~ GroupCCQN))]
+```
+
+#### Multivariate regression
+
+Predicting craving (CCQ-N) score after treatment using as covariates: 
+
+1. Stimulation group  
+2. Baseline craving score  
+3. Baseline impulsivity score  
+
+```{r}
+summary(lm(Post_CCQ_N ~ Group + Pre_CCQ_N + Pre_B11_Tot, data = grMedClin))
+```
+
+### Barratt's Impulsivity Scale
+
+#### Plot 
+
+##### Score change in Stages
+
+```{r}
+grMedClinLong[Scale == "B11_Tot"] %>% 
+    summarySE(measurevar = "Delta", groupvars = c("GroupBIS2", "GroupBIS3", "Group", "Stage")) %>%
+    ggplot(aes(Stage, Delta, group = GroupBIS2)) +
+    geom_errorbar(aes(ymin = Delta - sd, ymax = Delta + sd, col = GroupBIS3),
+                  width = 0.1, position = pd) +
+    geom_line(position = pd, aes(col = GroupBIS3)) +
+    geom_point(shape = 21, size = 4, fill = "white", position = pd) +
+    scale_colour_hue(name = "Group by Median",
+                   breaks=c("<", ">"),
+                   labels=c("Low score", "High score"),
+                     l=10) +
+    labs(y = "Scores (Delta)", title = "Impulsivity (BIS-11) changes after 2 weeks of rTMS",
+         x = "Stage") +
+    scale_x_discrete(labels = c("Pre-", "Post-")) +
+    facet_grid(. ~ factor(Group, labels = c("Sham rTMS", "Real rTMS")))
+```
+
+##### Detailed changes 
+
+```{r}
+grMedClinLong[Scale == "B11_Tot" & Stage == "t1"] %>% 
+    ggplot(aes(Stage, Delta, fill = GroupBIS3)) +
+    geom_boxplot(col = "black") +
+scale_fill_hue(name = "Group by Median",
+                   breaks=c("<", ">"),
+                   labels=c("Low score", "High score"),
+                   l=10) +
+    labs(y = "Scores (Delta)", title = "Impulsivity (BIS-11) changes after 2 weeks of rTMS",
+         x = NULL) +
+    scale_x_discrete(labels = "2 weeks of treatment") +
+    facet_grid(. ~ factor(Group, labels = c("Sham rTMS", "Real rTMS")))
+```
+
+
+#### Comparing score changes between groups 
+
+```{r}
+grMedClinLong[Scale == "B11_Tot", summary.lm(aov(Delta ~ GroupBIS))]
+```
+
+#### Multivariate regression
+
+Predicting impulsivity (BIS-11) score after treatment using as covariates: 
+
+1. Stimulation group  
+2. Baseline impulsivity score  
+3. Baseline craving scores  
+
+```{r}
+summary(lm(Post_B11_Tot ~ Group + Pre_B11_Tot + Pre_CCQ_N + Pre_CCQ_G + Pre_VAS, data = grMedClin))
+```
+

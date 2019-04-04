@@ -1,0 +1,518 @@
+---
+title: "Clinical results report"
+author: "Garzalab"
+date: "February 25, 2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(tidyverse)
+library(data.table)
+library(moonBook)
+library(xtable)
+library(afex)
+library(effsize)
+library(readxl)
+library(knitr)
+
+clin1 <- read_rds("outData/cl1.RDS")
+clin2 <- read_rds("outData/cl2.RDS")
+clin3 <- read_rds("outData/cl3.RDS")
+aovClin <- read_rds("outData/aovClin.RDS")
+anovaClin <- read_rds("outData/anovaClin.RDS")
+chiClin <- read_rds("outData/chiClin.RDS")
+chiClin2 <- read_rds("outData/chiClin2.RDS")
+chiClin3 <- read_rds("outData/chiClin3.RDS")
+tTstClin <- read_rds("outData/tTstClin.RDS")
+
+source('customFunctions.R')
+
+theme_set(theme_linedraw(base_size = 10))
+pd <- position_dodge(0.25)
+```
+
+## Outcome variables
+
+For the present report, we performed statistical analysis over the results of the following outcome variables: 
+
++ Craving 
+    1. Visual Analogue Scale (VAS)
+    2. Cocaine Craving Questionnaire (CCQ)
+        + General version
+        + Now version
+    3. Urine's drug testing (UT)
+        + THC
+        + Benzodiazepines
+        + Cocaine
+    4. Pattern of consumption
+        + Grams 
+        + Frequency
++ Impulsivity
+    1. Barratt's Impulsivity Scale 11 (B11)
+        + Cognitive subscale
+        + Motor subscale
+        + Non-planning subscale
+        + Total score
++ General improvement
+    1. Subjective improvement report
+    
+## Baseline (T0)
+
+There were no significant differences between any of the results of the outcome variables at baseline between the two stimulation groups.
+
+```{r}
+clin1 %>% 
+    mutate(Stage = factor(Stage, labels = c("T0", "T1")),
+           Group = factor(Group, labels = c("Sham rTMS", "Real rTMS"))) %>% 
+    select(1:13) %>% 
+    filter(Stage == "T0") %>% 
+    select(-Stage) %>% 
+    mytable(Group ~ . -Study.ID,
+         data = .,
+         method = 1) %>% 
+    mytable2df() %>% 
+    kable(format = "latex")
+```
+
+## Clinical improvement 
+
+The clinical improvement resulting from the rTMS treatment was explored with the previously mentioned outcome measures. The analysis was performed at three timepoints: (1) after two weeks of close-label (double-blind placebo) treatment of rTMS (N=29; Sham, 13; Real, 16), (2) after two weeks of open-label real rTMS (N = 24), and, (3) after three months of maintenance rTMS sessions (N = 13). 
+
+### Close-label phase (2 weeks of double-blind rTMS)
+
+Twenty-nine patients finished the two weeks of close-label rTMS treatment. Four dropped-out before finishing the treatment and one was excluded from the analysis after clinical findings in his MRI. 
+
+
+#### Craving measures
+
+##### VAS 
+ 
+Although the results didn't reach the significant threshold, there was an important interaction between the stage of treatment and the group of stimulation in the reported craving with the Analogue Visual Scale ($F_{(1,27)} = 4.07, p = .05, \eta^2 = .03$).
+
+```{r}
+
+prep_plot_cl(clin1, VAS) %>% 
+    ggplot(aes(Stage, Score, group = Group)) +
+    geom_errorbar(aes(ymin = Score - se, ymax = Score + se, col = Group), 
+                  width = 0.1, position = pd, alpha = .7) +
+    geom_line(position = pd, aes(col = Group)) +
+    geom_point(shape = 21, size = 4, fill = "white", position = pd) +
+    scale_colour_hue(name="Group",    # Legend label, use darker colors
+                     breaks=c("sham", "tx"),
+                     labels=c("Sham rTMS", "Real rTMS"),
+                     l=20) +
+    labs(y = NULL, title = "Interaction (Group v Stage): Craving's Analogue Visual Scale (N = 29)",
+         x = NULL) +
+    scale_x_discrete(labels = c("Pre-", "Post-"))
+
+aovClin[[1]]
+
+```
+
+##### Cocaine Craving Questionnaire 
+
+On the other hand, when exploring craving with the CCQ, neither the General version ($F_{(1,27)} = 0.0, p = .96, \eta^2 = <.0001$), nor the Now version ($F_{(1,27)} = 1.01, p = .32, \eta^2 = .008$) showed significant results in interaction of Group and Stage. 
+
+```{r}
+
+prep_plot_cl(clin1, CCQ_G:CCQ_N) %>% 
+    mutate(Scale = factor(Scale, labels = c("General", "Now"))) %>% 
+    ggplot(aes(Stage, Score, group = Group)) +
+    geom_errorbar(aes(ymin = Score - se, ymax = Score + se, col = Group), 
+                  width = 0.1, position = pd) +
+    geom_line(position = pd, aes(col = Group)) +
+    geom_point(shape = 21, size = 4, fill = "white", position = pd) +
+    scale_colour_hue(name="Group",    # Legend label, use darker colors
+                     breaks=c("sham", "tx"),
+                     labels=c("Sham rTMS", "Real rTMS"),
+                     l=20) +
+    labs(y = NULL, title = "Interaction (Group v Stage): Cocaine's Craving Questionnaire (N = 29)",
+         x = NULL) +
+    scale_x_discrete(labels = c("Pre-", "Post-")) +
+    facet_wrap(Scale ~ ., scales = "free")
+
+aovClin[2:3]
+```
+
+##### Urine's drug testing 
+
+There were no significant difference between groups in the urine testing for none of the drugs tested: benzodiazepines,$\chi^2_{(1)} = 0.04, p = 0.85$; cocaine,$\chi^2_{(1)} = 0.0, p = 1$; THC,$\chi^2_{(1)} = 0.0, p = 1$. 
+
+```{r}
+
+UTgraph <- clin1 %>% 
+    gather("Scale", "Score", UT_bzd:UT_thc, factor_key = T) %>% 
+    mutate(Scale = factor(Scale, labels = c("Benzodiazepines", "Cocaine", "THC")),
+           Group = factor(Group, labels = c("Sham rTMS", "Real rTMS")),
+           Stage = factor(Stage, labels = c("Pre-", "Post-"))) %>% 
+    group_by(Group, Stage, Scale, Score) %>% 
+    dplyr::summarise(Count = n()) %>% 
+    ggplot(aes(Stage, Count, fill = Score)) +
+    scale_fill_hue(name="Score",    # Legend label, use darker colors
+                     breaks=c("negative", "positive"),
+                     labels=c("Negative", "Positive"),
+                     l=30) +
+    labs(y = "Count", title = "Urine Testing after 2 weeks of rTMS (N = 29)",
+         x = NULL) +
+    facet_grid(Group ~ Scale)
+
+UTgraph + geom_bar(stat = "identity", position = "fill") + 
+    scale_y_continuous(name = "Percent", labels = scales::percent)
+
+chiClin[1:3]
+```
+
+##### Pattern of consumption
+
+There were no significant differences either exploring the consumption between groups in the close-label phase. Either in abstinence ($\chi^2_{(1)} = 0.34, p = .56$), frequency ($F_{(1,27)} = 1.34, p = .26, \eta^2 = .01$) nor grams consumed ($F_{(1,26)} = 0.24, p = .63, \eta^2 = .004$).
+
+```{r}
+ConsGraph <- clin1 %>% 
+    mutate(Group = factor(Group, labels = c("Sham rTMS", "Real rTMS"))) %>% 
+    group_by(Group, Stage, Consume) %>% 
+    dplyr::summarise(Count = n()) %>% 
+    filter(Stage == "t1") %>% 
+    ggplot(aes(Group, Count, fill = Consume)) +
+    scale_fill_hue(name="Consumption",    # Legend label, use darker colors
+                   breaks=c("Yes", "No"),
+                   labels=c("Yes", "No"),
+                   l=30) +
+    labs(y = "Count", title = "Consumption after 2 weeks of rTMS (N = 29)",
+         x = NULL) 
+
+ConsGraph + geom_bar(stat = "identity", position = "fill") +
+    scale_y_continuous(name = "Percent", labels = scales::percent)
+
+chiClin[4]
+
+prep_plot_cl(clin1, Coc_last30:Grams) %>% 
+    mutate(Scale = factor(Scale, labels = c("Frequency", "Grams"))) %>% 
+    ggplot(aes(Stage, Score, group = Group)) +
+    geom_errorbar(aes(ymin = Score - se, ymax = Score + se, col = Group), 
+                  width = 0.1, position = pd) +
+    geom_line(position = pd, aes(col = Group)) +
+    geom_point(shape = 21, size = 4, fill = "white", position = pd) +
+    scale_colour_hue(name="Group",    # Legend label, use darker colors
+                     breaks=c("sham", "tx"),
+                     labels=c("Sham rTMS", "Real rTMS"),
+                     l=20) +
+    labs(y = NULL, title = "Interaction (Group v Stage): Consumption (N = 29)",
+         x = NULL) +
+    scale_x_discrete(labels = c("Pre-", "Post-")) +
+    facet_wrap(Scale ~ ., scales = "free")
+
+aovClin[8:9]
+```
+
+
+#### Impulsivity
+
+##### Barratt's Impulsivity Scale 11
+
+Impulsivity improved significantly on those who underwent real rTMS compared with those of sham rTMS, as can be seen in the interaction of the total score ($F_{(1,27)} = 9.43, p = .005, \eta^2 = .06$), and two of the subscales: cognitive ($F_{(1,27)} = 7.91, p = .009, \eta^2 = .05$) and motor ($F_{(1,27)} = 7.25, p = .01, \eta^2 = .05$). The non-planning subscale showed no significant interaction ($F_{(1,27)} = 3.28, p = .08, \eta^2 = .03$).
+
+
+```{r}
+prep_plot_cl(clin1, B11_C:B11_Tot) %>% 
+    mutate(Scale = factor(Scale, labels = c("Cognitive", "Motor", "Non-planning", "Total score"))) %>% 
+    ggplot(aes(Stage, Score, group = Group)) +
+    geom_errorbar(aes(ymin = Score - se, ymax = Score + se, col = Group), 
+                  width = 0.1, position = pd) +
+    geom_line(position = pd, aes(col = Group)) +
+    geom_point(shape = 21, size = 4, fill = "white", position = pd) +
+    scale_colour_hue(name="Group",    # Legend label, use darker colors
+                     breaks=c("sham", "tx"),
+                     labels=c("Sham rTMS", "Real rTMS"),
+                     l=20) +
+    labs(y = NULL, title = "Interaction (Group v Stage): Barratt's Impulsivity Scale 11 (N = 29)",
+         x = NULL) +
+    scale_x_discrete(labels = c("Pre-", "Post-")) +
+    facet_wrap(Scale ~ ., scales = "free")
+
+aovClin[4:7]
+```
+
+#### General Improvement 
+
+##### Subjective improvement report
+
+Another sign of significant clinical improvement was the auto-report of improvement of those of the real rTMS group compared with the sham rTMS group ($\chi^2_{(3)}=9.48, p = .024$)
+
+```{r}
+ImprovGraph <- clin1 %>% 
+    mutate(Group = factor(Group, labels = c("Sham rTMS", "Real rTMS"))) %>% 
+    group_by(Group, Stage, Improvement) %>% 
+    dplyr::summarise(Count = n()) %>% 
+    filter(Stage == "t1") %>% 
+    ggplot(aes(Group, Count, fill = Improvement)) +
+    scale_fill_hue(name="Improvement",    # Legend label, use darker colors
+                   # breaks=c("Yes", "No"),
+                   # labels=c("Yes", "No"),
+                   l=20) +
+    labs(y = "Count", title = "Subjective improvement after 2 weeks (N = 29)",
+         x = NULL) 
+
+ImprovGraph + geom_bar(stat = "identity", position = "fill") +
+    scale_y_continuous(name = "Percent", labels = scales::percent)
+
+chiClin[5]
+```
+
+
+
+### Open-label phase (2 weeks of real rTMS)
+
+After finishing the close-label phase, those of who underwent simulated rTMS were given the option to receive another 2 weeks of real rTMS treatment. Eight of these 13 patients opted to continue with the open-label phase, resulting in 24 participants who finished 2 weeks of real rTMS. 
+
+#### Craving measures
+
+##### VAS 
+
+A significant improvement after the 2 weeks or real rTMS was shown in the reported craving on the VAS with a medium effect size ($t_{(23)}=4.30, p < .000, d = .64$). 
+
+```{r}
+clin2 %>% 
+    ggplot(aes(Stage, VAS, fill = Stage)) +
+    geom_boxplot() +
+    scale_fill_hue(name="Stage",    # Legend label, use darker colors
+                     breaks=c("t0", "t1"),
+                     labels=c("Pre-", "Post-"),
+                     l=25) +
+    labs(y = NULL, title = "2 weeks real rTMS: Craving's Analogue Visual Scale (N = 24)",
+         x = NULL) +
+    scale_x_discrete(labels = c("Pre-", "Post-")) +
+    scale_y_continuous(breaks = seq(0, 10, 2))
+
+tTstClin[[1]][[1]]
+tTstClin[[2]][[1]]
+```
+
+##### Cocaine Craving Questionnaire
+
+The same improvement was found with the CCQ in both versions, although with a smaller effect size (General: $t_{(23)}=2.62, p = .008, d = .45$; Now: $t_{(23)}=2.56, p = .009, d = .48$).
+
+```{r}
+clin2 %>% 
+    gather(CCQ_G:CCQ_N, key = "Scale", value = "Score") %>% 
+    mutate(Scale = factor(Scale, labels = c("General", "Now"))) %>% 
+    ggplot(aes(Stage, Score, fill = Stage)) +
+    geom_boxplot() +
+    scale_fill_hue(name="Stage",    # Legend label, use darker colors
+                   breaks=c("t0", "t1"),
+                   labels=c("Pre-", "Post-"),
+                   l=25) +
+    labs(y = NULL, title = "2 weeks real rTMS: Cocaine Craving's Questionnaire (N = 24)",
+         x = NULL) +
+    scale_x_discrete(labels = c("Pre-", "Post-")) +
+    facet_wrap(Scale ~ ., scales = "free")
+
+tTstClin[[1]][2:3]
+tTstClin[[2]][2:3]
+
+```
+
+##### Urine's drug testing 
+
+There were no differences in the results of the drug testing between the stages of treatment for none of the drugs tested: benzodiazepines,$\chi^2_{(1)} = 0.27, p = .601$; cocaine,$\chi^2_{(1)} = 0.0, p = 1$; THC,$\chi^2_{(1)} = 0.0, p = 1$.
+
+```{r}
+UTgraph2 <- clin2 %>% 
+    gather("Scale", "Score", UT_bzd:UT_thc, factor_key = T) %>% 
+    mutate(Scale = factor(Scale, labels = c("Benzodiacepines", "Cocaine", "THC"))) %>% 
+    group_by(Stage, Scale, Score) %>% 
+    dplyr::summarise(Count = n()) %>% 
+    ggplot(aes(Stage, Count, fill = Score)) +
+    scale_fill_hue(name="Score",    # Legend label, use darker colors
+                   breaks=c("negative", "positive"),
+                   labels=c("Negative", "Positive"),
+                   l=30) +
+    labs(y = "Count", title = "Urine Testing after 2 weeks of real rTMS (N = 24)",
+         x = NULL) +
+    scale_x_discrete(labels = c("Pre-", "Post-")) +
+    facet_wrap(Scale ~ .)
+
+UTgraph2 + geom_bar(stat = "identity", position = "fill") + 
+    scale_y_continuous(name = "Percent", labels = scales::percent)
+
+chiClin2
+```
+
+##### Pattern of consumption
+
+A significant reduction in the frequency of consumption was found after the 2 weeks of real rTMS ($t_{(23)}=2.26, p=.017, d = .47$) but not of the grams consumed ($t_{(23)}=1.24, p=.113, d=.26$).
+
+```{r}
+clin2 %>% 
+    gather(Coc_last30:Grams, key = "Scale", value = "Score") %>% 
+    mutate(Scale = factor(Scale, labels = c("Frequency", "Grams"))) %>% 
+    ggplot(aes(Stage, Score, fill = Stage)) +
+    geom_boxplot() +
+    scale_fill_hue(name="Stage",    # Legend label, use darker colors
+                   breaks=c("t0", "t1"),
+                   labels=c("Pre-", "Post-"),
+                   l=25) +
+    labs(y = NULL, title = "2 weeks real rTMS: Consumption (N = 24)",
+         x = NULL) +
+    scale_x_discrete(labels = c("Pre-", "Post-")) +
+    facet_wrap(Scale ~ ., scales = "free")
+
+tTstClin[[1]][8:9]
+tTstClin[[2]][8:9]
+```
+
+#### Impulsivity
+
+##### Barratt's Impulsivity Scale 11
+
+A significant improvement occured after the 2 weeks of real rTMS in impulsivity as measured with BIS11. A significant difference with a large effect size was found in the total score of the scale ($t{(23)}=4.32, p<.000,d=.83$), as well as a medium-sized effect difference in the three subscales: Cognitive, $t{(23)}=3.34, p=.001,d=.67$; Motor, $t{(23)}=4.12, p<.000,d=.55$; and Non-planning, $t{(23)}=2.93, p=.004,d=.64$. 
+
+```{r}
+clin2 %>% 
+    gather( B11_C:B11_Tot, key = "Scale", value = "Score") %>% 
+    mutate(Scale = factor(Scale, labels = c("Cognitive", "Motor", "Non-planning", "Total score"))) %>% 
+    ggplot(aes(Stage, Score, fill = Stage)) +
+    geom_boxplot() +
+    scale_fill_hue(name="Stage",    # Legend label, use darker colors
+                   breaks=c("t0", "t1"),
+                   labels=c("Pre-", "Post-"),
+                   l=25) +
+    labs(y = NULL, title = "2 weeks real rTMS: Barratt's Impulsivity Scale (N = 24)",
+         x = NULL) +
+    scale_x_discrete(labels = c("Pre-", "Post-")) +
+    facet_wrap(Scale ~ ., scales = "free")
+
+tTstClin[[1]][4:7]
+tTstClin[[2]][4:7]
+
+```
+
+### Maintenance phase
+
+Of the initial sample, 13 participants followed maintenance treatment of weekly sessions for three months after the open-label phase. 
+
+#### Craving measures
+
+##### VAS 
+
+There was a significant difference in VAS scores between the three stages of treatment (baseline, 2 weeks treatment, 3 months maintenance): $F_{(2,36)}=6.425, p=.004$. Post-hoc testing showed a difference between treatment and baseline ($p=.01$), and, maintenance and baseline ($p=.01$); but not between treatment and maintenance ($p=.99$). 
+
+```{r}
+prep_plot_cl2(clin3, VAS) %>% 
+    ggplot(aes(Stage, Score, group = 1)) +
+    geom_errorbar(aes(ymin = Score - se, ymax = Score + se), 
+                  width = 0.1, position = pd, alpha = .7) +
+    geom_line(position = pd) +
+    geom_point(shape = 21, size = 4, fill = "white", position = pd) +
+    labs(y = NULL, title = "Longitudinal: Craving's Analogue Visual Scale (N = 13)",
+         x = NULL) +
+    scale_x_discrete(labels = c("Basal", "2 weeks rTMS", "3 months maint"))
+
+anovaClin[[1]][1]
+anovaClin[[2]][1]
+```
+
+
+##### Cocaine Craving Questionnaire
+
+The ANOVA showed significant differences between stages in the General version of the questionnaire ($F_{(2,36)}=7.69, p=.002$), but not the Now version ($F_{(2,36)}=2.96, p=.06$). The post-hoc analysis found differences in the score of the General version between baseline with both treatment ($p=.015$) and maintenance ($p=.002$), but not between treatment and maintenance ($p=.728$).
+```{r}
+prep_plot_cl2(clin3, CCQ_G:CCQ_N) %>% 
+    mutate(Scale = factor(Scale, labels = c("General", "Now"))) %>% 
+    ggplot(aes(Stage, Score, group = 1)) +
+    geom_errorbar(aes(ymin = Score - se, ymax = Score + se), 
+                  width = 0.1, position = pd) +
+    geom_line(position = pd) +
+    geom_point(shape = 21, size = 4, fill = "white", position = pd) +
+    labs(y = NULL, title = "Longitudinal: Cocaine's Craving Questionnaire (N = 13)",
+         x = NULL) +
+    scale_x_discrete(labels = c("Basal", "2 weeks rTMS", "3 months maint")) +
+    facet_wrap(. ~ Scale, scales = "free")
+
+anovaClin[[1]][2:3]
+anovaClin[[2]][2:3]
+```
+
+##### Urine's drug testing 
+
+Between the three stages here were no differences in the results of the drug testing for none of the drugs tested: benzodiazepines,$\chi^2_{(2)} = 4.309, p = .116$; cocaine,$\chi^2_{(2)} = 0.292, p = .864$; THC,$\chi^2_{(2)} = 1.975, p = .373$.
+
+```{r}
+UTgraph3 <- clin3 %>% 
+    gather("Scale", "Score", UT_bzd:UT_thc, factor_key = T) %>% 
+    mutate(Scale = factor(Scale, labels = c("Benzodiacepines", "Cocaine", "THC"))) %>% 
+    group_by(Stage, Scale, Score) %>% 
+    dplyr::summarise(Count = n()) %>% 
+    na.omit() %>% 
+    ggplot(aes(Stage, Count, fill = Score)) +
+    scale_fill_hue(name="Score",    # Legend label, use darker colors
+                   breaks=c("negative", "positive"),
+                   labels=c("Negative", "Positive"),
+                   l=30) +
+    labs(y = "Count", title = "Urine Testing after 2 weeks of real rTMS (N = 24)",
+         x = NULL) +
+    scale_x_discrete(labels = c("T0", "T1", "T2")) +
+    facet_wrap(Scale ~ .)
+
+UTgraph3 + geom_bar(stat = "identity", position = "fill") + 
+    scale_y_continuous(name = "Percent", labels = scales::percent)
+
+chiClin3
+```
+
+
+
+
+##### Pattern of consumption
+
+There were no significant differences between the stages of treatment in neither frequency of consumption ($F_{(2,36)}=1.76, p=.187$) or grams consumed ($F_{(2,36)}=2.10, p=.137$).
+
+
+```{r}
+prep_plot_cl2(clin3, Coc_last30:Grams) %>% 
+    mutate(Scale = factor(Scale, labels = c("Frequency", "Grams"))) %>% 
+    ggplot(aes(Stage, Score, group = 1)) +
+    geom_errorbar(aes(ymin = Score - se, ymax = Score + se), 
+                  width = 0.1, position = pd) +
+    geom_line(position = pd) +
+    geom_point(shape = 21, size = 4, fill = "white", position = pd) +
+    
+    labs(y = NULL, title = "Longitudinal: Consumption (N = 13)",
+         x = NULL) +
+    scale_x_discrete(labels = c("Basal", "2 weeks rTMS", "3 months maint")) +
+    facet_wrap(Scale ~ ., scales = "free")
+
+anovaClin[[1]][8:9]
+
+```
+
+
+#### Impulsivity
+
+##### Barratt's Impulsivity Scale 11
+
+A significant difference between stages of treatment was found in the total score of the BIS-11 ($F_{(2,36)}=8.374, p=.001$); the differences were between baseline and both treatment ($p=.007$) and maintenance ($p=.002$), but not between these last two ($p=.845$)
+
+In the subscales, significant results were found for the motor subscale ($F_{(2,36)}=5.488, p=.008$) and the non-planning subscale ($F_{(2,36)}=6.456, p=.004$), but not the cognitive one ($F_{(2,36)}=2.734, p=.078$). 
+
+Post-hoc analysis for the motor subscale showed difference only between baseline and maintenance ($p=.007$), while the non-planning subscale showed difference between baseline and both treatment ($p=.007$) and maintenance ($p=.002$). 
+
+```{r}
+prep_plot_cl2(clin3, B11_C:B11_Tot) %>% 
+    mutate(Scale = factor(Scale, labels = c("Cognitive", "Motor", "Non-planning", "Total score"))) %>% 
+    ggplot(aes(Stage, Score, group = 1)) +
+    geom_errorbar(aes(ymin = Score - se, ymax = Score + se), 
+                  width = 0.1, position = pd) +
+    geom_line(position = pd) +
+    geom_point(shape = 21, size = 4, fill = "white", position = pd) +
+    labs(y = NULL, title = "Longitudinal: Barratt's Impulsivity Scale 11 (N = 13)",
+         x = NULL) +
+    scale_x_discrete(labels = c("Basal", "2 weeks rTMS", "3 months maint")) +
+    facet_wrap(Scale ~ ., scales = "free")
+
+anovaClin[[1]][4:7]
+anovaClin[[2]][5:7]
+```
+
