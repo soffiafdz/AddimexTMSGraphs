@@ -1,5 +1,5 @@
 
-# Raw data  -----------------------------------------------------------------------------------
+# Raw data  --------------------------------------------------------------------
 
 data_amai <- read_excel('inData/clinical_data/20190410/AMA INSE 8x7.xlsx',
                         sheet = 2)
@@ -39,7 +39,7 @@ data_demog <- read_excel('inData/clinical_data/20190410/DEMOGRAPHIC.xlsx',
                          sheet = 1, na = 'NA')
 
 
-# Demographics --------------------------------------------------------------------------------
+# Demographics ----------------------------------------------------------------
 
 sd <- left_join(data_demog, data_tobacco, by = c("rid", "group", "stage")) %>% 
     select(1:2, 5:7, 16:17, 25:28) %>% 
@@ -56,7 +56,7 @@ names(sd) <- sd_names <- c("RID", "Group", "Sex", "Age", "Education_years",
                            "Tobacco_years", "Cigs_day") 
 
 
-# Clinical ------------------------------------------------------------------------------------
+# Clinical --------------------------------------------------------------------
 
 clinical <- data_vas %>% 
     left_join(data_ccqg[c(1:3, 49)]) %>%
@@ -102,6 +102,16 @@ clinical <- data_vas %>%
 clin1 <- clinical %>% filter(Stage %in% c("t1", "t0")) %>% 
     mutate(Stage = factor(Stage)) %>% data.table()
 
+clin1Delta <- clin1 %>% 
+    select(1:10) %>% 
+    gather(key = "Scale", value = "Score", 4:10, factor_key = T) %>% 
+    spread(Stage, Score) %>% 
+    mutate(Delta = t1 - t0) %>% 
+    select(-c(4,5)) %>% 
+    spread(Scale, Delta)
+
+
+
 clin2 <- clinical %>% 
     filter(Study.ID %in% c(
         as.character(clinical[clinical$Stage == "t1-4",]$Study.ID),
@@ -140,9 +150,10 @@ clin3 <- clinical %>%
 write_rds(clin1, "outData/cl1.RDS")
 write_rds(clin2, "outData/cl2.RDS")
 write_rds(clin3, "outData/cl3.RDS")
+write_csv(clin1Delta, "outData/clinicalDelta.csv")
 
 
-# Blind stage ANOVA & chi2 ----------------------------------------------------------------------
+# Blind stage ANOVA & chi2 ---------------------------------------------------
 
 aovClin <- vector('list', length = 9)
 
@@ -184,7 +195,7 @@ chiClin[[5]] <- chisq.test(table(filter(clin1, Stage == "t1")$Improvement,
 write_rds(aovClin, "outData/aovClin.RDS")
 write_rds(chiClin, "outData/chiClin.RDS")
 
-# Open-label tTests ---------------------------------------------------------------------------
+# Open-label tTests -----------------------------------------------------------
 
 tTestClin <- vector('list', length = 2)
 
@@ -227,7 +238,7 @@ chiClin2[[3]] <- chisq.test(table(filter(clin2)$UT_thc, filter(clin2)$Stage))
 write_rds(tTestClin, "outData/tTstClin.RDS")
 write_rds(chiClin2, "outData/chiClin2.RDS")
 
-# Open-label ANOVAs ---------------------------------------------------------------------------
+# Open-label ANOVAs -----------------------------------------------------------
 
 anovaClin <- vector('list', length = 2)
 
@@ -262,7 +273,7 @@ chiClin3[[3]] <- chisq.test(table(filter(clin3)$UT_thc, filter(clin3)$Stage))
 write_rds(anovaClin, "outData/anovaClin.RDS")
 write_rds(chiClin3, "outData/chiClin3.RDS")
 
-# Graph Metrics -------------------------------------------------------------------------------
+# Graph Metrics ---------------------------------------------------------------
 
 CON <- attrCON %>% left_join(clinical) %>% data.table() 
 DAN <- attrDAN %>% left_join(clinical) %>% data.table()
@@ -314,7 +325,7 @@ VANl <- attrVANl %>% left_join(clin3) %>% data.table()
 WBl <- attrWBl %>% left_join(clin3) %>% data.table()
 
 
-# Graph metrics (anterior model) --------------------------------------------------------------
+# Graph metrics (anterior model) ----------------------------------------------
 
 # CON1 <- attr1CON %>% left_join(clinical) %>% data.table()
 # DAN1 <- attr1DAN %>% left_join(clinical) %>% data.table()
@@ -326,7 +337,7 @@ WBl <- attrWBl %>% left_join(clin3) %>% data.table()
 # WB1 <- attr1WB %>% left_join(clinical) %>% data.table()
 
 
-# Graph metrics (posterior model) -------------------------------------------------------------
+# Graph metrics (posterior model) ---------------------------------------------
 
 # CON2 <- attr2CON %>% left_join(clinical) %>% data.table()
 # DAN2 <- attr2DAN %>% left_join(clinical) %>% data.table()
