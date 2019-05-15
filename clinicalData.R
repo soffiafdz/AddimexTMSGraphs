@@ -317,26 +317,4 @@ VANl <- attrVANl %>% left_join(clin3) %>% data.table()
 WBl <- attrWBl %>% left_join(clin3) %>% data.table()
 
 
-# Graph metrics (anterior model) ----------------------------------------------
-
-# CON1 <- attr1CON %>% left_join(clinical) %>% data.table()
-# DAN1 <- attr1DAN %>% left_join(clinical) %>% data.table()
-# DMN1 <- attr1DMN %>% left_join(clinical) %>% data.table()
-# FPN1 <- attr1FPN %>% left_join(clinical) %>% data.table()
-# SAL1 <- attr1SAL %>% left_join(clinical) %>% data.table()
-# SUB1 <- attr1SUB %>% left_join(clinical) %>% data.table()
-# VAN1 <- attr1VAN %>% left_join(clinical) %>% data.table()
-# WB1 <- attr1WB %>% left_join(clinical) %>% data.table()
-
-
-# Graph metrics (posterior model) ---------------------------------------------
-
-# CON2 <- attr2CON %>% left_join(clinical) %>% data.table()
-# DAN2 <- attr2DAN %>% left_join(clinical) %>% data.table()
-# DMN2 <- attr2DMN %>% left_join(clinical) %>% data.table()
-# FPN2 <- attr2FPN %>% left_join(clinical) %>% data.table()
-# SAL2 <- attr2SAL %>% left_join(clinical) %>% data.table()
-# SUB2 <- attr2SUB %>% left_join(clinical) %>% data.table()
-# VAN2 <- attr2VAN %>% left_join(clinical) %>% data.table()
-# WB2 <- attr2WB %>% left_join(clinical) %>% data.table()
 
