@@ -17,7 +17,9 @@ home <- '/run/media/sofdez/Omega/TMS/derivatives/graphs/'
 #Huasteca
 # home <- '/media/neuroimagen/Omega/TMS/derivatives/graphs/'
 
-#Constants  ==========================
+
+# Constants ---------------------------------------------------------------
+
 today <- format(Sys.Date(), '%m-%y')
 savedir <- paste0(home, 'brainGraph/')
 savedir1 <- paste0(savedir, today, "_")
