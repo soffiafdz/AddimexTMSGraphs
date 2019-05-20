@@ -2,7 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
-*.Rproj
-*Data/
+outData/
 *.pdf
 *.html
+*.tex
