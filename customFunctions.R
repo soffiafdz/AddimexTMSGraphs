@@ -5,81 +5,92 @@ mkInds <- function(covars, gr) {
   )
 }
 
-matFiles <- function(dataCTRL, dataTMS) {
-  list(
-    r_c = c(
-      str_subset(
-        list.files(list.dirs(paste(dataCTRL, net, sep = "/"), recursive = T),
-          paste("*_matrix", net, "r.csv", sep = "_"),
-          full.names = T
-        ),
-        paste(str_replace_all(
-          str_subset(covars_p$Study.ID, "ctr-"),
-          "ctr-", "sub-"
-        ), collapse = "|")
-      ),
-      list.files(list.dirs(paste(dataTMS, net, "all", sep = "/"), recursive = T),
-        paste("*t0_matrix", net, "r.csv", sep = "_"),
-        full.names = T
-      )
-    ),
-    r_t0 = c(
-      list.files(list.dirs(paste(dataTMS, net, "sham", sep = "/"), recursive = T),
-        paste("*t0_matrix", net, "r.csv", sep = "_"),
-        full.names = T
-      ),
-      list.files(list.dirs(paste(dataTMS, net, "tx", sep = "/"), recursive = T),
-        paste("*t0_matrix", net, "r.csv", sep = "_"),
-        full.names = T
-      )
-    ),
-    r_t1 = c(
-      list.files(list.dirs(paste(dataTMS, net, "sham", sep = "/"), recursive = T),
-        paste("*t1_matrix", net, "r.csv", sep = "_"),
-        full.names = T
-      ),
-      list.files(list.dirs(paste(dataTMS, net, "tx", sep = "/"), recursive = T),
-        paste("*t1_matrix", net, "r.csv", sep = "_"),
-        full.names = T
-      )
-    ),
-    r_tx_pre = c(
-      str_subset(
-        list.files(list.dirs(paste(dataTMS, net, "sham", sep = "/"), recursive = T),
-          paste("*t1_matrix", net, "r.csv", sep = "_"),
-          full.names = T
-        ),
-        paste(covars2$Study.ID, collapse = "|")
-      ),
-      list.files(list.dirs(paste(dataTMS, net, "tx", sep = "/"), recursive = T),
-        paste("*t0_matrix", net, "r.csv", sep = "_"),
-        full.names = T
-      )
-    ),
-    r_tx_post = c(
-      list.files(list.dirs(paste(dataTMS, net, "sham", sep = "/"), recursive = T),
-        paste("*t14_matrix", net, "r.csv", sep = "_"),
-        full.names = T
-      ),
-      list.files(list.dirs(paste(dataTMS, net, "tx", sep = "/"), recursive = T),
-        paste("*t1_matrix", net, "r.csv", sep = "_"),
-        full.names = T
-      )
-    ),
-    r_t2 = c(
-      list.files(list.dirs(paste(dataTMS, net, "sham", sep = "/"), recursive = T),
-        paste("*t2_matrix", net, "r.csv", sep = "_"),
-        full.names = T
-      ),
-      list.files(list.dirs(paste(dataTMS, net, "tx", sep = "/"), recursive = T),
-        paste("*t2_matrix", net, "r.csv", sep = "_"),
-        full.names = T
+readTimeSeries <- function(dataTMS, dataCTRL = NULL) {
+  #Function for extracting the files
+  ls <- function(dir1, dir2 = dir1, dt) {
+    return(c(
+      str_subset(list.files(list.dirs(dataTMS, recursive = T),
+                            dir1, full.names = T),
+                 dt[group == "sham", paste(Study.ID, collapse = "|")]),
+      str_subset(list.files(list.dirs(dataTMS, recursive = T),
+                            dir2, full.names = T),
+                 dt[group == "tx", paste(Study.ID, collapse = "|")])
       )
     )
+  }
+  # Applying function by groups
+  dirs <- list(
+    t0 = ls(
+      dir1 = "*ses-t0_power264_ts.1D",
+      dt = covars
+    ),
+    t1 = ls(
+      dir1 = "*ses-t1_power264_ts.1D", 
+      dt = covars
+    ),
+    pre = ls(
+      dir1 = "*ses-t1_power264_ts.1D",
+      dir2 = "*ses-t0_power264_ts.1D",
+      dt = covars2
+    ),
+    post = ls(
+      dir1 = "*ses-t14_power264_ts.1D",
+      dir2 = "*ses-t1_power264_ts.1D",
+      dt = covars2
+    ),
+    t2 = ls(
+      dir1 = "*ses-t2_power264_ts.1D",
+      dt = covars3
+    )
   )
+  # Conditional if there is a control group (not yet)
+  if (!is.null(dataCTRL)) {
+    dirs[["hc_cu"]] <- c(
+      str_subset(
+        list.files(list.dirs(dataCTRL, recursive = T), 
+                   "*_power264_ts.1D", full.names = T),
+        covarsP[group == "control", 
+                paste(str_replace_all(Study.ID, "ctr-", "sub-"),
+                      collapse = "|")]
+      ),
+      str_subset(
+        list.files(list.dirs(dataTMS, recursive = T), 
+                   "*ses-t0_power264_ts.1D", full.names = T),
+        covarsP[group == "user", 
+                paste(Study.ID, collapse = "|")]
+      )
+    )
+  }
+  tsSubs <- map_depth(dirs, 2, str_extract, pattern = "sub-[0-9]{3}")
+  tSeries <- map_depth(dirs, 2, fread)
+  return(map2(tSeries, tsSubs, set_names))
 }
 
-createMats <- function(matfiles, ind, thr_mt) {
+timeSeries2Corrs <- function(TS, method = "pearson") {
+  return(map_depth(TS, 2, cor, method = method))
+}
+
+writeCorrs <- function(Corrs, outDir) {
+  for (i in 1:length(Corrs)) {
+    corrsNames <- paste(
+      names(Corrs)[[i]],
+      names(Corrs[[i]]),
+      sep = "/"
+    )
+    map2(Corrs[[i]], corrsNames,
+         ~ fwrite(
+           .x, 
+           file = paste0(
+             outDir, "/", .y, ".tsv"
+           ),
+           col.names = F, 
+           sep = "\t"
+         )
+    )
+  }
+}
+
+TimecreateMats <- function(matfiles, ind, thr_mt) {
   create_mats(matfiles,
     modality = modality,
     threshold.by = thr_mt,

@@ -36,17 +36,15 @@ setkey(covars, group, Study.ID)
 covars2 <- covars[-c(1, 8, 9, 13)]
 covars3 <- covars2[-c(2, 4:6, 9, 10, 14, 16:17, 19, 23, 27)]
 
-### SOFIA THIS DOESN"T WORK!!!!
-
-# covarsP <- fread("inData/controls.txt")
-# setnames(covars, 1, "Study.ID")
-# covarsP[, sex := factor(sex, labels = c("M", "F"))]
-# covarsP <- rbind(covarsP, covars, fill = T)
-# covarsP[, `:=`(
-#     group = factor(rep(groups1, each = 31)),
-#     sex = as.factor(sex)
-# )]
-# setkey(covarsP, group, Study.ID)
+covarsP <- fread("inData/controls.txt")
+setnames(covars, 1, "Study.ID")
+covarsP[, sex := factor(sex, labels = c("M", "F"))]
+covarsP <- rbind(covarsP, covars, fill = T)
+covarsP[, `:=`(
+    group = factor(rep(groups1, each = 31)),
+    sex = as.factor(sex)
+)]
+setkey(covarsP, group, Study.ID)
 
 indsP <- mkInds(covarsP, groups1)
 inds <- mkInds(covars, groups2)

@@ -1,5 +1,5 @@
 
-# Atlas ---------------------------------------------------------------------------------------
+# Atlas -------------------------------------------------------------------
 
 power <- fread('inData/atlas_power_r.csv', header = T)
 power <- power[,-9] %>% 
@@ -15,10 +15,19 @@ pSUB <- power[network == "Subcortical"]
 pVAN <- power[network == "Ventral attention"]
 
 
-# Thresholding --------------------------------------------------------------------------------
+# Thresholding ------------------------------------------------------------
 
 thresholds <- 0.2
 sub.thresh <- 0.65
+
+# Time Series -------------------------------------------------------------
+
+dataTMS <- 'inData/TimeSeries'
+dataCTRL <- NULL
+
+TimeSeries <- readTimeSeries(dataTMS)
+CorrMats <- timeSeries2Corrs(TimeSeries)
+
 
 
 # Matrices directories ------------------------------------------------------------------------
