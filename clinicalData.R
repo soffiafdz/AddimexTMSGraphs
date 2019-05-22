@@ -110,7 +110,7 @@ clin1Delta <- clin1 %>%
     select(-c(4,5)) %>% 
     spread(Scale, Delta)
 
-
+seeds <- sprintf("sub-%03d", c(2,4,8,20:27,30:34,36:37))
 
 clin2 <- clinical %>% 
     filter(Study.ID %in% c(

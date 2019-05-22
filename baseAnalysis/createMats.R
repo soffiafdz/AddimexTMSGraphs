@@ -2,40 +2,51 @@
 # Atlas -------------------------------------------------------------------
 
 power <- fread('inData/atlas_power_r.csv', header = T)
-power <- power[,-9] %>% 
-    mutate(name = factor(name), lobe = factor(lobe), hemi = factor(hemi), 
-           network = factor(network)) %>% data.table()
+power[, `:=`(
+    name = factor(name),
+    lobe = factor(lobe),
+    hemi = factor(hemi),
+    network = factor(network),
+    V9 = NULL)]
 
-pCON <- power[network == "Cingulo-opercular Task Control"]
-pDAN <- power[network == "Dorsal attention"]
-pDMN <- power[network == "Default mode"]
-pFPN <- power[network == "Fronto-parietal Task Control"]
-pSAL <- power[network == "Salience"]
-pSUB <- power[network == "Subcortical"]
-pVAN <- power[network == "Ventral attention"]
+pCON <- power[network == "Cingulo-opercular Task Control", 
+              networkLabel := "CON"]
+pDAN <- power[network == "Dorsal attention",
+              networkLabel := "DAN"]
+pDMN <- power[network == "Default mode",
+              networkLabel := "DMN"]
+pFPN <- power[network == "Fronto-parietal Task Control",
+              networkLabel := "FPN"]
+pSAL <- power[network == "Salience",
+              networkLabel := "SAL"]
+pSUB <- power[network == "Subcortical",
+              networkLabel := "SUB"]
+pVAN <- power[network == "Ventral attention",
+              networkLabel := "VAN"]
 
 
-# Thresholding ------------------------------------------------------------
+# Time Series -> Correlations ---------------------------------------------
 
-thresholds <- 0.2
-sub.thresh <- 0.65
+timeSeries <- readTimeSeries('inData/TimeSeries')
+writeCorMats(timeSeries2Corrs(timeSeries), 'inData/CorMatsRaw')
+corMats <- readCorMats('inData/CorMatsRaw')
+corMatsNeg <- readCorMats('inData/CorMatsRaw', Neg = T)
 
-# Time Series -------------------------------------------------------------
 
-dataTMS <- 'inData/TimeSeries'
-dataCTRL <- NULL
+# Adjacency Matrices ------------------------------------------------------
 
-TimeSeries <- readTimeSeries(dataTMS)
-CorrMats <- timeSeries2Corrs(TimeSeries)
-writeCorrs(CorrMats, 'inData/CorMats')
+# corMats[[1:5]][[1:31]][[1:264]]
 
-# Matrices directories ------------------------------------------------------------------------
+index <- pNET[,index]
 
-dataTMS <- paste0(home, 'matrices/pwr_final') 
-dataCTRL <- '/run/media/sofdez/Alpha/addimex_conn/derivatives/graphs/matrices/pwr_final'
+CorMats[[1]][[1]][pCON[,index],..pCON[,index]]
 
+for (i in power[!is.na(networkLabel),unique((networkLabel))]) {
+    index <- power[networkLabel == i, index] 
+    
+} 
  
-# Whole brain network -------------------------------------------------------------------------
+# Whole brain network -----------------------------------------------------
 
 mFilesWB <- ext_mat_files('wb', dataCTRL, dataTMS)
 matsWBvs <- cr_mats_soph(mFilesWB$r_c, inds_p, "consensus")

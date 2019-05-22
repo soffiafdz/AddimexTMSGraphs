@@ -21,7 +21,7 @@ ggplot(mutate(corrClin, Stage = factor(Stage, labels = c("Pre-", "Post"))),
 # t-Test Urine Test group-separated -----------------------------------------------------------
 
 utClin <- melt(clin1, id.vars = c(1,3,12), measure.vars = c(4:6, 10),
-                          variable.name = "Scale", value.name = "Score")
+               variable.name = "Scale", value.name = "Score")
 
 utClin[Stage == "t0", t.test(Score ~ UT_coc), by = Scale]
 utClin[Stage == "t0", cohen.d(Score ~ UT_coc), by = Scale]
@@ -38,15 +38,15 @@ ggplot(utClin[Stage == "t0"], aes(UT_coc, Score, fill = UT_coc)) +
 # Median-separated groups ---------------------------------------------------------------------
 
 grMedClin <- melt(clin1, id.vars = 1:3, measure.vars = c(4:6, 10),
-                             variable.name = "Scale", value.name = "Score")
+                  variable.name = "Scale", value.name = "Score")
 
 mediansClin <- grMedClin[Group == "tx" & Stage == "t0", 
-                                 .(Median = median(Score)), 
-                                 by = Scale]
+                         .(Median = median(Score)), 
+                         by = Scale]
 
 grMedClin[, Stage_Scale := ifelse(Stage == "t0", 
-                                      paste0("Pre_", Scale),
-                                      paste0("Post_", Scale))]
+                                  paste0("Pre_", Scale),
+                                  paste0("Post_", Scale))]
 
 grMedClin %<>% dcast.data.table(Study.ID + Group ~ Stage_Scale, value.var = "Score") 
 

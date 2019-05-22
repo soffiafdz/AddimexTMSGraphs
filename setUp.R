@@ -23,7 +23,8 @@ groups2 <- c("sham", "tx")
 
 atlas <- "power"
 modality <- "fmri"
-thresholds <- 0.2
+thresholds <- 0.25
+sub.thresh <- 0.65
 
 covars <- fread("inData/participants.txt")
 setnames(covars, 1, "Study.ID")

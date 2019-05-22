@@ -5,14 +5,14 @@ mkInds <- function(covars, gr) {
   )
 }
 
-readTimeSeries <- function(dataTMS, dataCTRL = NULL) {
+readTimeSeries <- function(dirTMS, dirCTRL = NULL) {
   #Function for extracting the files
   ls <- function(dir1, dir2 = dir1, dt) {
     return(c(
-      str_subset(list.files(list.dirs(dataTMS, recursive = T),
+      str_subset(list.files(list.dirs(dirTMS, recursive = T),
                             dir1, full.names = T),
                  dt[group == "sham", paste(Study.ID, collapse = "|")]),
-      str_subset(list.files(list.dirs(dataTMS, recursive = T),
+      str_subset(list.files(list.dirs(dirTMS, recursive = T),
                             dir2, full.names = T),
                  dt[group == "tx", paste(Study.ID, collapse = "|")])
       )
@@ -44,17 +44,17 @@ readTimeSeries <- function(dataTMS, dataCTRL = NULL) {
     )
   )
   # Conditional if there is a control group (not yet)
-  if (!is.null(dataCTRL)) {
+  if (!is.null(dirCTRL)) {
     dirs[["hc_cu"]] <- c(
       str_subset(
-        list.files(list.dirs(dataCTRL, recursive = T), 
+        list.files(list.dirs(dirCTRL, recursive = T), 
                    "*_power264_ts.1D", full.names = T),
         covarsP[group == "control", 
                 paste(str_replace_all(Study.ID, "ctr-", "sub-"),
                       collapse = "|")]
       ),
       str_subset(
-        list.files(list.dirs(dataTMS, recursive = T), 
+        list.files(list.dirs(dirTMS, recursive = T), 
                    "*ses-t0_power264_ts.1D", full.names = T),
         covarsP[group == "user", 
                 paste(Study.ID, collapse = "|")]
@@ -70,16 +70,19 @@ timeSeries2Corrs <- function(TS, method = "pearson") {
   return(suppressWarnings(map_depth(TS, 2, cor, method = method)))
 }
 
-writeCorrs <- function(Corrs, outDir) {
+writeCorMats <- function(Corrs, outDir) {
   for (i in 1:length(Corrs)) {
-    name1 <- names(Corrs)[[i]]
-    dir.create(paste(outDir, name1, sep = "/"), showWarnings = F)
-    names2 <- paste(
-      name1,
+    midDir <- names(Corrs)[[i]]
+    dir.create(
+      paste(outDir, midDir, sep = "/"), 
+      showWarnings = F, recursive = T
+    )
+    fullDir <- paste(
+      midDir,
       names(Corrs[[i]]),
       sep = "/"
     )
-    map2(Corrs[[i]], names2,
+    map2(Corrs[[i]], fullDir,
          ~ fwrite(
            .x, 
            file = paste0(
@@ -93,8 +96,126 @@ writeCorrs <- function(Corrs, outDir) {
   }
 }
 
-TimecreateMats <- function(matfiles, ind, thr_mt) {
-  create_mats(matfiles,
+readCorMats <- function(directory, Neg = F, CTRL = F) {
+  #Function for extracting the files
+  ls <- function(subdir, dt) {
+    return(
+      c(
+        str_subset(list.files(list.dirs(
+          paste(directory, subdir, sep = "/"), recursive = T),
+          "sub-[0-9]{3}.tsv", full.names = T), 
+          dt[group == "sham", paste(Study.ID, collapse = "|")]),
+        str_subset(list.files(list.dirs(
+          paste(directory, subdir, sep = "/"), recursive = T),
+          "sub-[0-9]{3}.tsv", full.names = T),
+          dt[group == "tx", paste(Study.ID, collapse = "|")])
+      )
+    )
+  }
+  # Applying function by groups
+  dirs <- list(
+    t0 = ls(
+      subdir = "t0",
+      dt = covars
+    ),
+    t1 = ls(
+      subdir = "t1", 
+      dt = covars
+    ),
+    pre = ls(
+      subdir = "pre",
+      dt = covars2
+    ),
+    post = ls(
+      subdir = "post",
+      dt = covars2
+    ),
+    t2 = ls(
+      subdir = "t2",
+      dt = covars3
+    )
+  )
+  # Conditional if there is a control group (not yet)
+  if (CTRL) {
+    dirs[["hc_cu"]] <- c(
+      str_subset(
+        list.files(list.dirs(
+          paste(directory, "hc_cu", sep = "/"), recursive = T),
+          "sub-[0-9]{3}.tsv", full.names = T),
+        covarsP[group == "control", 
+                paste(str_replace_all(Study.ID, "ctr-", "sub-"),
+                      collapse = "|")]
+      ),
+      str_subset(
+        list.files(list.dirs(
+          paste(directory, "hc_cu", sep = "/"), recursive = T),
+          "sub-[0-9]{3}.tsv", full.names = T),
+        covarsP[group == "user", 
+                paste(Study.ID, collapse = "|")]
+      )
+    )
+  }
+  subs <- map_depth(dirs, 2, str_extract, pattern = "sub-[0-9]{3}")
+  if (Neg) {
+    # Only Negative values 
+    corMapsNeg <- map_depth(dirs, 2, fread)
+    for (i in seq_along(corMapsNeg)) {
+      for (j in seq_along(corMapsNeg[[i]])) {
+        for (k in seq_along(corMapsNeg[[i]][[j]])) {
+          set(
+            corMapsNeg[[i]][[j]],
+            j = k, value = -corMapsNeg[[i]][[j]][[k]]
+          )
+          set(
+            corMapsNeg[[i]][[j]],
+            i = which(corMapsNeg[[i]][[j]][[k]] < 0),
+            j = k, value = 0
+          )
+          set(
+            corMapsNeg[[i]][[j]],
+            i = k, j = k, value = 1
+          )
+        }
+      }
+    }
+    return(map2(corMapsNeg, subs, set_names))
+  } else {
+    corMapsPos <- map_depth(dirs, 2, fread)
+    # Only Positive values 
+    for (i in seq_along(corMapsPos)) {
+      for (j in seq_along(corMapsPos[[i]])) {
+        for (k in seq_along(corMapsPos[[i]][[j]])) {
+          set(
+            corMapsPos[[i]][[j]],
+            i = which(corMapsPos[[i]][[j]][[k]] < 0),
+            j = k, value = 0
+          )
+        }
+      }
+    }
+    return(map2(corMapsPos, subs, set_names))
+  }
+}
+
+subMats <- function(Corrs, outDir) {
+  
+  
+  
+  
+  
+}
+
+power <- function(exponent) {
+  function(x) {
+    x ^ exponent
+  }
+}
+
+square <- power(2)
+square(2)
+
+createMats <- function(matfiles, ind, thr_mt) {
+  brainGraph::create_mats(matfiles,
     modality = modality,
     threshold.by = thr_mt,
     mat.thresh = thresholds,
