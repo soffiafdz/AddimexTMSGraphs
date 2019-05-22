@@ -67,24 +67,27 @@ readTimeSeries <- function(dataTMS, dataCTRL = NULL) {
 }
 
 timeSeries2Corrs <- function(TS, method = "pearson") {
-  return(map_depth(TS, 2, cor, method = method))
+  return(suppressWarnings(map_depth(TS, 2, cor, method = method)))
 }
 
 writeCorrs <- function(Corrs, outDir) {
   for (i in 1:length(Corrs)) {
-    corrsNames <- paste(
-      names(Corrs)[[i]],
+    name1 <- names(Corrs)[[i]]
+    dir.create(paste(outDir, name1, sep = "/"), showWarnings = F)
+    names2 <- paste(
+      name1,
       names(Corrs[[i]]),
       sep = "/"
     )
-    map2(Corrs[[i]], corrsNames,
+    map2(Corrs[[i]], names2,
          ~ fwrite(
            .x, 
            file = paste0(
              outDir, "/", .y, ".tsv"
            ),
            col.names = F, 
-           sep = "\t"
+           sep = "\t",
+           na = 0
          )
     )
   }

@@ -50,5 +50,3 @@ indsP <- mkInds(covarsP, groups1)
 inds <- mkInds(covars, groups2)
 inds2 <- mkInds(covars2, groups2)
 inds3 <- mkInds(covars3, groups2)
-
-DT[Psychoactive != 0 ]

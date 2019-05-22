@@ -27,8 +27,7 @@ dataCTRL <- NULL
 
 TimeSeries <- readTimeSeries(dataTMS)
 CorrMats <- timeSeries2Corrs(TimeSeries)
-
-
+writeCorrs(CorrMats, 'inData/CorMats')
 
 # Matrices directories ------------------------------------------------------------------------
 
