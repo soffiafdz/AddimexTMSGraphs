@@ -31,24 +31,15 @@ timeSeries <- readTimeSeries('inData/TimeSeries')
 writeCorMats(timeSeries2Corrs(timeSeries), 'inData/CorMatsRaw')
 corMats <- readCorMats('inData/CorMatsRaw')
 corMatsNeg <- readCorMats('inData/CorMatsRaw', Neg = T)
-
+writeCorMats(corMats, 'inData/CorMatsPos')
+writeCorMats(corMatsNeg, 'inData/CorMatsNeg')
+subMats(corMats, T, 'inData/subNets')
+subMats(corMatsNeg, T, 'inData/subNetsNeg')
 
 # Adjacency Matrices ------------------------------------------------------
-
-# corMats[[1:5]][[1:31]][[1:264]]
-
-index <- pNET[,index]
-
-CorMats[[1]][[1]][pCON[,index],..pCON[,index]]
-
-for (i in power[!is.na(networkLabel),unique((networkLabel))]) {
-    index <- power[networkLabel == i, index] 
-    
-} 
- 
 # Whole brain network -----------------------------------------------------
 
-mFilesWB <- ext_mat_files('wb', dataCTRL, dataTMS)
+mFilesWB <- readCorMats('inData/CorMatsPos/', Files = T)
 matsWBvs <- cr_mats_soph(mFilesWB$r_c, inds_p, "consensus")
 matsWBt0 <- cr_mats_soph(mFilesWB$r_t0, inds, "consensus")
 matsWBt1 <- cr_mats_soph(mFilesWB$r_t1, inds, "consensus")

@@ -96,7 +96,7 @@ writeCorMats <- function(Corrs, outDir) {
   }
 }
 
-readCorMats <- function(directory, Neg = F, CTRL = F) {
+readCorMats <- function(directory, Neg = F, CTRL = F, Files = F) {
   #Function for extracting the files
   ls <- function(subdir, dt) {
     return(
@@ -156,63 +156,69 @@ readCorMats <- function(directory, Neg = F, CTRL = F) {
     )
   }
   subs <- map_depth(dirs, 2, str_extract, pattern = "sub-[0-9]{3}")
-  if (Neg) {
-    # Only Negative values 
-    corMapsNeg <- map_depth(dirs, 2, fread)
-    for (i in seq_along(corMapsNeg)) {
-      for (j in seq_along(corMapsNeg[[i]])) {
-        for (k in seq_along(corMapsNeg[[i]][[j]])) {
-          set(
-            corMapsNeg[[i]][[j]],
-            j = k, value = -corMapsNeg[[i]][[j]][[k]]
-          )
-          set(
-            corMapsNeg[[i]][[j]],
-            i = which(corMapsNeg[[i]][[j]][[k]] < 0),
-            j = k, value = 0
-          )
-          set(
-            corMapsNeg[[i]][[j]],
-            i = k, j = k, value = 1
-          )
-        }
-      }
-    }
-    return(map2(corMapsNeg, subs, set_names))
+  if (Files) {
+    return(dirs)
   } else {
-    corMapsPos <- map_depth(dirs, 2, fread)
-    # Only Positive values 
-    for (i in seq_along(corMapsPos)) {
-      for (j in seq_along(corMapsPos[[i]])) {
-        for (k in seq_along(corMapsPos[[i]][[j]])) {
-          set(
-            corMapsPos[[i]][[j]],
-            i = which(corMapsPos[[i]][[j]][[k]] < 0),
-            j = k, value = 0
-          )
+    if (Neg) {
+      # Only Negative values 
+      corMapsNeg <- map_depth(dirs, 2, fread)
+      for (i in seq_along(corMapsNeg)) {
+        for (j in seq_along(corMapsNeg[[i]])) {
+          for (k in seq_along(corMapsNeg[[i]][[j]])) {
+            set(
+              corMapsNeg[[i]][[j]],
+              j = k, value = -corMapsNeg[[i]][[j]][[k]]
+            )
+            set(
+              corMapsNeg[[i]][[j]],
+              i = which(corMapsNeg[[i]][[j]][[k]] < 0),
+              j = k, value = 0
+            )
+            set(
+              corMapsNeg[[i]][[j]],
+              i = k, j = k, value = 1
+            )
+          }
         }
       }
+      return(map2(corMapsNeg, subs, set_names))
+    } else {
+      corMapsPos <- map_depth(dirs, 2, fread)
+      # Only Positive values 
+      for (i in seq_along(corMapsPos)) {
+        for (j in seq_along(corMapsPos[[i]])) {
+          for (k in seq_along(corMapsPos[[i]][[j]])) {
+            set(
+              corMapsPos[[i]][[j]],
+              i = which(corMapsPos[[i]][[j]][[k]] < 0),
+              j = k, value = 0
+            )
+          }
+        }
+      }
+      return(map2(corMapsPos, subs, set_names))
     }
-    return(map2(corMapsPos, subs, set_names))
   }
 }
 
-subMats <- function(Corrs, outDir) {
-  
-  
-  
-  
-  
-}
-
-power <- function(exponent) {
-  function(x) {
-    x ^ exponent
+subMats <- function(Corrs, write = F, outDir = NULL) {
+  subnets <- power[!is.na(networkLabel), unique((networkLabel))]
+  subCorrs <- vector(mode = "list", length = length(subnets))
+  names(subCorrs) <- subnets
+  for (i in subnets) {
+    index <- power[networkLabel == i, index] 
+    subCorrs[[i]] <- copy(Corrs)
+    for (j in seq_along(Corrs)) {
+      for (k in seq_along(Corrs[[j]])) {
+        subCorrs[[i]][[j]][[k]] <- Corrs[[j]][[k]][index, ..index]
+      }
+    }
+    if (write) {
+      writeCorMats(subCorrs[[i]], paste(outDir, i, sep = "/"))
+    }
   }
+  if (!write) {return(subCorrs)}
 }
-
-square <- power(2)
-square(2)
 
 createMats <- function(matfiles, ind, thr_mt) {
   brainGraph::create_mats(matfiles,
