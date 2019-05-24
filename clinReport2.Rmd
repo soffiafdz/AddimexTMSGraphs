@@ -16,7 +16,7 @@ library(effsize)
 library(Hotelling)
 source('customFunctions.R')
 
-clin1 <- data.table(read_rds("outData/cl1.RDS"))
+clin1 <- data.table(read_rds("outData/rds/cl1.rds"))
 
 theme_set(theme_linedraw(base_size = 12))
 pd <- position_dodge(0.25)          
@@ -186,10 +186,10 @@ contrasts(grMedClin$GroupCCQG) <- cbind(contr1, contr2)
 contrasts(grMedClin$GroupCCQN) <- cbind(contr1, contr2)
 contrasts(grMedClin$GroupBIS) <- cbind(contr1, contr2)
 
-contrasts(grMedClinLong$GroupVAS) <- cbind(contr1, contr2)
-contrasts(grMedClinLong$GroupCCQG) <- cbind(contr1, contr2)
-contrasts(grMedClinLong$GroupCCQN) <- cbind(contr1, contr2)
-contrasts(grMedClinLong$GroupBIS) <- cbind(contr1, contr2)
+# contrasts(grMedClinLong$GroupVAS) <- cbind(contr1, contr2)
+# contrasts(grMedClinLong$GroupCCQG) <- cbind(contr1, contr2)
+# contrasts(grMedClinLong$GroupCCQN) <- cbind(contr1, contr2)
+# contrasts(grMedClinLong$GroupBIS) <- cbind(contr1, contr2)
 
 contrasts(grMedClin$GroupVAS)
 ```

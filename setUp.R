@@ -3,10 +3,10 @@
 
 pacman::p_load(
   brainGraph, data.table, tidyverse, reshape2, moonBook, xtable,
-  foreach, doParallel, afex, GGally, ggpubr, effsize, WRS2, readxl
+  foreach, doParallel, afex, GGally, ggpubr, effsize, WRS2, readxl, plyr
 )
 
-registerDoParallel(cores = 1)
+registerDoParallel(cores = 2)
 
 source("customFunctions.R")
 
@@ -24,13 +24,14 @@ groups2 <- c("sham", "tx")
 atlas <- "power"
 modality <- "fmri"
 thresholds <- 0.25
+thresholdWB <- 0.5
 sub.thresh <- 0.65
 
 covars <- fread("inData/participants.txt")
 setnames(covars, 1, "Study.ID")
 covars[,`:=`(
-    group = as.factor(group),
-    sex = as.factor(sex)
+  group = as.factor(group),
+  sex = as.factor(sex)
 )]
 setkey(covars, group, Study.ID)
 
@@ -42,8 +43,8 @@ setnames(covars, 1, "Study.ID")
 covarsP[, sex := factor(sex, labels = c("M", "F"))]
 covarsP <- rbind(covarsP, covars, fill = T)
 covarsP[, `:=`(
-    group = factor(rep(groups1, each = 31)),
-    sex = as.factor(sex)
+  group = factor(rep(groups1, each = 31)),
+  sex = as.factor(sex)
 )]
 setkey(covarsP, group, Study.ID)
 

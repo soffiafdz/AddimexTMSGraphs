@@ -42,7 +42,8 @@ bnvTx1[[8]] <- gGrWBt1[[2]][[1]]
 
 # Saving Raw ----------------------------------------------------------------------------------
 
-for (i in c(1, 6:8)) {
+# for (i in c(1, 6:8)) {
+i <- 8
     write_brainnet(bnvSh0[[i]], "none", "strength", "weight", 
                    paste0("outData/brainNetViewer/sh0", i))
     write_brainnet(bnvTx0[[i]], "none", "strength", "weight", 
@@ -51,7 +52,7 @@ for (i in c(1, 6:8)) {
                    paste0("outData/brainNetViewer/sh1", i))
     write_brainnet(bnvTx1[[i]], "none", "strength", "weight", 
                    paste0("outData/brainNetViewer/tx1", i))
-}
+# }
 
 
 # Loading back --------------------------------------------------------------------------------

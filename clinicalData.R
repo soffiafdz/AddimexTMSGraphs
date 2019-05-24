@@ -9,8 +9,8 @@ data_bis11 <- read_excel('inData/clinical_data/20190410/BIS-11.xlsx',
                          sheet = 2)
 data_calendar <- read_excel('inData/clinical_data/20190410/Calendar.xlsx',
                             sheet = 2, na = 'NA')
-data_cal2 <- read_excel('inData/clinical_data/20190410/CalendarRelative.xlsx',
-                        sheet = 2, na = 'NA')
+# data_cal2 <- read_excel('inData/clinical_data/20190410/CalendarRelative.xlsx',
+#                         sheet = 2, na = 'NA')
 data_ccqg <- read_excel('inData/clinical_data/20190410/CCQ-G.xlsx',
                         sheet = 1)
 data_ccqn <- read_excel('inData/clinical_data/20190410/CCQ-N.xlsx',
@@ -112,45 +112,45 @@ clin1Delta <- clin1 %>%
 
 seeds <- sprintf("sub-%03d", c(2,4,8,20:27,30:34,36:37))
 
-clin2 <- clinical %>% 
-    filter(Study.ID %in% c(
-        as.character(clinical[clinical$Stage == "t1-4",]$Study.ID),
-        unique(as.character(clinical[clinical$Group == "tx",]$Study.ID)))) %>% 
-    mutate(Stage2 = case_when(
-        Group == "tx" & Stage == "t0" ~ "t0",
-        Group == "tx" & Stage == "t1" ~ "t1",
-        Group == "sham" & Stage == "t0" ~ "X",
-        Group == "sham" & Stage == "t1" ~ "t0",
-        Group == "sham" & Stage == "t1-4" ~ "t1",
-        Stage == "t2" ~ "X")) %>% 
-    select(-Stage) %>% 
-    select(1:2, Stage = Stage2, everything()) %>% 
-    filter(Stage != "X", Study.ID != 'sub-012') %>% 
-    data.table()
+# clin2 <- clinical %>% 
+#     filter(Study.ID %in% c(
+#         as.character(clinical[clinical$Stage == "t1-4",]$Study.ID),
+#         unique(as.character(clinical[clinical$Group == "tx",]$Study.ID)))) %>% 
+#     mutate(Stage2 = case_when(
+#         Group == "tx" & Stage == "t0" ~ "t0",
+#         Group == "tx" & Stage == "t1" ~ "t1",
+#         Group == "sham" & Stage == "t0" ~ "X",
+#         Group == "sham" & Stage == "t1" ~ "t0",
+#         Group == "sham" & Stage == "t1-4" ~ "t1",
+#         Stage == "t2" ~ "X")) %>% 
+#     select(-Stage) %>% 
+#     select(1:2, Stage = Stage2, everything()) %>% 
+#     filter(Stage != "X", Study.ID != 'sub-012') %>% 
+#     data.table()
+# 
+# clin3 <- clinical %>%
+#     filter(
+#         Study.ID %in% as.character(
+#             clinical[clinical$Stage == "t2",]$Study.ID
+#             )
+#         ) %>%
+#     mutate(Stage2 = case_when(
+#         Group == "tx" & Stage == "t0" ~ "t0",
+#         Group == "tx" & Stage == "t1" ~ "t1",
+#         Group == "sham" & Stage == "t0" ~ "X",
+#         Group == "sham" & Stage == "t1" ~ "t0",
+#         Group == "sham" & Stage == "t1-4" ~ "t1",
+#         Stage == "t2" ~ "t2")) %>%
+#     select(-Stage) %>% 
+#     select(1:2, Stage = Stage2, everything()) %>% 
+#     filter(Stage != "X") %>% 
+#     data.table()
 
-clin3 <- clinical %>%
-    filter(
-        Study.ID %in% as.character(
-            clinical[clinical$Stage == "t2",]$Study.ID
-            )
-        ) %>%
-    mutate(Stage2 = case_when(
-        Group == "tx" & Stage == "t0" ~ "t0",
-        Group == "tx" & Stage == "t1" ~ "t1",
-        Group == "sham" & Stage == "t0" ~ "X",
-        Group == "sham" & Stage == "t1" ~ "t0",
-        Group == "sham" & Stage == "t1-4" ~ "t1",
-        Stage == "t2" ~ "t2")) %>%
-    select(-Stage) %>% 
-    select(1:2, Stage = Stage2, everything()) %>% 
-    filter(Stage != "X") %>% 
-    data.table()
 
-
-write_rds(clin1, "outData/cl1.RDS")
-write_rds(clin2, "outData/cl2.RDS")
-write_rds(clin3, "outData/cl3.RDS")
-write_csv(clin1Delta, "outData/clinicalDelta.csv")
+write_rds(clin1, "outData/rds/cl1.rds")
+# write_rds(clin2, "outData/cl2.RDS")
+# write_rds(clin3, "outData/cl3.RDS")
+fwrite(clin1Delta, "outData/clinicalDelta.csv")
 
 
 # Blind stage ANOVA & chi2 ---------------------------------------------------
@@ -171,10 +171,10 @@ aovClin[[6]] <- aov_car(B11_NP ~ Group * Stage + Error(Study.ID/Stage),
                         data = clin1)
 aovClin[[7]] <- aov_car(B11_Tot ~ Group * Stage + Error(Study.ID/Stage),
                         data = clin1)
-aovClin[[8]] <- aov_car(Coc_last30 ~ Group * Stage + Error(Study.ID/Stage),
-                        data = clin1)
-aovClin[[9]] <- aov_car(Grams ~ Group * Stage + Error(Study.ID/Stage),
-                        data = clin1)
+# aovClin[[8]] <- aov_car(Coc_last30 ~ Group * Stage + Error(Study.ID/Stage),
+#                         data = clin1)
+# aovClin[[9]] <- aov_car(Grams ~ Group * Stage + Error(Study.ID/Stage),
+#                         data = clin1)
 
 
 
@@ -192,97 +192,103 @@ chiClin[[5]] <- chisq.test(table(filter(clin1, Stage == "t1")$Improvement,
                                  filter(clin1, Stage == "t1")$Group))
 
 
-write_rds(aovClin, "outData/aovClin.RDS")
-write_rds(chiClin, "outData/chiClin.RDS")
+write_rds(aovClin, "outData/rds/aovClin.RDS")
+write_rds(chiClin, "outData/rds/chiClin.RDS")
 
 # Open-label tTests -----------------------------------------------------------
 
-tTestClin <- vector('list', length = 2)
-
-tTestClin[[1]][[1]] <- t.test(VAS ~ Stage, alternative = "g",
-                              paired = T, data = clin2)
-tTestClin[[1]][[2]] <- t.test(CCQ_N ~ Stage, alternative = "g",
-                              paired = T, data = clin2)
-tTestClin[[1]][[3]] <- t.test(CCQ_G ~ Stage, alternative = "g",
-                              paired = T, data = clin2)
-tTestClin[[1]][[4]] <- t.test(B11_C ~ Stage, alternative = "g",
-                              paired = T, data = clin2)
-tTestClin[[1]][[5]] <- t.test(B11_M ~ Stage, alternative = "g",
-                              paired = T, data = clin2)
-tTestClin[[1]][[6]] <- t.test(B11_NP ~ Stage, alternative = "g",
-                              paired = T, data = clin2)
-tTestClin[[1]][[7]] <- t.test(B11_Tot ~ Stage, alternative = "g",
-                              paired = T, data = clin2)
-tTestClin[[1]][[8]] <- t.test(Coc_last30 ~ Stage, alternative = "g",
-                              paired = T, data = clin2)
-tTestClin[[1]][[9]] <- t.test(Grams ~ Stage, alternative = "g",
-                              paired = T, data = clin2)
-
-tTestClin[[2]][[1]] <- cohen.d(VAS ~ Stage, paired = T, data = clin2)
-tTestClin[[2]][[2]] <- cohen.d(CCQ_N ~ Stage, paired = T, data = clin2)
-tTestClin[[2]][[3]] <- cohen.d(CCQ_G ~ Stage, paired = T, data = clin2)
-tTestClin[[2]][[4]] <- cohen.d(B11_C ~ Stage, paired = T, data = clin2)
-tTestClin[[2]][[5]] <- cohen.d(B11_M ~ Stage, paired = T, data = clin2)
-tTestClin[[2]][[6]] <- cohen.d(B11_NP ~ Stage, paired = T, data = clin2)
-tTestClin[[2]][[7]] <- cohen.d(B11_Tot ~ Stage, paired = T, data = clin2)
-tTestClin[[2]][[8]] <- cohen.d(Coc_last30 ~ Stage, paired = T, data = clin2)
-tTestClin[[2]][[9]] <- cohen.d(Grams ~ Stage, paired = T, data = clin2)
-
-
-chiClin2 <- vector('list', length = 3)
-
-chiClin2[[1]] <- chisq.test(table(filter(clin2)$UT_bzd, filter(clin2)$Stage))
-chiClin2[[2]] <- chisq.test(table(filter(clin2)$UT_coc, filter(clin2)$Stage))
-chiClin2[[3]] <- chisq.test(table(filter(clin2)$UT_thc, filter(clin2)$Stage))
-
-write_rds(tTestClin, "outData/tTstClin.RDS")
-write_rds(chiClin2, "outData/chiClin2.RDS")
-
-# Open-label ANOVAs -----------------------------------------------------------
-
-anovaClin <- vector('list', length = 2)
-
-anovaClin[[1]][[1]] <- summary(aov(VAS ~ Stage, data = clin3))
-anovaClin[[1]][[2]] <- summary(aov(CCQ_N ~ Stage, data = clin3))
-anovaClin[[1]][[3]] <- summary(aov(CCQ_G ~ Stage, data = clin3))
-anovaClin[[1]][[4]] <- summary(aov(B11_C ~ Stage, data = clin3))
-anovaClin[[1]][[5]] <- summary(aov(B11_M ~ Stage, data = clin3))
-anovaClin[[1]][[6]] <- summary(aov(B11_NP ~ Stage, data = clin3))
-anovaClin[[1]][[7]] <- summary(aov(B11_Tot ~ Stage, data = clin3))
-anovaClin[[1]][[8]] <- summary(aov(Coc_last30 ~ Stage, data = clin3))
-anovaClin[[1]][[9]] <- summary(aov(Grams ~ Stage, data = clin3))
-
-
-anovaClin[[2]][[1]] <- TukeyHSD(aov(VAS ~ Stage, data = clin3))
-anovaClin[[2]][[2]] <- TukeyHSD(aov(CCQ_N ~ Stage, data = clin3))
-anovaClin[[2]][[3]] <- TukeyHSD(aov(CCQ_G ~ Stage, data = clin3))
-anovaClin[[2]][[4]] <- TukeyHSD(aov(B11_C ~ Stage, data = clin3))
-anovaClin[[2]][[5]] <- TukeyHSD(aov(B11_M ~ Stage, data = clin3))
-anovaClin[[2]][[6]] <- TukeyHSD(aov(B11_NP ~ Stage, data = clin3))
-anovaClin[[2]][[7]] <- TukeyHSD(aov(B11_Tot ~ Stage, data = clin3))
-anovaClin[[2]][[8]] <- TukeyHSD(aov(Coc_last30 ~ Stage, data = clin3))
-anovaClin[[2]][[9]] <- TukeyHSD(aov(Grams ~ Stage, data = clin3))
-
-
-chiClin3 <- vector('list', length = 3)
-
-chiClin3[[1]] <- chisq.test(table(filter(clin3)$UT_bzd, filter(clin3)$Stage))
-chiClin3[[2]] <- chisq.test(table(filter(clin3)$UT_coc, filter(clin3)$Stage))
-chiClin3[[3]] <- chisq.test(table(filter(clin3)$UT_thc, filter(clin3)$Stage))
-
-write_rds(anovaClin, "outData/anovaClin.RDS")
-write_rds(chiClin3, "outData/chiClin3.RDS")
+# tTestClin <- vector('list', length = 2)
+# 
+# tTestClin[[1]][[1]] <- t.test(VAS ~ Stage, alternative = "g",
+#                               paired = T, data = clin2)
+# tTestClin[[1]][[2]] <- t.test(CCQ_N ~ Stage, alternative = "g",
+#                               paired = T, data = clin2)
+# tTestClin[[1]][[3]] <- t.test(CCQ_G ~ Stage, alternative = "g",
+#                               paired = T, data = clin2)
+# tTestClin[[1]][[4]] <- t.test(B11_C ~ Stage, alternative = "g",
+#                               paired = T, data = clin2)
+# tTestClin[[1]][[5]] <- t.test(B11_M ~ Stage, alternative = "g",
+#                               paired = T, data = clin2)
+# tTestClin[[1]][[6]] <- t.test(B11_NP ~ Stage, alternative = "g",
+#                               paired = T, data = clin2)
+# tTestClin[[1]][[7]] <- t.test(B11_Tot ~ Stage, alternative = "g",
+#                               paired = T, data = clin2)
+# tTestClin[[1]][[8]] <- t.test(Coc_last30 ~ Stage, alternative = "g",
+#                               paired = T, data = clin2)
+# tTestClin[[1]][[9]] <- t.test(Grams ~ Stage, alternative = "g",
+#                               paired = T, data = clin2)
+# 
+# tTestClin[[2]][[1]] <- cohen.d(VAS ~ Stage, paired = T, data = clin2)
+# tTestClin[[2]][[2]] <- cohen.d(CCQ_N ~ Stage, paired = T, data = clin2)
+# tTestClin[[2]][[3]] <- cohen.d(CCQ_G ~ Stage, paired = T, data = clin2)
+# tTestClin[[2]][[4]] <- cohen.d(B11_C ~ Stage, paired = T, data = clin2)
+# tTestClin[[2]][[5]] <- cohen.d(B11_M ~ Stage, paired = T, data = clin2)
+# tTestClin[[2]][[6]] <- cohen.d(B11_NP ~ Stage, paired = T, data = clin2)
+# tTestClin[[2]][[7]] <- cohen.d(B11_Tot ~ Stage, paired = T, data = clin2)
+# tTestClin[[2]][[8]] <- cohen.d(Coc_last30 ~ Stage, paired = T, data = clin2)
+# tTestClin[[2]][[9]] <- cohen.d(Grams ~ Stage, paired = T, data = clin2)
+# 
+# 
+# chiClin2 <- vector('list', length = 3)
+# 
+# chiClin2[[1]] <- chisq.test(table(filter(clin2)$UT_bzd, filter(clin2)$Stage))
+# chiClin2[[2]] <- chisq.test(table(filter(clin2)$UT_coc, filter(clin2)$Stage))
+# chiClin2[[3]] <- chisq.test(table(filter(clin2)$UT_thc, filter(clin2)$Stage))
+# 
+# write_rds(tTestClin, "outData/tTstClin.RDS")
+# write_rds(chiClin2, "outData/chiClin2.RDS")
+# 
+# # Open-label ANOVAs -----------------------------------------------------------
+# 
+# anovaClin <- vector('list', length = 2)
+# 
+# anovaClin[[1]][[1]] <- summary(aov(VAS ~ Stage, data = clin3))
+# anovaClin[[1]][[2]] <- summary(aov(CCQ_N ~ Stage, data = clin3))
+# anovaClin[[1]][[3]] <- summary(aov(CCQ_G ~ Stage, data = clin3))
+# anovaClin[[1]][[4]] <- summary(aov(B11_C ~ Stage, data = clin3))
+# anovaClin[[1]][[5]] <- summary(aov(B11_M ~ Stage, data = clin3))
+# anovaClin[[1]][[6]] <- summary(aov(B11_NP ~ Stage, data = clin3))
+# anovaClin[[1]][[7]] <- summary(aov(B11_Tot ~ Stage, data = clin3))
+# anovaClin[[1]][[8]] <- summary(aov(Coc_last30 ~ Stage, data = clin3))
+# anovaClin[[1]][[9]] <- summary(aov(Grams ~ Stage, data = clin3))
+# 
+# 
+# anovaClin[[2]][[1]] <- TukeyHSD(aov(VAS ~ Stage, data = clin3))
+# anovaClin[[2]][[2]] <- TukeyHSD(aov(CCQ_N ~ Stage, data = clin3))
+# anovaClin[[2]][[3]] <- TukeyHSD(aov(CCQ_G ~ Stage, data = clin3))
+# anovaClin[[2]][[4]] <- TukeyHSD(aov(B11_C ~ Stage, data = clin3))
+# anovaClin[[2]][[5]] <- TukeyHSD(aov(B11_M ~ Stage, data = clin3))
+# anovaClin[[2]][[6]] <- TukeyHSD(aov(B11_NP ~ Stage, data = clin3))
+# anovaClin[[2]][[7]] <- TukeyHSD(aov(B11_Tot ~ Stage, data = clin3))
+# anovaClin[[2]][[8]] <- TukeyHSD(aov(Coc_last30 ~ Stage, data = clin3))
+# anovaClin[[2]][[9]] <- TukeyHSD(aov(Grams ~ Stage, data = clin3))
+# 
+# 
+# chiClin3 <- vector('list', length = 3)
+# 
+# chiClin3[[1]] <- chisq.test(table(filter(clin3)$UT_bzd, filter(clin3)$Stage))
+# chiClin3[[2]] <- chisq.test(table(filter(clin3)$UT_coc, filter(clin3)$Stage))
+# chiClin3[[3]] <- chisq.test(table(filter(clin3)$UT_thc, filter(clin3)$Stage))
+# 
+# write_rds(anovaClin, "outData/anovaClin.RDS")
+# write_rds(chiClin3, "outData/chiClin3.RDS")
 
 # Graph Metrics ---------------------------------------------------------------
 
-CON <- attrCON %>% left_join(clinical) %>% data.table() 
-DAN <- attrDAN %>% left_join(clinical) %>% data.table()
-DMN <- attrDMN %>% left_join(clinical) %>% data.table()
-FPN <- attrFPN %>% left_join(clinical) %>% data.table()
-SAL <- attrSAL %>% left_join(clinical) %>% data.table()
-SUB <- attrSUB %>% left_join(clinical) %>% data.table()
-VAN <- attrVAN %>% left_join(clinical) %>% data.table()
-WB <- attrWB %>% left_join(clinical) %>% data.table()
+setkey(clin1, Study.ID, Stage, Group)
+
+merge
+
+attrSubNets[Network == "CON"][clin1, on = .(Study.ID, Group, Stage)]
+
+CON <- attrSubNets[Network == "CON"][clin1, on = .(Study.ID, Group, Stage)]
+DAN <- attrSubNets[Network == "DAN"][clin1, on = .(Study.ID, Group, Stage)]
+DMN <- attrSubNets[Network == "DMN"][clin1, on = .(Study.ID, Group, Stage)]
+FPN <- attrSubNets[Network == "FPN"][clin1, on = .(Study.ID, Group, Stage)]
+SAL <- attrSubNets[Network == "SAL"][clin1, on = .(Study.ID, Group, Stage)]
+SUB <- attrSubNets[Network == "SUB"][clin1, on = .(Study.ID, Group, Stage)]
+VAN <- attrSubNets[Network == "VAN"][clin1, on = .(Study.ID, Group, Stage)]
+WB <- attrWB[clin1, on = .(Study.ID, Group, Stage)]
 
 
 

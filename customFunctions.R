@@ -481,7 +481,7 @@ setBgAttr1 <- function(
       if (!is_named(g)) {
         V(g)$name <- atlas.dt[, name]
       }
-      g <- make_brainGraph_sof(g, atlas, ...)
+      g <- make_brainGraph(g, atlas, ...)
       g$asymm <- edge_asymmetry(g)$asymm
       V(g)$asymm <- edge_asymmetry(g, "vertex")$asymm
       g$spatial.dist <- mean(E(g)$dist)
@@ -532,7 +532,7 @@ setBgAttr1 <- function(
     x <- clusts$membership
     V(g)$comp <- match(x, order(table(x), decreasing = TRUE))
     g <- brainGraph:::set_vertex_color(g, "color.comp", V(g)$comp)
-    g <- brainGraph:::set_edge_color(g, "color.comp", V(g)$comp)
+    # g <- brainGraph:::set_edge_color(g, "color.comp", V(g)$comp)
     V(g)$circle.layout.comm <- order(V(g)$comm, V(g)$degree)
     V(g)$GC <- gateway_coeff(g, V(g)$comm)
     V(g)$PC <- part_coeff(g, V(g)$comm)
