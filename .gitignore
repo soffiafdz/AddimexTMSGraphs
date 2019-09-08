@@ -2,7 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
-outData/
+outData/*
+inData/*
 *.pdf
 *.html
 *.tex
