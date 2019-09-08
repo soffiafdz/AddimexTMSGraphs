@@ -52,13 +52,14 @@ i <- 1
     # Use [[i]] if Loop
     swx <- lSW
     attrSubNets <- rbindlist(lSubNets, fill = T)
+    attrSubNets <- do.call(data.table, rapply(attrSubNets, function(x) ifelse(is.nan(x),NA_real_,x), how="replace"))
     attrWB <- rbindlist(lWB, fill = T)
     
     attrSubNets <- attrSubNets[, `:=`(
         Stage = factor(
             rep.int(
-                c(rep.int("t0", 31),
-                  rep.int("t1", 31)),
+                c(rep.int("t0", 33),
+                  rep.int("t1", 33)),
                 7)),
         Network = factor(
             str_replace_all(
@@ -77,11 +78,11 @@ i <- 1
     
     attrWB[, `:=`(
         Stage = factor(
-            c(rep.int("t0", 31),
-              rep.int("t1", 31))
+            c(rep.int("t0", 33),
+              rep.int("t1", 33))
         ),
         atlas = factor(
-            rep.int("WB", 62)
+            rep.int("WB", 66)
         ),
         Study.ID = factor(Study.ID),
         Group = factor(Group)

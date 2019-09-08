@@ -1,41 +1,42 @@
 
 # Raw data  --------------------------------------------------------------------
+inClinDir <- 'inData/clinical_data/20190828/'
 
-data_amai <- read_excel('inData/clinical_data/20190410/AMA INSE 8x7.xlsx',
+data_amai <- read_excel(paste0(inClinDir, 'AMA INSE 8x7.xlsx'),
                         sheet = 2)
-data_asip <- read_excel('inData/clinical_data/20190410/ASIP.xlsx',
+data_asip <- read_excel(paste0(inClinDir, 'ASIP.xlsx'),
                         sheet = 1, na = 'NA')
-data_bis11 <- read_excel('inData/clinical_data/20190410/BIS-11.xlsx',
+data_bis11 <- read_excel(paste0(inClinDir, 'BIS-11.xlsx'),
                          sheet = 2)
-data_calendar <- read_excel('inData/clinical_data/20190410/Calendar.xlsx',
+data_calendar <- read_excel(paste0(inClinDir, 'Calendar.xlsx'),
                             sheet = 2, na = 'NA')
-# data_cal2 <- read_excel('inData/clinical_data/20190410/CalendarRelative.xlsx',
-#                         sheet = 2, na = 'NA')
-data_ccqg <- read_excel('inData/clinical_data/20190410/CCQ-G.xlsx',
+data_cal2 <- read_excel(paste0(inClinDir, 'CalendarRelative.xlsx'),
+                        sheet = 2, na = 'NA')
+data_ccqg <- read_excel(paste0(inClinDir, 'CCQ-G.xlsx'),
                         sheet = 1)
-data_ccqn <- read_excel('inData/clinical_data/20190410/CCQ-N.xlsx',
+data_ccqn <- read_excel(paste0(inClinDir, 'CCQ-N.xlsx'),
                         sheet = 1)
-data_ehi <- read_excel('inData/clinical_data/20190410/EHI-SF.xlsx',
+data_ehi <- read_excel(paste0(inClinDir, 'EHI-SF.xlsx'),
                        sheet = 1)
-data_hars <- read_excel('inData/clinical_data/20190410/HARS.xlsx',
+data_hars <- read_excel(paste0(inClinDir, 'HARS.xlsx'),
                         sheet = 2)
-data_hdrs <- read_excel('inData/clinical_data/20190410/HDRS.xlsx',
+data_hdrs <- read_excel(paste0(inClinDir, 'HDRS.xlsx'),
                         sheet = 2)
-data_inventory <- read_excel('inData/clinical_data/20190410/Inventory.xlsx',
+data_inventory <- read_excel(paste0(inClinDir, 'Inventory.xlsx'),
                              sheet = 1, na = 'NA')
-data_mini <- read_excel('inData/clinical_data/20190410/MINI PLUS.xlsx',
+data_mini <- read_excel(paste0(inClinDir, 'MINI PLUS.xlsx'),
                         sheet = 1)
-data_psqi <- read_excel('inData/clinical_data/20190410/PSQI.xlsx',
+data_psqi <- read_excel(paste0(inClinDir, 'PSQI.xlsx'),
                         sheet = 1, na = 'NA')
-data_scl90 <- read_excel('inData/clinical_data/20190410/SCL-90-R.xlsx',
+data_scl90 <- read_excel(paste0(inClinDir, 'SCL-90-R.xlsx'),
                          sheet = 1)
-data_tobacco <- read_excel('inData/clinical_data/20190410/Tobacco.xlsx',
+data_tobacco <- read_excel(paste0(inClinDir, 'Tobacco.xlsx'),
                            sheet = 1)
-data_vas <- read_excel('inData/clinical_data/20190410/VAS Clinico.xlsx',
+data_vas <- read_excel(paste0(inClinDir, 'VAS Clinico.xlsx'),
                        sheet = 1)
-data_whodas <- read_excel('inData/clinical_data/20190410/WHODAS 2,0 X.xlsx',
+data_whodas <- read_excel(paste0(inClinDir, 'WHODAS 2,0 X.xlsx'),
                           sheet = 1, na = 'NA')
-data_demog <- read_excel('inData/clinical_data/20190410/DEMOGRAPHIC.xlsx',
+data_demog <- read_excel(paste0(inClinDir, 'DEMOGRAPHIC.xlsx'),
                          sheet = 1, na = 'NA')
 
 
@@ -43,7 +44,7 @@ data_demog <- read_excel('inData/clinical_data/20190410/DEMOGRAPHIC.xlsx',
 
 sd <- left_join(data_demog, data_tobacco, by = c("rid", "group", "stage")) %>% 
     select(1:2, 5:7, 16:17, 25:28) %>% 
-    filter(!rid %in% c(5, 9, 14, 28:29)) %>% 
+    filter(!rid %in% c(5, 9, 14, 28:29,35)) %>% 
     mutate(rid = factor(rid), 
            group = factor(group, labels = c("Sham", "Tx")),
            q1_sex = factor(q1_sex, labels = c("Male", "Female")),
@@ -64,14 +65,14 @@ clinical <- data_vas %>%
     left_join(data_bis11[c(1:3, 34:37)]) %>%
     left_join(data_inventory[c(1:2,4, 19:20, 23:24, 26, 28)]) %>%
     left_join(data_asip[c(1:3, 68)]) %>%
-    # left_join(data_cal2[c(1:3, 17)]) %>%
+    left_join(data_cal2[c(1:3, 17)]) %>%
     filter(stage %in% c("T0", "T1", "T1-4", "T2")) %>%
     dplyr::rename(Study.ID = rid, Group = group, Stage = stage, B11_C = cog,
                   B11_M = mot, B11_NP = nonp, B11_Tot = tot_score,
                   CCQ_G = ccq_g, CCQ_N = ccq_n, VAS = vas,
                   UT_bzd = ut_bzd, UT_coc = ut_coc, UT_thc = ut_thc,
                   Consume = auto1, Grams_month = auto3, Improvement = auto5, 
-                  Coc_last30 = d8cc30) %>% #, Grams0 = "gram_-1") %>%
+                  Coc_last30 = d8cc30, Grams0 = "gram_-1") %>%
     mutate(Study.ID = factor(paste0("sub-", sprintf("%03d", Study.ID))),
            Group = factor(Group, labels = c("sham", "tx")),
            Stage = factor(Stage, labels = c("t0", "t1", "t1-4", "t2")),
@@ -84,15 +85,16 @@ clinical <- data_vas %>%
                                                         "Moderately better",
                                                         "Slightly better",
                                                         "No changes",
-                                                        "Worse"))) %>% 
-    #        Grams_month = as.double(Grams_month),
-    #        Grams = case_when(
-    #            Consume == "No" ~ 0,
-    #            Consume == "Yes" ~ Grams_month,
-    #            is.na(Consume) ~ Grams0),
-    #        Grams = if_else(Coc_last30 == 0, 0, Grams)) %>%
-    # select(-Grams0, -Grams_month) %>%
-    filter(!Study.ID %in% paste0("sub-0", c('05', '09', 14, 28, 29))) %>%
+                                                        "Worse")),
+           Grams_month = as.double(Grams_month),
+           Grams = case_when(
+               Consume == "No" ~ 0,
+               Consume == "Yes" ~ Grams_month,
+               is.na(Consume) ~ Grams0),
+           Grams = if_else(Coc_last30 == 0, 0, Grams),
+            Grams = if_else(is.na(Grams), 0, Grams)) %>%
+    select(-Grams0, -Grams_month) %>%
+    filter(!Study.ID %in% paste0("sub-0", c('05', '09', 14, 28, 29, 35))) %>%
     data.table()
 
 
@@ -171,10 +173,10 @@ aovClin[[6]] <- aov_car(B11_NP ~ Group * Stage + Error(Study.ID/Stage),
                         data = clin1)
 aovClin[[7]] <- aov_car(B11_Tot ~ Group * Stage + Error(Study.ID/Stage),
                         data = clin1)
-# aovClin[[8]] <- aov_car(Coc_last30 ~ Group * Stage + Error(Study.ID/Stage),
-#                         data = clin1)
-# aovClin[[9]] <- aov_car(Grams ~ Group * Stage + Error(Study.ID/Stage),
-#                         data = clin1)
+aovClin[[8]] <- aov_car(Coc_last30 ~ Group * Stage + Error(Study.ID/Stage),
+                        data = clin1)
+aovClin[[9]] <- aov_car(Grams ~ Group * Stage + Error(Study.ID/Stage),
+                        data = clin1)
 
 
 
@@ -277,10 +279,6 @@ write_rds(chiClin, "outData/rds/chiClin.RDS")
 
 setkey(clin1, Study.ID, Stage, Group)
 
-merge
-
-attrSubNets[Network == "CON"][clin1, on = .(Study.ID, Group, Stage)]
-
 CON <- attrSubNets[Network == "CON"][clin1, on = .(Study.ID, Group, Stage)]
 DAN <- attrSubNets[Network == "DAN"][clin1, on = .(Study.ID, Group, Stage)]
 DMN <- attrSubNets[Network == "DMN"][clin1, on = .(Study.ID, Group, Stage)]
@@ -292,35 +290,36 @@ WB <- attrWB[clin1, on = .(Study.ID, Group, Stage)]
 
 
 
-## 2 weeks Real rTMS
 
-CONtx <- attrCONtx %>% left_join(clin2) %>%
-    filter(Study.ID != 'sub-012') %>% data.table() 
-DANtx <- attrDANtx %>% left_join(clin2) %>%
-    filter(Study.ID != 'sub-012') %>% data.table()
-DMNtx <- attrDMNtx %>% left_join(clin2) %>%
-    filter(Study.ID != 'sub-012') %>% data.table()
-FPNtx <- attrFPNtx %>% left_join(clin2) %>%
-    filter(Study.ID != 'sub-012') %>% data.table()
-SALtx <- attrSALtx %>% left_join(clin2) %>%
-    filter(Study.ID != 'sub-012') %>% data.table()
-SUBtx <- attrSUBtx %>% left_join(clin2) %>%
-    filter(Study.ID != 'sub-012') %>% data.table()
-VANtx <- attrVANtx %>% left_join(clin2) %>%
-    filter(Study.ID != 'sub-012') %>% data.table()
-WBtx <- attrWBtx %>% left_join(clin2) %>%
-    filter(Study.ID != 'sub-012') %>% data.table()
-
-## 3 months maintenance
-
-CONl <- attrCONl %>% left_join(clin3) %>% data.table() 
-DANl <- attrDANl %>% left_join(clin3) %>% data.table()
-DMNl <- attrDMNl %>% left_join(clin3) %>% data.table()
-FPNl <- attrFPNl %>% left_join(clin3) %>% data.table()
-SALl <- attrSALl %>% left_join(clin3) %>% data.table()
-SUBl <- attrSUBl %>% left_join(clin3) %>% data.table()
-VANl <- attrVANl %>% left_join(clin3) %>% data.table()
-WBl <- attrWBl %>% left_join(clin3) %>% data.table()
-
-
-
+# ## 2 weeks Real rTMS
+# 
+# CONtx <- attrCONtx %>% left_join(clin2) %>%
+#     filter(Study.ID != 'sub-012') %>% data.table() 
+# DANtx <- attrDANtx %>% left_join(clin2) %>%
+#     filter(Study.ID != 'sub-012') %>% data.table()
+# DMNtx <- attrDMNtx %>% left_join(clin2) %>%
+#     filter(Study.ID != 'sub-012') %>% data.table()
+# FPNtx <- attrFPNtx %>% left_join(clin2) %>%
+#     filter(Study.ID != 'sub-012') %>% data.table()
+# SALtx <- attrSALtx %>% left_join(clin2) %>%
+#     filter(Study.ID != 'sub-012') %>% data.table()
+# SUBtx <- attrSUBtx %>% left_join(clin2) %>%
+#     filter(Study.ID != 'sub-012') %>% data.table()
+# VANtx <- attrVANtx %>% left_join(clin2) %>%
+#     filter(Study.ID != 'sub-012') %>% data.table()
+# WBtx <- attrWBtx %>% left_join(clin2) %>%
+#     filter(Study.ID != 'sub-012') %>% data.table()
+# 
+# ## 3 months maintenance
+# 
+# CONl <- attrCONl %>% left_join(clin3) %>% data.table() 
+# DANl <- attrDANl %>% left_join(clin3) %>% data.table()
+# DMNl <- attrDMNl %>% left_join(clin3) %>% data.table()
+# FPNl <- attrFPNl %>% left_join(clin3) %>% data.table()
+# SALl <- attrSALl %>% left_join(clin3) %>% data.table()
+# SUBl <- attrSUBl %>% left_join(clin3) %>% data.table()
+# VANl <- attrVANl %>% left_join(clin3) %>% data.table()
+# WBl <- attrWBl %>% left_join(clin3) %>% data.table()
+# 
+# 
+# 

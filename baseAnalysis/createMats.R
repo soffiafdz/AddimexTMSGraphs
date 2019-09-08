@@ -17,23 +17,23 @@ power[network == "Salience", networkLabel := "SAL"]
 power[network == "Subcortical", networkLabel := "SUB"]
 power[network == "Ventral attention", networkLabel := "VAN"]
 
-pCON <- power[networkLabel == "CON"]
-pDAN <- power[networkLabel == "DAN"]
-pDMN <- power[networkLabel == "DMN"]
-pFPN <- power[networkLabel == "FPN"]
-pSAL <- power[networkLabel == "SAL"]
-pSUB <- power[networkLabel == "SUB"]
-pVAN <- power[networkLabel == "VAN"]
+# pCON <- power[networkLabel == "CON"]
+# pDAN <- power[networkLabel == "DAN"]
+# pDMN <- power[networkLabel == "DMN"]
+# pFPN <- power[networkLabel == "FPN"]
+# pSAL <- power[networkLabel == "SAL"]
+# pSUB <- power[networkLabel == "SUB"]
+# pVAN <- power[networkLabel == "VAN"]
 
 
 # Time Series -> Correlations ---------------------------------------------
 
-# timeSeries <- readTimeSeries('inData/TimeSeries')
-# writeCorMats(timeSeries2Corrs(timeSeries), 'inData/CorMatsRaw')
+timeSeries <- readTimeSeries('inData/TimeSeries')
+writeCorMats(timeSeries2Corrs(timeSeries), 'inData/CorMatsRaw')
 corMats <- readCorMats('inData/CorMatsRaw')
 corMatsNeg <- readCorMats('inData/CorMatsRaw', Neg = T)
-# writeCorMats(corMats, 'inData/CorMatsPos')
-# writeCorMats(corMatsNeg, 'inData/CorMatsNeg')
+writeCorMats(corMats, 'inData/CorMatsPos')
+writeCorMats(corMatsNeg, 'inData/CorMatsNeg')
 subMats(corMats, T, 'inData/subNets')
 subMats(corMatsNeg, T, 'inData/subNetsNeg')
 

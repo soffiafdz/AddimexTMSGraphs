@@ -8,13 +8,13 @@
 # Closed label: T0 ----------------------------------------------------------------------------
 
 richCONt0 <- randCONt0$rich
-smallCONt0 <- randCONt0$small[, Stage := rep.int("t0", 31)]
+smallCONt0 <- randCONt0$small[, Stage := rep.int("t0", 33)]
 rnetsCONt0 <- randCONt0$rand
 
 # Closed label: T1 ----------------------------------------------------------------------------
 
 richCONt1 <- randCONt1$rich
-smallCONt1 <- randCONt1$small[, Stage := rep.int("t1", 31)]
+smallCONt1 <- randCONt1$small[, Stage := rep.int("t1", 33)]
 rnetsCONt1 <- randCONt1$rand
 
 # Open label: T0 ------------------------------------------------------------------------------

@@ -8,13 +8,13 @@
 # Closed label: T0 ----------------------------------------------------------------------------
 
 richWBt0 <- na.omit(randWBt0$rich)
-smallWBt0 <- randWBt0$small[, Stage := rep.int("t0", 31)]
+smallWBt0 <- randWBt0$small[, Stage := rep.int("t0", 33)]
 rnetsWBt0 <- randWBt0$rand
 
 # Closed label: T1 ----------------------------------------------------------------------------
 
 richWBt1 <- na.omit(randWBt1$rich)
-smallWBt1 <- randWBt1$small[, Stage := rep.int("t1", 31)]
+smallWBt1 <- randWBt1$small[, Stage := rep.int("t1", 33)]
 rnetsWBt1 <- randWBt1$rand
 
 # Open label: T0 ------------------------------------------------------------------------------

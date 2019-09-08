@@ -8,13 +8,13 @@
 # Closed label: T0 ----------------------------------------------------------------------------
 
 richDMNt0 <- randDMNt0$rich
-smallDMNt0 <- randDMNt0$small[, Stage := rep.int("t0", 31)]
+smallDMNt0 <- randDMNt0$small[, Stage := rep.int("t0", 33)]
 rnetsDMNt0 <- randDMNt0$rand
 
 # Closed label: T1 ----------------------------------------------------------------------------
 
 richDMNt1 <- randDMNt1$rich
-smallDMNt1 <- randDMNt1$small[, Stage := rep.int("t1", 31)]
+smallDMNt1 <- randDMNt1$small[, Stage := rep.int("t1", 33)]
 rnetsDMNt1 <- randDMNt1$rand
 
 # Open label: T0 ------------------------------------------------------------------------------

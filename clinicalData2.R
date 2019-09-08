@@ -302,7 +302,9 @@ grMedClinLong[Scale == "B11_Tot" & Stage == "t1"] %>%
                    l=25) +
     labs(y = "Scores (Delta)", title = "Impulsivity (BIS-11) changes after 2 weeks of rTMS",
          x = NULL) +
-    scale_x_discrete(labels = "2 weeks real rTMS")grMedClinLong[Scale == "B11_Tot" & Stage == "t1"] %>% 
+    scale_x_discrete(labels = "2 weeks real rTMS")
+
+grMedClinLong[Scale == "B11_Tot" & Stage == "t1"] %>% 
     ggplot(aes(Stage, Delta, fill = GroupBIS)) +
     geom_boxplot() +
     scale_fill_hue(name="Group",
@@ -311,7 +313,9 @@ grMedClinLong[Scale == "B11_Tot" & Stage == "t1"] %>%
                    l=25) +
     labs(y = "Scores (Delta)", title = "Impulsivity (BIS-11) changes after 2 weeks of rTMS",
          x = NULL) +
-    scale_x_discrete(labels = "2 weeks real rTMS")grMedClinLong[Scale == "B11_Tot" & Stage == "t1"] %>% 
+    scale_x_discrete(labels = "2 weeks real rTMS")
+
+grMedClinLong[Scale == "B11_Tot" & Stage == "t1"] %>% 
     ggplot(aes(Stage, Delta, fill = GroupBIS)) +
     geom_boxplot() +
     scale_fill_hue(name="Group",
@@ -320,7 +324,9 @@ grMedClinLong[Scale == "B11_Tot" & Stage == "t1"] %>%
                    l=25) +
     labs(y = "Scores (Delta)", title = "Impulsivity (BIS-11) changes after 2 weeks of rTMS",
          x = NULL) +
-    scale_x_discrete(labels = "2 weeks real rTMS")grMedClinLong[Scale == "B11_Tot" & Stage == "t1"] %>% 
+    scale_x_discrete(labels = "2 weeks real rTMS")
+
+grMedClinLong[Scale == "B11_Tot" & Stage == "t1"] %>% 
     ggplot(aes(Stage, Delta, fill = GroupBIS)) +
     geom_boxplot() +
     scale_fill_hue(name="Group",

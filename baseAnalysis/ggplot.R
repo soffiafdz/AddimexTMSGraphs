@@ -5,8 +5,8 @@ prep_plot_grw <- function(...){
     x %>% 
         select(1:3,
                Network,
-               CP = Cp, 
-               LP = Lp, 
+               CP = Cp.norm, 
+               LP = Lp.norm, 
                SW = sigma, 
                EG = E.global, 
                EL = E.local,
@@ -19,9 +19,9 @@ prep_plot_grw <- function(...){
 }
 
 prep_plot_gr <- function(...){
-    x <- bind_rows(...)
+    x <- rbindlist(list(...), fill = T)
     x %>% 
-        select(1:2,
+        select(1:3,
                Network,
                CP = Cp, 
                LP = Lp, 
@@ -31,8 +31,10 @@ prep_plot_gr <- function(...){
                D = density,
                S = strength) %>% 
         gather(key = "Metric", value = "Val", CP:S) %>% 
+        na.omit() %>% 
+        mutate(Val = unlist(Val)) %>% 
         summarySE(measurevar = "Val", 
-                  groupvars = c("Stage", "Network", "Metric"),
+                  groupvars = c("Stage", "Group", "Network", "Metric"),
                   na.rm = T)
     
 }
@@ -69,7 +71,7 @@ prep_plot_cl(clin1, VAS) %>%
                      breaks=c("sham", "tx"),
                      labels=c("Sham rTMS", "Real rTMS"),
                      l=20) +
-    labs(y = NULL, title = "Interaction (Group v Stage): Craving's Analogue Visual Scale (N = 29)",
+    labs(y = NULL, title = "Interaction (Group v Stage): Craving's Analogue Visual Scale (N = 33)",
          x = NULL) +
     scale_x_discrete(labels = c("Pre-", "Post-"))
 
@@ -101,7 +103,7 @@ prep_plot_cl(clin1, B11_C:B11_Tot) %>%
                      breaks=c("sham", "tx"),
                      labels=c("Sham rTMS", "Real rTMS"),
                      l=20) +
-    labs(y = NULL, title = "Interaction (Group v Stage): Barratt's Impulsivity Scale 11 (N = 29)",
+    labs(y = NULL, title = "Interaction (Group v Stage): Barratt's Impulsivity Scale 11 (N = 33)",
          x = NULL) +
     scale_x_discrete(labels = c("Pre-", "Post-")) +
     facet_wrap(Scale ~ ., scales = "free")
@@ -368,9 +370,9 @@ ImprovGraph3 + geom_bar(stat = "identity", position = "fill") +
 
 # Graphs --------------------------------------------------------------------------------------
 
-prep_plot_gr(CON, DAN, DMN, FPN, SAL, SUB, VAN, WB) %>% 
-    filter(Metric %in% c("EG", "EL")) %>% 
-    mutate(Metric = factor(Metric, labels = c("Global eff.", "Local eff."))) %>% 
+prep_plot_gr(WB) %>% 
+    filter(Metric %in% c("EG", "EL", "D", "S", "CP", "LP", "SW")) %>% 
+    mutate(Metric = factor(Metric, labels = c("Global eff.", "Local eff.", "Density", "Strength", "Gamma", "Lambda", "Omega (SW)"))) %>% 
     ggplot(aes(Stage, Val, group = Group)) +
     geom_errorbar(aes(ymin = Val - se, ymax = Val + se, col = Group), 
                   width = 0.1, position = pd) +
@@ -380,12 +382,13 @@ prep_plot_gr(CON, DAN, DMN, FPN, SAL, SUB, VAN, WB) %>%
                      breaks=c("sham", "tx"),
                      labels=c("Sham TMS", "Real TMS"),
                      l=40) +
-    facet_grid(Metric ~ Network, scales = 'free') +
+    facet_wrap(.~Metric, scales = 'free') +
     labs(y = NULL, title = NULL,
          x = NULL) +
-    scale_x_discrete(labels = c("Pre-", "Post-"))
+    scale_x_discrete(labels = c("Pre-", "Post-")) + 
+    theme(legend.position = c(0.9, 0.1))
 
-prep_plot_gr(CON, DAN, DMN, FPN, SAL, SUB, VAN, WB) %>% 
+prep_plot_gr(WB) %>% 
     filter(Metric %in% c("D", "S")) %>% 
     mutate(Metric = factor(Metric, labels = c("Density", "Strength"))) %>% 
     ggplot(aes(Stage, Val, group = Group)) +
@@ -397,12 +400,12 @@ prep_plot_gr(CON, DAN, DMN, FPN, SAL, SUB, VAN, WB) %>%
                      breaks=c("sham", "tx"),
                      labels=c("Sham TMS", "Real TMS"),
                      l=40) +
-    facet_grid(Metric ~ Network, scales = 'free') +
+    facet_wrap(.~Metric, scales = 'free') +
     labs(y = NULL, title = NULL,
          x = NULL) +
     scale_x_discrete(labels = c("Pre-", "Post-"))
 
-prep_plot_gr(CON, DAN, DMN, FPN, SAL, SUB, VAN, WB) %>% 
+prep_plot_gr(WB) %>% 
     filter(Metric %in% c("CP", "LP", "SW")) %>% 
     mutate(Metric = factor(Metric, labels = c("Clustering coeff.", "Ch. path length", "Smallworldness"))) %>% 
     ggplot(aes(Stage, Val, group = Group)) +
@@ -414,7 +417,7 @@ prep_plot_gr(CON, DAN, DMN, FPN, SAL, SUB, VAN, WB) %>%
                      breaks=c("sham", "tx"),
                      labels=c("Sham TMS", "Real TMS"),
                      l=40) +
-    facet_grid(Metric ~ Network, scales = 'free') +
+    facet_wrap(Metric~., scales = 'free') +
     labs(y = NULL, title = NULL,
          x = NULL) +
     scale_x_discrete(labels = c("Pre-", "Post-"))

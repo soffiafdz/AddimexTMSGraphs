@@ -22,7 +22,7 @@ sdPairing <- sd %>%
 # saveRDS(sdTbl, "outData/sdTbl.RDS")
 
 # Clinical ------------------------------------------------------------------------------------
-clin1 %>% 
+clinTbl <- clin1 %>% 
     mutate(Stage = factor(Stage, levels = levels(Stage), labels = c("T0", "T1")),
            Group = factor(Group, labels = c("Sham rTMS", "Real rTMS"))) %>% 
     select(1:13) %>% 
@@ -58,10 +58,10 @@ clinScales <- c('VAS', 'CCQ-N', 'CCQ-G', 'B11C', 'B11M', 'B11Np', 'B11T')
 # map(p, p.adjust, method = "fdr")
 
 aovClinDf <- data_frame(scales = clinScales,
-                    stat = aovClin %>% map(1) %>% map(4) %>% map_dbl(3),
-                    df = rep("1,22", 7),
-                    ges = aovClin %>% map(1) %>% map(5) %>% map_dbl(3),
-                    p = aovClin %>% map(1) %>% map(6) %>% map_dbl(3)) %>% data.table()
+                    stat = aovClin[1:7] %>% map(1) %>% map(4) %>% map_dbl(3),
+                    df = rep("1,31", 7),
+                    ges = aovClin[1:7] %>% map(1) %>% map(5) %>% map_dbl(3),
+                    p = aovClin[1:7] %>% map(1) %>% map(6) %>% map_dbl(3)) %>% data.table()
 
 write_csv(aovClinDf, "outData/tables/aovClin.csv")
 # saveRDS(aov_df, "~/Desktop/aov_df.RDS")
