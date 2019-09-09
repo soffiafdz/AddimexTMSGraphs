@@ -1,20 +1,15 @@
-mkInds <- function(covars, gr) {
-  lapply(
-    seq_along(gr),
-    function(x) covars[, which(group == gr[x])]
-  )
-}
+
+# Custom Functions --------------------------------------------------------
+
 
 readTimeSeries <- function(dirTMS, dirCTRL = NULL) {
   #Function for extracting the files
   ls <- function(dir1, dir2 = dir1, dt) {
     return(c(
-      str_subset(list.files(list.dirs(dirTMS, recursive = T),
-                            dir1, full.names = T),
-                 dt[group == "sham", paste(Study.ID, collapse = "|")]),
-      str_subset(list.files(list.dirs(dirTMS, recursive = T),
-                            dir2, full.names = T),
-                 dt[group == "tx", paste(Study.ID, collapse = "|")])
+      str_subset(list.files(dirTMS, dir1, full.names = T),
+                 dt[group == "Sham", paste(Study.ID, collapse = "|")]),
+      str_subset(list.files(dirTMS, dir2, full.names = T),
+                 dt[group == "Tx", paste(Study.ID, collapse = "|")])
       )
     )
   }
@@ -22,11 +17,11 @@ readTimeSeries <- function(dirTMS, dirCTRL = NULL) {
   dirs <- list(
     t0 = ls(
       dir1 = "*ses-t0_power264_ts.1D",
-      dt = covars
+      dt = covars1
     ),
     t1 = ls(
       dir1 = "*ses-t1_power264_ts.1D", 
-      dt = covars
+      dt = covars1
     ),
     pre = ls(
       dir1 = "*ses-t1_power264_ts.1D",
@@ -40,6 +35,10 @@ readTimeSeries <- function(dirTMS, dirCTRL = NULL) {
     ),
     t2 = ls(
       dir1 = "*ses-t2_power264_ts.1D",
+      dt = covars2
+    ),
+    t3 = ls(
+      dir1 = "*ses-t3_power264_ts.1D",
       dt = covars3
     )
   )
@@ -47,21 +46,17 @@ readTimeSeries <- function(dirTMS, dirCTRL = NULL) {
   if (!is.null(dirCTRL)) {
     dirs[["hc_cu"]] <- c(
       str_subset(
-        list.files(list.dirs(dirCTRL, recursive = T), 
-                   "*_power264_ts.1D", full.names = T),
-        covarsP[group == "control", 
-                paste(str_replace_all(Study.ID, "ctr-", "sub-"),
-                      collapse = "|")]
+        list.files(dirCTRL, "*_power264_ts.1D", full.names = T),
+        covarsP[group == "HC", 
+                paste(Study.ID, collapse = "|")]
       ),
       str_subset(
-        list.files(list.dirs(dirTMS, recursive = T), 
-                   "*ses-t0_power264_ts.1D", full.names = T),
-        covarsP[group == "user", 
-                paste(Study.ID, collapse = "|")]
+        list.files(dirTMS, "*ses-t0_power264_ts.1D", full.names = T),
+        covarsP[group == "CU", paste(Study.ID, collapse = "|")]
       )
     )
   }
-  tsSubs <- map_depth(dirs, 2, str_extract, pattern = "sub-[0-9]{3}")
+  tsSubs <- map_depth(dirs, 2, str_extract, pattern = "(sub|ctr)-[0-9]{3}")
   tSeries <- map_depth(dirs, 2, fread)
   return(map2(tSeries, tsSubs, set_names))
 }
@@ -82,7 +77,7 @@ writeCorMats <- function(Corrs, outDir) {
       names(Corrs[[i]]),
       sep = "/"
     )
-    map2(Corrs[[i]], fullDir,
+    walk2(Corrs[[i]], fullDir,
          ~ fwrite(
            .x, 
            file = paste0(
@@ -104,11 +99,11 @@ readCorMats <- function(directory, Neg = F, CTRL = F, Files = F) {
         str_subset(list.files(list.dirs(
           paste(directory, subdir, sep = "/"), recursive = T),
           "sub-[0-9]{3}.tsv", full.names = T), 
-          dt[group == "sham", paste(Study.ID, collapse = "|")]),
+          dt[group == "Sham", paste(Study.ID, collapse = "|")]),
         str_subset(list.files(list.dirs(
           paste(directory, subdir, sep = "/"), recursive = T),
           "sub-[0-9]{3}.tsv", full.names = T),
-          dt[group == "tx", paste(Study.ID, collapse = "|")])
+          dt[group == "Tx", paste(Study.ID, collapse = "|")])
       )
     )
   }
@@ -116,11 +111,11 @@ readCorMats <- function(directory, Neg = F, CTRL = F, Files = F) {
   dirs <- list(
     t0 = ls(
       subdir = "t0",
-      dt = covars
+      dt = covars1
     ),
     t1 = ls(
       subdir = "t1", 
-      dt = covars
+      dt = covars1
     ),
     pre = ls(
       subdir = "pre",
@@ -132,6 +127,10 @@ readCorMats <- function(directory, Neg = F, CTRL = F, Files = F) {
     ),
     t2 = ls(
       subdir = "t2",
+      dt = covars2
+    ),
+    t3 = ls(
+      subdir = "t3",
       dt = covars3
     )
   )
@@ -142,20 +141,19 @@ readCorMats <- function(directory, Neg = F, CTRL = F, Files = F) {
         list.files(list.dirs(
           paste(directory, "hc_cu", sep = "/"), recursive = T),
           "sub-[0-9]{3}.tsv", full.names = T),
-        covarsP[group == "control", 
-                paste(str_replace_all(Study.ID, "ctr-", "sub-"),
-                      collapse = "|")]
+        covarsP[group == "CU", 
+                paste(Study.ID, collapse = "|")]
       ),
       str_subset(
         list.files(list.dirs(
           paste(directory, "hc_cu", sep = "/"), recursive = T),
-          "sub-[0-9]{3}.tsv", full.names = T),
-        covarsP[group == "user", 
+          "ctr-[0-9]{3}.tsv", full.names = T),
+        covarsP[group == "HC", 
                 paste(Study.ID, collapse = "|")]
       )
     )
   }
-  subs <- map_depth(dirs, 2, str_extract, pattern = "sub-[0-9]{3}")
+  subs <- map_depth(dirs, 2, str_extract, pattern = "(sub|ctr)-[0-9]{3}")
   if (Files) {
     return(dirs)
   } else {
@@ -218,16 +216,6 @@ subMats <- function(Corrs, write = F, outDir = NULL) {
     }
   }
   if (!write) {return(subCorrs)}
-}
-
-createMats <- function(matfiles, ind, thr_mt) {
-  brainGraph::create_mats(matfiles,
-    modality = modality,
-    threshold.by = thr_mt,
-    mat.thresh = thresholds,
-    sub.thresh = sub.thresh,
-    inds = ind
-  )
 }
 
 setBgAttr <- function(
