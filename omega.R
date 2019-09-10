@@ -7,9 +7,11 @@ gRandP <- smallClustP <- vector('list', length = length(groups1))
 for (i in seq_along(groups1)) {
     gRandP[[i]] <- vector('list', length = length(thresholdsP))
     for (j in seq_along(thresholdsP)) {
-        gRandP[[i]][[j]] <- sim.rand.graph.par(
-            gP[[i]][[j]], kNumRandClust, clustering = T
-        )
+        for (k in seq_along(indsP[[i]])) {
+            gRandP[[i]][[j]][[k]] <- sim.rand.graph.par(
+                gP[[i]][[j]][[k]], kNumRandClust, clustering = T
+            )
+        }
     }
     smallClustP[[i]] <- small.world(gP[[i]], gRandP[[i]])
 }
