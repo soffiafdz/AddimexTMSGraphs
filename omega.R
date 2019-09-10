@@ -16,7 +16,7 @@ gL23 <- read_rds(paste0(savedir, prefix, 'gL23', '.RDS'))
 
 kNumRand <- 3e2
 
-outdir <- paste0(savedir, '/rand2P', today)
+outdir <- paste0(savedir, 'rand2P_', today)
 
 randNets2P <- analysis_random_graphs(
     gP, kNumRand, savedir = outdir, clustering = T
@@ -30,7 +30,7 @@ smallClustP <- randNets2P$small
 
 # Closed label: T0 --------------------------------------------------------
 
-outdir <- paste0(savedir, '/rand2T0', today)
+outdir <- paste0(savedir, 'rand2T0_', today)
 
 randNets2T0 <- analysis_random_graphs(
     gT0, kNumRand, savedir = outdir, clustering = T
@@ -44,7 +44,7 @@ smallClustT0 <- randNets2T0$small
 
 # Closed label: T1 --------------------------------------------------------
 
-outdir <- paste0(savedir, '/rand2T1', today)
+outdir <- paste0(savedir, 'rand2T1_', today)
 
 randNets2T1 <- analysis_random_graphs(
     gT1, kNumRand, savedir = outdir, clustering = T
@@ -59,7 +59,7 @@ smallClustT1 <- randNets2T1$small
 
 # Longitudinal 1: Baseline ------------------------------------------------
 
-outdir <- paste0(savedir, '/rand2L10', today)
+outdir <- paste0(savedir, 'rand2L10_', today)
 
 randNets2L10 <- analysis_random_graphs(
     gL10, kNumRand, savedir = outdir, clustering = T
@@ -74,7 +74,7 @@ smallClustL10 <- randNets2L10$small
 
 # Longitudinal 1: Two weeks -----------------------------------------------
 
-outdir <- paste0(savedir, '/rand2L11', today)
+outdir <- paste0(savedir, 'rand2L11_', today)
 
 randNets2L11 <- analysis_random_graphs(
     gL11, kNumRand, savedir = outdir, clustering = T
@@ -89,7 +89,7 @@ smallClustL11 <- randNets2L11$small
 
 # Longitudinal 1: Three months --------------------------------------------
 
-outdir <- paste0(savedir, '/rand2L12', today)
+outdir <- paste0(savedir, 'rand2L12_', today)
 
 randNets2L12 <- analysis_random_graphs(
     gL12, kNumRand, savedir = outdir, clustering = T
@@ -104,7 +104,7 @@ smallClustL12 <- randNets2L12$small
 
 # Longitudinal 2: Baseline ------------------------------------------------
 
-outdir <- paste0(savedir, '/rand2L20', today)
+outdir <- paste0(savedir, 'rand2L20_', today)
 
 randNets2L20 <- analysis_random_graphs(
     gL20, kNumRand, savedir = outdir, clustering = T
@@ -119,7 +119,7 @@ smallClustL20 <- randNets2L20$small
 
 # Longitudinal 2: Two weeks -----------------------------------------------
 
-outdir <- paste0(savedir, '/rand2L21', today)
+outdir <- paste0(savedir, 'rand2L21_', today)
 
 randNets2L21 <- analysis_random_graphs(
     gL21, kNumRand, savedir = outdir, clustering = T
@@ -134,7 +134,7 @@ smallClustL21 <- randNets2L21$small
 
 # Longitudinal 2: Three months --------------------------------------------
 
-outdir <- paste0(savedir, '/rand2L22', today)
+outdir <- paste0(savedir, 'rand2L22_', today)
 
 randNets2L22 <- analysis_random_graphs(
     gL22, kNumRand, savedir = outdir, clustering = T
@@ -149,7 +149,7 @@ smallClustL22 <- randNets2L22$small
 
 # Longitudinal 2: Six months ----------------------------------------------
 
-outdir <- paste0(savedir, '/rand2L23', today)
+outdir <- paste0(savedir, 'rand2L23_', today)
 
 randNets2L23 <- analysis_random_graphs(
     gL23, kNumRand, savedir = outdir, clustering = T
