@@ -1,7 +1,4 @@
 source('setUp.R')
-thresholdsP <- thresholds[1:14]
-atlas <- "power264"
-
 prefix <- '20190909_'
 
 gP <- read_rds(paste0(savedir, prefix, 'gP', '.RDS'))
@@ -17,184 +14,152 @@ gL23 <- read_rds(paste0(savedir, prefix, 'gL23', '.RDS'))
 
 # Dependence vs Controls --------------------------------------------------
 
-kNumRandClust <- 3e2
-gRandP <- smallClustP <- vector('list', length = length(groups1))
+kNumRand <- 3e2
 
-for (i in seq_along(groups1)) {
-    gRandP[[i]] <- vector('list', length = length(thresholdsP))
-    for (j in seq_along(thresholdsP)) {
-        for (k in seq_along(indsP[[i]])) {
-            gRandP[[i]][[j]][[k]] <- sim.rand.graph.par(
-                gP[[i]][[j]][[k]], kNumRandClust, clustering = T
-            )
-        }
-    }
-    smallClustP[[i]] <- small.world(gP[[i]], gRandP[[i]])
-}
-smallClustP <- rbindlist(smallClustP)
+outdir <- paste0(savedir, '/rand2P', today)
 
-write_rds(gRandP, 'outData/RDS/gRandP.RDS')
-write_rds(smallClustP, 'outData/RDS/smallClustP.RDS')
+randNets2P <- analysis_random_graphs(
+    gP, kNumRand, savedir = outdir, clustering = T
+)
+
+write_rds(randNets2P, paste0(savedir1, 'randNets2P.RDS'))
+
+# randNets2P <- read_rds(paste0(savedir1, 'randNets2P.RDS'))
+
+smallClustP <- randNets2P$small
 
 # Closed label: T0 --------------------------------------------------------
 
-gRandT0 <- smallClustT0 <- vector('list', length = length(groups2))
+outdir <- paste0(savedir, '/rand2T0', today)
 
-for (i in seq_along(groups2)) {
-    gRandT0[[i]] <- vector('list', length = length(thresholds))
-    for (j in seq_along(thresholds)) {
-        gRandT0[[i]][[j]] <- sim.rand.graph.par(
-            gT0[[i]][[j]], kNumRandClust, clustering = T
-        )
-    }
-    smallClustT0[[i]] <- small.world(gT0[[i]], gRandT0[[i]])
-}
-smallClustT0 <- rbindlist(smallClustT0)
+randNets2T0 <- analysis_random_graphs(
+    gT0, kNumRand, savedir = outdir, clustering = T
+)
 
-write_rds(gRandT0, 'outData/RDS/gRandT0.RDS')
-write_rds(smallClustT0, 'outData/RDS/smallClustT0.RDS')
+write_rds(randNets2T0, paste0(savedir1, 'randNets2T0.RDS'))
+
+# randNets2T0 <- read_rds(paste0(savedir1, 'randNets2T0.RDS'))
+
+smallClustT0 <- randNets2T0$small
 
 # Closed label: T1 --------------------------------------------------------
 
-gRandT1 <- smallClustT1 <- vector('list', length = length(groups2))
+outdir <- paste0(savedir, '/rand2T1', today)
 
-for (i in seq_along(groups2)) {
-    gRandT1[[i]] <- vector('list', length = length(thresholds))
-    for (j in seq_along(thresholds)) {
-        gRandT1[[i]][[j]] <- sim.rand.graph.par(
-            gT1[[i]][[j]], kNumRandClust, clustering = T
-        )
-    }
-    smallClustT1[[i]] <- small.world(gT1[[i]], gRandT1[[i]])
-}
-smallClustT1 <- rbindlist(smallClustT1)
+randNets2T1 <- analysis_random_graphs(
+    gT1, kNumRand, savedir = outdir, clustering = T
+)
 
-write_rds(gRandT1, 'outData/RDS/gRandT1.RDS')
-write_rds(smallClustT1, 'outData/RDS/smallClustT1.RDS')
+write_rds(randNets2T1, paste0(savedir1, 'randNets2T1.RDS'))
+
+# randNets2T1 <- read_rds(paste0(savedir1, 'randNets2T1.RDS'))
+
+smallClustT1 <- randNets2T1$small
+
 
 # Longitudinal 1: Baseline ------------------------------------------------
 
-gRandL10 <- smallClustL10 <- vector('list', length = length(groups2))
+outdir <- paste0(savedir, '/rand2L10', today)
 
-for (i in seq_along(groups2)) {
-    gRandL10[[i]] <- vector('list', length = length(thresholds))
-    for (j in seq_along(thresholds)) {
-        gRandL10[[i]][[j]] <- sim.rand.graph.par(
-            gL10[[i]][[j]], kNumRandClust, clustering = T
-        )
-    }
-    smallClustL10[[i]] <- small.world(gL10[[i]], gRandL10[[i]])
-}
-smallClustL10 <- rbindlist(smallClustL10)
+randNets2L10 <- analysis_random_graphs(
+    gL10, kNumRand, savedir = outdir, clustering = T
+)
 
-write_rds(gRandL10, 'outData/RDS/gRandL10.RDS')
-write_rds(smallClustL10, 'outData/RDS/smallClustL10.RDS')
+write_rds(randNets2L10, paste0(savedir1, 'randNets2L10.RDS'))
+
+# randNets2L10 <- read_rds(paste0(savedir1, 'randNets2L10.RDS'))
+
+smallClustL10 <- randNets2L10$small
+
 
 # Longitudinal 1: Two weeks -----------------------------------------------
 
-gRandL11 <- smallClustL11 <- vector('list', length = length(groups2))
+outdir <- paste0(savedir, '/rand2L11', today)
 
-for (i in seq_along(groups2)) {
-    gRandL11[[i]] <- vector('list', length = length(thresholds))
-    for (j in seq_along(thresholds)) {
-        gRandL11[[i]][[j]] <- sim.rand.graph.par(
-            gL11[[i]][[j]], kNumRandClust, clustering = T
-        )
-    }
-    smallClustL11[[i]] <- small.world(gL11[[i]], gRandL11[[i]])
-}
-smallClustL11 <- rbindlist(smallClustL11)
+randNets2L11 <- analysis_random_graphs(
+    gL11, kNumRand, savedir = outdir, clustering = T
+)
 
-write_rds(gRandL11, 'outData/RDS/gRandL11.RDS')
-write_rds(smallClustL11, 'outData/RDS/smallClustL11.RDS')
+write_rds(randNets2L11, paste0(savedir1, 'randNets2L11.RDS'))
+
+# randNets2L11 <- read_rds(paste0(savedir1, 'randNets2L11.RDS'))
+
+smallClustL11 <- randNets2L11$small
+
 
 # Longitudinal 1: Three months --------------------------------------------
 
-gRandL12 <- smallClustL12 <- vector('list', length = length(groups2))
+outdir <- paste0(savedir, '/rand2L12', today)
 
-for (i in seq_along(groups2)) {
-    gRandL12[[i]] <- vector('list', length = length(thresholds))
-    for (j in seq_along(thresholds)) {
-        gRandL12[[i]][[j]] <- sim.rand.graph.par(
-            gL12[[i]][[j]], kNumRandClust, clustering = T
-        )
-    }
-    smallClustL12[[i]] <- small.world(gL12[[i]], gRandL12[[i]])
-}
-smallClustL12 <- rbindlist(smallClustL12)
+randNets2L12 <- analysis_random_graphs(
+    gL12, kNumRand, savedir = outdir, clustering = T
+)
 
-write_rds(gRandL12, 'outData/RDS/gRandL12.RDS')
-write_rds(smallClustL12, 'outData/RDS/smallClustL12.RDS')
+write_rds(randNets2L12, paste0(savedir1, 'randNets2L12.RDS'))
+
+# randNets2L12 <- read_rds(paste0(savedir1, 'randNets2L12.RDS'))
+
+smallClustL12 <- randNets2L12$small
+
 
 # Longitudinal 2: Baseline ------------------------------------------------
 
-gRandL20 <- smallClustL20 <- vector('list', length = length(groups2))
+outdir <- paste0(savedir, '/rand2L20', today)
 
-for (i in seq_along(groups2)) {
-    gRandL20[[i]] <- vector('list', length = length(thresholds))
-    for (j in seq_along(thresholds)) {
-        gRandL20[[i]][[j]] <- sim.rand.graph.par(
-            gL20[[i]][[j]], kNumRandClust, clustering = T
-        )
-    }
-    smallClustL20[[i]] <- small.world(gL20[[i]], gRandL20[[i]])
-}
-smallClustL20 <- rbindlist(smallClustL20)
+randNets2L20 <- analysis_random_graphs(
+    gL20, kNumRand, savedir = outdir, clustering = T
+)
 
-write_rds(gRandL20, 'outData/RDS/gRandL20.RDS')
-write_rds(smallClustL20, 'outData/RDS/smallClustL20.RDS')
+write_rds(randNets2L20, paste0(savedir1, 'randNets2L20.RDS'))
+
+# randNets2L20 <- read_rds(paste0(savedir1, 'randNets2L20.RDS'))
+
+smallClustL20 <- randNets2L20$small
+
 
 # Longitudinal 2: Two weeks -----------------------------------------------
 
-gRandL21 <- smallClustL21 <- vector('list', length = length(groups2))
+outdir <- paste0(savedir, '/rand2L21', today)
 
-for (i in seq_along(groups2)) {
-    gRandL21[[i]] <- vector('list', length = length(thresholds))
-    for (j in seq_along(thresholds)) {
-        gRandL21[[i]][[j]] <- sim.rand.graph.par(
-            gL21[[i]][[j]], kNumRandClust, clustering = T
-        )
-    }
-    smallClustL21[[i]] <- small.world(gL21[[i]], gRandL21[[i]])
-}
-smallClustL21 <- rbindlist(smallClustL21)
+randNets2L21 <- analysis_random_graphs(
+    gL21, kNumRand, savedir = outdir, clustering = T
+)
 
-write_rds(gRandL21, 'outData/RDS/gRandL21.RDS')
-write_rds(smallClustL21, 'outData/RDS/smallClustL21.RDS')
+write_rds(randNets2L21, paste0(savedir1, 'randNets2L21.RDS'))
+
+# randNets2L21 <- read_rds(paste0(savedir1, 'randNets2L21.RDS'))
+
+smallClustL21 <- randNets2L21$small
+
 
 # Longitudinal 2: Three months --------------------------------------------
 
-gRandL22 <- smallClustL22 <- vector('list', length = length(groups2))
+outdir <- paste0(savedir, '/rand2L22', today)
 
-for (i in seq_along(groups2)) {
-    gRandL22[[i]] <- vector('list', length = length(thresholds))
-    for (j in seq_along(thresholds)) {
-        gRandL22[[i]][[j]] <- sim.rand.graph.par(
-            gL22[[i]][[j]], kNumRandClust, clustering = T
-        )
-    }
-    smallClustL22[[i]] <- small.world(gL22[[i]], gRandL22[[i]])
-}
-smallClustL22 <- rbindlist(smallClustL22)
+randNets2L22 <- analysis_random_graphs(
+    gL22, kNumRand, savedir = outdir, clustering = T
+)
 
-write_rds(gRandL22, 'outData/RDS/gRandL22.RDS')
-write_rds(smallClustL22, 'outData/RDS/smallClustL22.RDS')
+write_rds(randNets2L22, paste0(savedir1, 'randNets2L22.RDS'))
+
+# randNets2L22 <- read_rds(paste0(savedir1, 'randNets2L22.RDS'))
+
+smallClustL22 <- randNets2L22$small
+
 
 # Longitudinal 2: Six months ----------------------------------------------
 
-gRandL23 <- smallClustL23 <- vector('list', length = length(groups2))
+outdir <- paste0(savedir, '/rand2L23', today)
 
-for (i in seq_along(groups2)) {
-    gRandL23[[i]] <- vector('list', length = length(thresholds))
-    for (j in seq_along(thresholds)) {
-        gRandL23[[i]][[j]] <- sim.rand.graph.par(
-            gL23[[i]][[j]], kNumRandClust, clustering = T
-        )
-    }
-    smallClustL23[[i]] <- small.world(gL23[[i]], gRandL23[[i]])
-}
-smallClustL23 <- rbindlist(smallClustL23)
+randNets2L23 <- analysis_random_graphs(
+    gL23, kNumRand, savedir = outdir, clustering = T
+)
 
-write_rds(gRandL23, 'outData/RDS/gRandL23.RDS')
-write_rds(smallClustL23, 'outData/RDS/smallClustL23.RDS')
+write_rds(randNets2L23, paste0(savedir1, 'randNets2L23.RDS'))
+
+# randNets2L23 <- read_rds(paste0(savedir1, 'randNets2L23.RDS'))
+
+smallClustL23 <- randNets2L23$small
+
+
 
