@@ -6,7 +6,7 @@ pacman::p_load(
   foreach, doParallel, afex, GGally, ggpubr, effsize, WRS2, readxl, plyr
 )
 
-registerDoParallel(cores = 2)
+registerDoParallel(cores = 10)
 
 source("customFunctions.R")
 
@@ -36,9 +36,9 @@ covars[,`:=`(
 setkey(covars, group, Study.ID)
 
 covars1 <- covars[exclusion == 0]
-covars2 <- covars1[Study.ID %in% sprintf("sub-%03d", 
+covars2 <- covars1[Study.ID %in% sprintf("sub-%03d",
     c(2:4,7:8,15,20,22:25,27,31,32,34,36))]
-covars3 <- covars2[!Study.ID %in% sprintf("sub-%03d", 
+covars3 <- covars2[!Study.ID %in% sprintf("sub-%03d",
     c(15,23,25,31,34))]
 
 covarsP <- fread("inData/participantsConn.csv", na.strings = c('n/a','NA'))
@@ -56,13 +56,13 @@ covarsP[, `:=`(
 )]
 setkey(covarsP, group, Study.ID)
 
-indsP <- lapply(seq_along(groups1), function(x) 
+indsP <- lapply(seq_along(groups1), function(x)
     covarsP[, which(group == groups1[x])])
-inds1 <- lapply(seq_along(groups2), function(x) 
+inds1 <- lapply(seq_along(groups2), function(x)
     covars1[, which(group == groups2[x])])
-inds2 <- lapply(seq_along(groups2), function(x) 
+inds2 <- lapply(seq_along(groups2), function(x)
     covars2[, which(group == groups2[x])])
-inds3 <- lapply(seq_along(groups2), function(x) 
+inds3 <- lapply(seq_along(groups2), function(x)
     covars3[, which(group == groups2[x])])
 
 # Atlas -------------------------------------------------------------------
