@@ -6,7 +6,7 @@ pacman::p_load(
   foreach, doParallel, afex, GGally, ggpubr, effsize, WRS2, readxl, plyr
 )
 
-registerDoParallel(cores = 10)
+registerDoParallel(cores = detectCores()/2)
 
 source("customFunctions.R")
 
