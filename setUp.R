@@ -24,8 +24,8 @@ groups2 <- c("Sham", "Tx")
 atlas <- "power264"
 modality <- "fmri"
 # thresholds <- 0.25
-thresholds <- rev(seq(0.5, 0.01, -0.025))
-subThresh <- 0.65
+thresholds <- rev(seq(0.4, 0.01, -0.025))
+subThresh <- 0.5
 
 covars <- fread("inData/participants.csv", na.strings = 'NA')
 setnames(covars, 1, "Study.ID")

@@ -1,17 +1,16 @@
 
 # Cocaine Dependent vs Healthy Controls -----------------------------------
 
-thresholdsP <- thresholds[1:14]
 # A.norm.sub <- matsP$A.norm.sub
 # A.norm.mean <- matsP$A.norm.mean
-atlas <- "power264"
+# atlas <- "power264"
 # gGrP <- gP <- fnames <- vector('list', length=length(groups1))
-
+#
 # for (i in seq_along(groups1)) {
-#     for (j in seq_along(thresholdsP)) {
+#     for (j in seq_along(thresholds)) {
 #         print(
 #             paste0(
-#                 'Threshold ', j, '/', length(thresholdsP),
+#                 'Threshold ', j, '/', length(thresholds),
 #                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
 #             )
 #         )
@@ -24,7 +23,7 @@ atlas <- "power264"
 #             V(g.tmp)$name <- as.character(power264$name)
 #             g.tmp <- setBgAttr(
 #                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-#                 threshold = thresholdsP[j], subject = covarsP[groups1[i],
+#                 threshold = thresholds[j], subject = covarsP[groups1[i],
 #                 Study.ID[k]], group = groups1[i], use.parallel = F,
 #                 A = A.norm.sub[[j]][, , indsP[[i]][k]]
 #             )
@@ -39,19 +38,19 @@ atlas <- "power264"
 #
 #     # group mean weighted graphs
 #     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-#     gGrP[[i]] <- lapply(seq_along(thresholdsP), function(x)
+#     gGrP[[i]] <- lapply(seq_along(thresholds), function(x)
 #         graph_from_adjacency_matrix(
 #             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
 #         )
 #
-#     for (x in seq_along(thresholdsP)) {
+#     for (x in seq_along(thresholds)) {
 #         V(gGrP[[i]][[x]])$name <- as.character(power264$name)
 #     }
 #
-#     gGrP[[i]] <- llply(seq_along(thresholdsP), function(x)
+#     gGrP[[i]] <- llply(seq_along(thresholds), function(x)
 #         setBgAttr(
 #             gGrP[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-#             threshold = thresholdsP[x], group = groups1[i],
+#             threshold = thresholds[x], group = groups1[i],
 #             A = A.norm.mean[[x]][[i]], use.parallel = F
 #         ), .parallel = T
 #     )
@@ -59,8 +58,8 @@ atlas <- "power264"
 # }
 #
 # for (i in seq_along(groups1)) {
-#     gP[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsP))
-#     for (j in seq_along(thresholdsP)) {
+#     gP[[i]] <- fnames[[i]] <- vector('list', length = length(thresholds))
+#     for (j in seq_along(thresholds)) {
 #         fnames[[i]][[j]] <- list.files(
 #             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
 #         )
@@ -755,11 +754,11 @@ atlas <- "power264"
 #
 # write_rds(gL23, paste0(savedir1, 'gL23.RDS'))
 # write_rds(gGrL23, paste0(savedir1, 'gGrL23.RDS'))
-
+#
 
 # Read all graphs ---------------------------------------------------------
 
-prefix <- '20190909_'
+prefix <- '20190910_'
 
 gP <- read_rds(paste0(savedir, prefix, 'gP', '.RDS'))
 gT0 <- read_rds(paste0(savedir, prefix, 'gT0', '.RDS'))

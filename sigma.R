@@ -4,86 +4,86 @@ source('createGraphs.R')
 # Dependence vs Controls --------------------------------------------------
 
 kNumRand <- 3e2
-
-outdir <- paste0(savedir, 'randP', today)
-
-randNetsP <- analysis_random_graphs(
-    gP, kNumRand, savedir = outdir, clustering = F
-)
-
-write_rds(randNetsP, paste0(savedir1, 'randNetsP.RDS'))
-
-# randNetsP <- read_rds(paste0(savedir1, 'randNetsP.RDS'))
-
-richP <- na.omit(randNetsP$rich)
-smallP <- randNetsP$small
-rnetsP <- randNetsP$rand
-
+#
+# outdir <- paste0(savedir, 'randP', today)
+#
+# randNetsP <- analysis_random_graphs(
+#     gP, kNumRand, savedir = outdir, clustering = F
+# )
+#
+# write_rds(randNetsP, paste0(savedir1, 'randNetsP.RDS'))
+#
+# # randNetsP <- read_rds(paste0(savedir1, 'randNetsP.RDS'))
+#
+# richP <- na.omit(randNetsP$rich)
+# smallP <- randNetsP$small
+# rnetsP <- randNetsP$rand
+#
 # Closed label: T0 --------------------------------------------------------
 
-outdir <- paste0(savedir, 'randT0', today)
-
-randNetsT0 <- analysis_random_graphs(
-    gT0, kNumRand, savedir = outdir, clustering = F
-)
-
-write_rds(randNetsT0, paste0(savedir1, 'randNetsT0.RDS'))
-
-# randNetsT0 <- read_rds(paste0(savedir1, 'randNetsT0.RDS'))
-
-richT0 <- na.omit(randNetsT0$rich)
-smallT0 <- randNetsT0$small
-rnetsT0 <- randNetsT0$rand
-
-# Closed label: T1 --------------------------------------------------------
-
-outdir <- paste0(savedir, 'randT1', today)
-
-randNetsT1 <- analysis_random_graphs(
-    gT1, kNumRand, savedir = outdir, clustering = F
-)
-
-write_rds(randNetsT1, paste0(savedir1, 'randNetsT1.RDS'))
-
-# randNetsT1 <- read_rds(paste0(savedir1, 'randNetsT1.RDS'))
-
-richT1 <- na.omit(randNetsT1$rich)
-smallT1 <- randNetsT1$small
-rnetsT1 <- randNetsT1$rand
-
-
-# Longitudinal 1: Baseline ------------------------------------------------
-
-outdir <- paste0(savedir, 'randL10', today)
-
-randNetsL10 <- analysis_random_graphs(
-    gL10, kNumRand, savedir = outdir, clustering = F
-)
-
-write_rds(randNetsL10, paste0(savedir1, 'randNetsL10.RDS'))
-
-# randNetsL10 <- read_rds(paste0(savedir1, 'randNetsL10.RDS'))
-
-richL10 <- na.omit(randNetsL10$rich)
-smallL10 <- randNetsL10$small
-rnetsL10 <- randNetsL10$rand
-
-
-# Longitudinal 1: Two weeks -----------------------------------------------
-
-outdir <- paste0(savedir, 'randL11', today)
-
-randNetsL11 <- analysis_random_graphs(
-    gL11, kNumRand, savedir = outdir, clustering = F
-)
-
-write_rds(randNetsL11, paste0(savedir1, 'randNetsL11.RDS'))
-
-# randNetsL11 <- read_rds(paste0(savedir1, 'randNetsL11.RDS'))
-
-richL11 <- na.omit(randNetsL11$rich)
-smallL11 <- randNetsL11$small
-rnetsL11 <- randNetsL11$rand
+# outdir <- paste0(savedir, 'randT0', today)
+#
+# randNetsT0 <- analysis_random_graphs(
+#     gT0, kNumRand, savedir = outdir, clustering = F
+# )
+#
+# write_rds(randNetsT0, paste0(savedir1, 'randNetsT0.RDS'))
+#
+# # randNetsT0 <- read_rds(paste0(savedir1, 'randNetsT0.RDS'))
+#
+# richT0 <- na.omit(randNetsT0$rich)
+# smallT0 <- randNetsT0$small
+# rnetsT0 <- randNetsT0$rand
+#
+# # Closed label: T1 --------------------------------------------------------
+#
+# outdir <- paste0(savedir, 'randT1', today)
+#
+# randNetsT1 <- analysis_random_graphs(
+#     gT1, kNumRand, savedir = outdir, clustering = F
+# )
+#
+# write_rds(randNetsT1, paste0(savedir1, 'randNetsT1.RDS'))
+#
+# # randNetsT1 <- read_rds(paste0(savedir1, 'randNetsT1.RDS'))
+#
+# richT1 <- na.omit(randNetsT1$rich)
+# smallT1 <- randNetsT1$small
+# rnetsT1 <- randNetsT1$rand
+#
+#
+# # Longitudinal 1: Baseline ------------------------------------------------
+#
+# outdir <- paste0(savedir, 'randL10', today)
+#
+# randNetsL10 <- analysis_random_graphs(
+#     gL10, kNumRand, savedir = outdir, clustering = F
+# )
+#
+# write_rds(randNetsL10, paste0(savedir1, 'randNetsL10.RDS'))
+#
+# # randNetsL10 <- read_rds(paste0(savedir1, 'randNetsL10.RDS'))
+#
+# richL10 <- na.omit(randNetsL10$rich)
+# smallL10 <- randNetsL10$small
+# rnetsL10 <- randNetsL10$rand
+#
+#
+# # Longitudinal 1: Two weeks -----------------------------------------------
+#
+# outdir <- paste0(savedir, 'randL11', today)
+#
+# randNetsL11 <- analysis_random_graphs(
+#     gL11, kNumRand, savedir = outdir, clustering = F
+# )
+#
+# write_rds(randNetsL11, paste0(savedir1, 'randNetsL11.RDS'))
+#
+# # randNetsL11 <- read_rds(paste0(savedir1, 'randNetsL11.RDS'))
+#
+# richL11 <- na.omit(randNetsL11$rich)
+# smallL11 <- randNetsL11$small
+# rnetsL11 <- randNetsL11$rand
 
 
 # Longitudinal 1: Three months --------------------------------------------

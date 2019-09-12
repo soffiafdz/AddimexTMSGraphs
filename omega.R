@@ -1,16 +1,5 @@
 source('setUp.R')
-prefix <- '20190909_'
-
-gP <- read_rds(paste0(savedir, prefix, 'gP', '.RDS'))
-gT0 <- read_rds(paste0(savedir, prefix, 'gT0', '.RDS'))
-gT1 <- read_rds(paste0(savedir, prefix, 'gT1', '.RDS'))
-gL10 <- read_rds(paste0(savedir, prefix, 'gL10', '.RDS'))
-gL11 <- read_rds(paste0(savedir, prefix, 'gL11', '.RDS'))
-gL12 <- read_rds(paste0(savedir, prefix, 'gL12', '.RDS'))
-gL20 <- read_rds(paste0(savedir, prefix, 'gL20', '.RDS'))
-gL21 <- read_rds(paste0(savedir, prefix, 'gL21', '.RDS'))
-gL22 <- read_rds(paste0(savedir, prefix, 'gL22', '.RDS'))
-gL23 <- read_rds(paste0(savedir, prefix, 'gL23', '.RDS'))
+source('createGraphs.R')
 
 # Dependence vs Controls --------------------------------------------------
 
