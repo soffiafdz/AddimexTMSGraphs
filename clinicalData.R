@@ -1,325 +1,489 @@
 
-# Raw data  --------------------------------------------------------------------
+# Raw data  ---------------------------------------------------------------
+
 inClinDir <- 'inData/clinical_data/20190828/'
 
-data_amai <- read_excel(paste0(inClinDir, 'AMA INSE 8x7.xlsx'),
-                        sheet = 2)
-data_asip <- read_excel(paste0(inClinDir, 'ASIP.xlsx'),
-                        sheet = 1, na = 'NA')
-data_bis11 <- read_excel(paste0(inClinDir, 'BIS-11.xlsx'),
-                         sheet = 2)
-data_calendar <- read_excel(paste0(inClinDir, 'Calendar.xlsx'),
-                            sheet = 2, na = 'NA')
-data_cal2 <- read_excel(paste0(inClinDir, 'CalendarRelative.xlsx'),
-                        sheet = 2, na = 'NA')
-data_ccqg <- read_excel(paste0(inClinDir, 'CCQ-G.xlsx'),
-                        sheet = 1)
-data_ccqn <- read_excel(paste0(inClinDir, 'CCQ-N.xlsx'),
-                        sheet = 1)
-data_ehi <- read_excel(paste0(inClinDir, 'EHI-SF.xlsx'),
-                       sheet = 1)
-data_hars <- read_excel(paste0(inClinDir, 'HARS.xlsx'),
-                        sheet = 2)
-data_hdrs <- read_excel(paste0(inClinDir, 'HDRS.xlsx'),
-                        sheet = 2)
+# data_amai <- read_excel(paste0(inClinDir, 'AMA INSE 8x7.xlsx'), sheet = 2)
+# data_calendar <- read_excel(paste0(inClinDir, 'Calendar.xlsx'), 
+#     sheet = 2, na = 'NA')
+# data_ehi <- read_excel(paste0(inClinDir, 'EHI-SF.xlsx'), sheet = 1)
+# data_hars <- read_excel(paste0(inClinDir, 'HARS.xlsx'), sheet = 2)
+# data_hdrs <- read_excel(paste0(inClinDir, 'HDRS.xlsx'), sheet = 2)
+# data_mini <- read_excel(paste0(inClinDir, 'MINI PLUS.xlsx'), sheet = 1)
+# data_psqi <- read_excel(paste0(inClinDir, 'PSQI.xlsx'), sheet = 1, na = 'NA')
+# data_scl90 <- read_excel(paste0(inClinDir, 'SCL-90-R.xlsx'), sheet = 1)
+# data_whodas <- read_excel(paste0(inClinDir, 'WHODAS 2,0 X.xlsx'), 
+#     sheet = 1, na = 'NA')
+
+data_bis11 <- read_excel(paste0(inClinDir, 'BIS-11.xlsx'), sheet = 2)
+data_ccqg <- read_excel(paste0(inClinDir, 'CCQ-G.xlsx'), sheet = 1)
+data_ccqn <- read_excel(paste0(inClinDir, 'CCQ-N.xlsx'), sheet = 1)
+data_vas <- read_excel(paste0(inClinDir, 'VAS Clinico.xlsx'), sheet = 1)
+data_asip <- read_excel(paste0(inClinDir, 'ASIP.xlsx'), sheet = 1, na = 'NA')
+data_tobacco <- read_excel(paste0(inClinDir, 'Tobacco.xlsx'), sheet = 1)
 data_inventory <- read_excel(paste0(inClinDir, 'Inventory.xlsx'),
-                             sheet = 1, na = 'NA')
-data_mini <- read_excel(paste0(inClinDir, 'MINI PLUS.xlsx'),
-                        sheet = 1)
-data_psqi <- read_excel(paste0(inClinDir, 'PSQI.xlsx'),
-                        sheet = 1, na = 'NA')
-data_scl90 <- read_excel(paste0(inClinDir, 'SCL-90-R.xlsx'),
-                         sheet = 1)
-data_tobacco <- read_excel(paste0(inClinDir, 'Tobacco.xlsx'),
-                           sheet = 1)
-data_vas <- read_excel(paste0(inClinDir, 'VAS Clinico.xlsx'),
-                       sheet = 1)
-data_whodas <- read_excel(paste0(inClinDir, 'WHODAS 2,0 X.xlsx'),
-                          sheet = 1, na = 'NA')
-data_demog <- read_excel(paste0(inClinDir, 'DEMOGRAPHIC.xlsx'),
-                         sheet = 1, na = 'NA')
+    sheet = 1, na = 'NA')
+data_cal2 <- read_excel(paste0(inClinDir, 'CalendarRelative.xlsx'), 
+    sheet = 2, na = 'NA')
 
 
-# Demographics ----------------------------------------------------------------
-
-sd <- left_join(data_demog, data_tobacco, by = c("rid", "group", "stage")) %>% 
-    select(1:2, 5:7, 16:17, 25:28) %>% 
-    filter(!rid %in% c(5, 9, 14, 28:29,35)) %>% 
-    mutate(rid = factor(rid), 
-           group = factor(group, labels = c("Sham", "Tx")),
-           q1_sex = factor(q1_sex, labels = c("Male", "Female")),
-           consumption = factor(consumption, labels = c("No", "Yes")),
-           cig_day = as.double(cig_day)) %>% 
-    as.data.table()
-names(sd) <- sd_names <- c("RID", "Group", "Sex", "Age", "Education_years", 
-                           "Starting_age", "Years_consumption",
-                           "Tobacco_consumption", "Tobacco_start",
-                           "Tobacco_years", "Cigs_day") 
-
-
-# Clinical --------------------------------------------------------------------
+# Master Clinical ---------------------------------------------------------
 
 clinical <- data_vas %>% 
     left_join(data_ccqg[c(1:3, 49)]) %>%
     left_join(data_ccqn[c(1:3, 49)]) %>%
     left_join(data_bis11[c(1:3, 34:37)]) %>%
-    left_join(data_inventory[c(1:2,4, 19:20, 23:24, 26, 28)]) %>%
+    left_join(data_inventory[c(1:3, 19:20, 23:24, 26, 28)]) %>%
     left_join(data_asip[c(1:3, 68)]) %>%
     left_join(data_cal2[c(1:3, 17)]) %>%
-    filter(stage %in% c("T0", "T1", "T1-4", "T2")) %>%
-    dplyr::rename(Study.ID = rid, Group = group, Stage = stage, B11_C = cog,
-                  B11_M = mot, B11_NP = nonp, B11_Tot = tot_score,
-                  CCQ_G = ccq_g, CCQ_N = ccq_n, VAS = vas,
-                  UT_bzd = ut_bzd, UT_coc = ut_coc, UT_thc = ut_thc,
-                  Consume = auto1, Grams_month = auto3, Improvement = auto5, 
-                  Coc_last30 = d8cc30, Grams0 = "gram_-1") %>%
+    mutate(stage = ifelse(
+        rid == 15, ifelse(
+            stage == 'T3', 'T2', ifelse(
+                stage == 'T4', 'T3', stage)
+            ), stage
+        )
+    ) %>% 
+    filter(stage %in% c("T0", "T1", "T1-4", "T2", "T3")) %>%
+    dplyr::rename(
+        Study.ID = rid, Group = group, Stage = stage, 
+        B11C = cog, B11M = mot, B11NP = nonp, B11Tot = tot_score, 
+        CCQG = ccq_g, CCQN = ccq_n, VAS = vas, 
+        UT_bzd = ut_bzd, UT_coc = ut_coc, UT_thc = ut_thc, 
+        Consume = auto1, Grams_month = auto3, Improvement = auto5, 
+        Coc_last30 = d8cc30, Grams0 = "gram_-1"
+    ) %>%
     mutate(Study.ID = factor(paste0("sub-", sprintf("%03d", Study.ID))),
-           Group = factor(Group, labels = c("sham", "tx")),
-           Stage = factor(Stage, labels = c("t0", "t1", "t1-4", "t2")),
-           VAS = as.double(VAS),
-           UT_bzd = factor(UT_bzd, labels = c("positive", "negative")),
-           UT_coc = factor(UT_coc, labels = c("positive", "negative")),
-           UT_thc = factor(UT_thc, labels = c("positive", "negative")),
-           Consume = factor(Consume, labels = c("Yes", "No")),
-           Improvement = factor(Improvement, labels = c("Better",
-                                                        "Moderately better",
-                                                        "Slightly better",
-                                                        "No changes",
-                                                        "Worse")),
-           Grams_month = as.double(Grams_month),
-           Grams = case_when(
-               Consume == "No" ~ 0,
-               Consume == "Yes" ~ Grams_month,
-               is.na(Consume) ~ Grams0),
-           Grams = if_else(Coc_last30 == 0, 0, Grams),
-            Grams = if_else(is.na(Grams), 0, Grams)) %>%
-    select(-Grams0, -Grams_month) %>%
-    filter(!Study.ID %in% paste0("sub-0", c('05', '09', 14, 28, 29, 35))) %>%
+        Group = factor(Group, labels = c("Sham", "Tx")),
+        Stage = factor(Stage, labels = c("T0", "T1", "T1-4", "T2", "T3")),
+        VAS = round(as.double(VAS), digits = 2),
+        UT_bzd = factor(UT_bzd, labels = c("positive", "negative")),
+        UT_coc = factor(UT_coc, labels = c("positive", "negative")),
+        UT_thc = factor(UT_thc, labels = c("positive", "negative")),
+        Consume = factor(Consume, labels = c("Yes", "No")),
+        Improvement = factor(
+            Improvement, labels = c(
+                "Better", "Moderately better", "Slightly better",
+                "No changes", "Worse", "Moderately worse"
+            )
+        ),
+        Grams_month = as.double(Grams_month),
+        Grams = case_when(
+            Consume == "No" ~ 0,
+            Consume == "Yes" ~ Grams_month,
+            is.na(Consume) ~ Grams0),
+        Grams = if_else(Coc_last30 == 0, 0, Grams),
+        Grams = if_else(is.na(Grams), 0, Grams)
+    ) %>%
+    dplyr::select(-Grams0, -Grams_month) %>%
     data.table()
 
-
-# write_rds(clinical, "outData/clin_data.RDS")
-
-
-clin1 <- clinical %>% filter(Stage %in% c("t1", "t0")) %>% 
-    mutate(Stage = factor(Stage)) %>% data.table()
-
-clin1Delta <- clin1 %>% 
-    select(1:10) %>% 
-    gather(key = "Scale", value = "Score", 4:10, factor_key = T) %>% 
-    spread(Stage, Score) %>% 
-    mutate(Delta = t1 - t0) %>% 
-    select(-c(4,5)) %>% 
-    spread(Scale, Delta)
-
-seeds <- sprintf("sub-%03d", c(2,4,8,20:27,30:34,36:37))
-
-# clin2 <- clinical %>% 
-#     filter(Study.ID %in% c(
-#         as.character(clinical[clinical$Stage == "t1-4",]$Study.ID),
-#         unique(as.character(clinical[clinical$Group == "tx",]$Study.ID)))) %>% 
-#     mutate(Stage2 = case_when(
-#         Group == "tx" & Stage == "t0" ~ "t0",
-#         Group == "tx" & Stage == "t1" ~ "t1",
-#         Group == "sham" & Stage == "t0" ~ "X",
-#         Group == "sham" & Stage == "t1" ~ "t0",
-#         Group == "sham" & Stage == "t1-4" ~ "t1",
-#         Stage == "t2" ~ "X")) %>% 
-#     select(-Stage) %>% 
-#     select(1:2, Stage = Stage2, everything()) %>% 
-#     filter(Stage != "X", Study.ID != 'sub-012') %>% 
-#     data.table()
-# 
-# clin3 <- clinical %>%
-#     filter(
-#         Study.ID %in% as.character(
-#             clinical[clinical$Stage == "t2",]$Study.ID
-#             )
-#         ) %>%
-#     mutate(Stage2 = case_when(
-#         Group == "tx" & Stage == "t0" ~ "t0",
-#         Group == "tx" & Stage == "t1" ~ "t1",
-#         Group == "sham" & Stage == "t0" ~ "X",
-#         Group == "sham" & Stage == "t1" ~ "t0",
-#         Group == "sham" & Stage == "t1-4" ~ "t1",
-#         Stage == "t2" ~ "t2")) %>%
-#     select(-Stage) %>% 
-#     select(1:2, Stage = Stage2, everything()) %>% 
-#     filter(Stage != "X") %>% 
-#     data.table()
+write_rds(clinical, 'outData/RDS/clinical.RDS')
 
 
-write_rds(clin1, "outData/rds/cl1.rds")
-# write_rds(clin2, "outData/cl2.RDS")
-# write_rds(clin3, "outData/cl3.RDS")
-fwrite(clin1Delta, "outData/clinicalDelta.csv")
+# Clinical: Closed label --------------------------------------------------
+
+clin1 <- clinical[Stage %in% c('T0', 'T1') & Study.ID %in% covars1[,Study.ID]]
+
+clinDelta <- melt(clin1[, 1:10], measure.vars = c(4:10))
+
+clinDelta <- dcast(
+    clinDelta, Study.ID + Group + variable ~ Stage, value.var = 'value'
+)
+
+clin1_2 <- melt(clinDelta, measure.vars = c(4:5))
+clin1_2 <- dcast(clin1_2, Study.ID + Group ~ variable.1 + variable, value.var = 'value')
+
+clinDelta <- dcast(
+    clinDelta[, Delta := T1 - T0][, c(1:3, 6)], 
+    Study.ID + Group ~ variable, value.var = 'Delta'
+)
 
 
-# Blind stage ANOVA & chi2 ---------------------------------------------------
+setkey(clin1, Stage, Group, Study.ID)
+setkey(clin1_2, Group, Study.ID)
 
-aovClin <- vector('list', length = 9)
+# Clinical: Longitudinal 3 months -----------------------------------------
 
-aovClin[[1]] <- aov_car(VAS ~ Group * Stage + Error(Study.ID/Stage),
-                        data = clin1)
-aovClin[[2]] <- aov_car(CCQ_N ~ Group * Stage + Error(Study.ID/Stage),
-                        data = clin1)
-aovClin[[3]] <- aov_car(CCQ_G ~ Group * Stage + Error(Study.ID/Stage),
-                        data = clin1)
-aovClin[[4]] <- aov_car(B11_C ~ Group * Stage + Error(Study.ID/Stage),
-                        data = clin1)
-aovClin[[5]] <- aov_car(B11_M ~ Group * Stage + Error(Study.ID/Stage),
-                        data = clin1)
-aovClin[[6]] <- aov_car(B11_NP ~ Group * Stage + Error(Study.ID/Stage),
-                        data = clin1)
-aovClin[[7]] <- aov_car(B11_Tot ~ Group * Stage + Error(Study.ID/Stage),
-                        data = clin1)
-aovClin[[8]] <- aov_car(Coc_last30 ~ Group * Stage + Error(Study.ID/Stage),
-                        data = clin1)
-aovClin[[9]] <- aov_car(Grams ~ Group * Stage + Error(Study.ID/Stage),
-                        data = clin1)
+clin2 <- rbindlist(list(
+    clinical[Group == 'Sham' & 
+            Stage != 'T3' & 
+            Study.ID %in% covars2[, Study.ID]][Stage != 'T1'],
+    clinical[Group == 'Tx' & 
+            Stage != 'T3' & 
+            Study.ID %in% covars2[, Study.ID]]
+))
 
+clin2[Group == 'Sham' & Stage == 'T1-4', Stage := 'T1']
+clin2[, `:=`(
+    Group = NULL,
+    Stage = factor(Stage)
+)]
 
+setkey(clin2, Stage, Study.ID)
 
-chiClin <- vector('list', length = 5)
+# Clinical: Longitudinal 6 months -----------------------------------------
 
-chiClin[[1]] <- chisq.test(table(filter(clin1, Stage == "t1")$UT_bzd, 
-                                 filter(clin1, Stage == "t1")$Group))
-chiClin[[2]] <- chisq.test(table(filter(clin1, Stage == "t1")$UT_coc, 
-                                 filter(clin1, Stage == "t1")$Group))
-chiClin[[3]] <- chisq.test(table(filter(clin1, Stage == "t1")$UT_thc, 
-                                 filter(clin1, Stage == "t1")$Group))
-chiClin[[4]] <- chisq.test(table(filter(clin1, Stage == "t1")$Consume, 
-                                 filter(clin1, Stage == "t1")$Group))
-chiClin[[5]] <- chisq.test(table(filter(clin1, Stage == "t1")$Improvement, 
-                                 filter(clin1, Stage == "t1")$Group))
+clin3 <- rbindlist(list(
+    clinical[Group == 'Sham' & 
+            Study.ID %in% covars2[, Study.ID]][Stage != 'T1'],
+    clinical[Group == 'Tx' &
+            Study.ID %in% covars2[, Study.ID]]
+))
 
+clin3[Group == 'Sham' & Stage == 'T1-4', Stage := 'T1']
+clin3[, `:=`(
+    Group = NULL,
+    Stage = factor(Stage)
+)]
 
-write_rds(aovClin, "outData/rds/aovClin.RDS")
-write_rds(chiClin, "outData/rds/chiClin.RDS")
-
-# Open-label tTests -----------------------------------------------------------
-
-# tTestClin <- vector('list', length = 2)
-# 
-# tTestClin[[1]][[1]] <- t.test(VAS ~ Stage, alternative = "g",
-#                               paired = T, data = clin2)
-# tTestClin[[1]][[2]] <- t.test(CCQ_N ~ Stage, alternative = "g",
-#                               paired = T, data = clin2)
-# tTestClin[[1]][[3]] <- t.test(CCQ_G ~ Stage, alternative = "g",
-#                               paired = T, data = clin2)
-# tTestClin[[1]][[4]] <- t.test(B11_C ~ Stage, alternative = "g",
-#                               paired = T, data = clin2)
-# tTestClin[[1]][[5]] <- t.test(B11_M ~ Stage, alternative = "g",
-#                               paired = T, data = clin2)
-# tTestClin[[1]][[6]] <- t.test(B11_NP ~ Stage, alternative = "g",
-#                               paired = T, data = clin2)
-# tTestClin[[1]][[7]] <- t.test(B11_Tot ~ Stage, alternative = "g",
-#                               paired = T, data = clin2)
-# tTestClin[[1]][[8]] <- t.test(Coc_last30 ~ Stage, alternative = "g",
-#                               paired = T, data = clin2)
-# tTestClin[[1]][[9]] <- t.test(Grams ~ Stage, alternative = "g",
-#                               paired = T, data = clin2)
-# 
-# tTestClin[[2]][[1]] <- cohen.d(VAS ~ Stage, paired = T, data = clin2)
-# tTestClin[[2]][[2]] <- cohen.d(CCQ_N ~ Stage, paired = T, data = clin2)
-# tTestClin[[2]][[3]] <- cohen.d(CCQ_G ~ Stage, paired = T, data = clin2)
-# tTestClin[[2]][[4]] <- cohen.d(B11_C ~ Stage, paired = T, data = clin2)
-# tTestClin[[2]][[5]] <- cohen.d(B11_M ~ Stage, paired = T, data = clin2)
-# tTestClin[[2]][[6]] <- cohen.d(B11_NP ~ Stage, paired = T, data = clin2)
-# tTestClin[[2]][[7]] <- cohen.d(B11_Tot ~ Stage, paired = T, data = clin2)
-# tTestClin[[2]][[8]] <- cohen.d(Coc_last30 ~ Stage, paired = T, data = clin2)
-# tTestClin[[2]][[9]] <- cohen.d(Grams ~ Stage, paired = T, data = clin2)
-# 
-# 
-# chiClin2 <- vector('list', length = 3)
-# 
-# chiClin2[[1]] <- chisq.test(table(filter(clin2)$UT_bzd, filter(clin2)$Stage))
-# chiClin2[[2]] <- chisq.test(table(filter(clin2)$UT_coc, filter(clin2)$Stage))
-# chiClin2[[3]] <- chisq.test(table(filter(clin2)$UT_thc, filter(clin2)$Stage))
-# 
-# write_rds(tTestClin, "outData/tTstClin.RDS")
-# write_rds(chiClin2, "outData/chiClin2.RDS")
-# 
-# # Open-label ANOVAs -----------------------------------------------------------
-# 
-# anovaClin <- vector('list', length = 2)
-# 
-# anovaClin[[1]][[1]] <- summary(aov(VAS ~ Stage, data = clin3))
-# anovaClin[[1]][[2]] <- summary(aov(CCQ_N ~ Stage, data = clin3))
-# anovaClin[[1]][[3]] <- summary(aov(CCQ_G ~ Stage, data = clin3))
-# anovaClin[[1]][[4]] <- summary(aov(B11_C ~ Stage, data = clin3))
-# anovaClin[[1]][[5]] <- summary(aov(B11_M ~ Stage, data = clin3))
-# anovaClin[[1]][[6]] <- summary(aov(B11_NP ~ Stage, data = clin3))
-# anovaClin[[1]][[7]] <- summary(aov(B11_Tot ~ Stage, data = clin3))
-# anovaClin[[1]][[8]] <- summary(aov(Coc_last30 ~ Stage, data = clin3))
-# anovaClin[[1]][[9]] <- summary(aov(Grams ~ Stage, data = clin3))
-# 
-# 
-# anovaClin[[2]][[1]] <- TukeyHSD(aov(VAS ~ Stage, data = clin3))
-# anovaClin[[2]][[2]] <- TukeyHSD(aov(CCQ_N ~ Stage, data = clin3))
-# anovaClin[[2]][[3]] <- TukeyHSD(aov(CCQ_G ~ Stage, data = clin3))
-# anovaClin[[2]][[4]] <- TukeyHSD(aov(B11_C ~ Stage, data = clin3))
-# anovaClin[[2]][[5]] <- TukeyHSD(aov(B11_M ~ Stage, data = clin3))
-# anovaClin[[2]][[6]] <- TukeyHSD(aov(B11_NP ~ Stage, data = clin3))
-# anovaClin[[2]][[7]] <- TukeyHSD(aov(B11_Tot ~ Stage, data = clin3))
-# anovaClin[[2]][[8]] <- TukeyHSD(aov(Coc_last30 ~ Stage, data = clin3))
-# anovaClin[[2]][[9]] <- TukeyHSD(aov(Grams ~ Stage, data = clin3))
-# 
-# 
-# chiClin3 <- vector('list', length = 3)
-# 
-# chiClin3[[1]] <- chisq.test(table(filter(clin3)$UT_bzd, filter(clin3)$Stage))
-# chiClin3[[2]] <- chisq.test(table(filter(clin3)$UT_coc, filter(clin3)$Stage))
-# chiClin3[[3]] <- chisq.test(table(filter(clin3)$UT_thc, filter(clin3)$Stage))
-# 
-# write_rds(anovaClin, "outData/anovaClin.RDS")
-# write_rds(chiClin3, "outData/chiClin3.RDS")
-
-# Graph Metrics ---------------------------------------------------------------
-
-setkey(clin1, Study.ID, Stage, Group)
-
-CON <- attrSubNets[Network == "CON"][clin1, on = .(Study.ID, Group, Stage)]
-DAN <- attrSubNets[Network == "DAN"][clin1, on = .(Study.ID, Group, Stage)]
-DMN <- attrSubNets[Network == "DMN"][clin1, on = .(Study.ID, Group, Stage)]
-FPN <- attrSubNets[Network == "FPN"][clin1, on = .(Study.ID, Group, Stage)]
-SAL <- attrSubNets[Network == "SAL"][clin1, on = .(Study.ID, Group, Stage)]
-SUB <- attrSubNets[Network == "SUB"][clin1, on = .(Study.ID, Group, Stage)]
-VAN <- attrSubNets[Network == "VAN"][clin1, on = .(Study.ID, Group, Stage)]
-WB <- attrWB[clin1, on = .(Study.ID, Group, Stage)]
+setkey(clin3, Stage, Study.ID)
 
 
+# Write RDS objects -------------------------------------------------------
+
+write_rds(clin1, "outData/RDS/clin1.RDS")
+write_rds(clin2, "outData/RDS/clin2.RDS")
+write_rds(clin3, "outData/RDS/clin3.RDS")
+# fwrite(clin1Delta, "outData/clinicalDelta.csv")
 
 
-# ## 2 weeks Real rTMS
-# 
-# CONtx <- attrCONtx %>% left_join(clin2) %>%
-#     filter(Study.ID != 'sub-012') %>% data.table() 
-# DANtx <- attrDANtx %>% left_join(clin2) %>%
-#     filter(Study.ID != 'sub-012') %>% data.table()
-# DMNtx <- attrDMNtx %>% left_join(clin2) %>%
-#     filter(Study.ID != 'sub-012') %>% data.table()
-# FPNtx <- attrFPNtx %>% left_join(clin2) %>%
-#     filter(Study.ID != 'sub-012') %>% data.table()
-# SALtx <- attrSALtx %>% left_join(clin2) %>%
-#     filter(Study.ID != 'sub-012') %>% data.table()
-# SUBtx <- attrSUBtx %>% left_join(clin2) %>%
-#     filter(Study.ID != 'sub-012') %>% data.table()
-# VANtx <- attrVANtx %>% left_join(clin2) %>%
-#     filter(Study.ID != 'sub-012') %>% data.table()
-# WBtx <- attrWBtx %>% left_join(clin2) %>%
-#     filter(Study.ID != 'sub-012') %>% data.table()
-# 
-# ## 3 months maintenance
-# 
-# CONl <- attrCONl %>% left_join(clin3) %>% data.table() 
-# DANl <- attrDANl %>% left_join(clin3) %>% data.table()
-# DMNl <- attrDMNl %>% left_join(clin3) %>% data.table()
-# FPNl <- attrFPNl %>% left_join(clin3) %>% data.table()
-# SALl <- attrSALl %>% left_join(clin3) %>% data.table()
-# SUBl <- attrSUBl %>% left_join(clin3) %>% data.table()
-# VANl <- attrVANl %>% left_join(clin3) %>% data.table()
-# WBl <- attrWBl %>% left_join(clin3) %>% data.table()
-# 
-# 
-# 
+# Read RDS objects --------------------------------------------------------
+
+clin1 <- read_rds('outData/RDS/clin1.RDS')
+clin2 <- read_rds('outData/RDS/clin2.RDS')
+clin3 <- read_rds('outData/RDS/clin3.RDS')
+
+
+# Closed label ------------------------------------------------------------
+
+### Correlation Craving & Impulsivity 
+
+corrClin <- melt(clin1, id.vars = c(1, 3, 10), measure.vars = 4:6, 
+                 variable.name = "Craving_measure", value.name = "Craving_value")
+corrClin[Stage == "T0", cor.test(Craving_value, B11Tot), by = Craving_measure][
+    , c(1,5,4,10)]
+corrClin[Stage == "T1", cor.test(Craving_value, B11Tot), by = Craving_measure][
+    , c(1,5,4,10)]
+
+### Baseline comparison by Urine Test
+
+utClin <- melt(clin1, id.vars = c(1,3,12), measure.vars = c(4:6, 10),
+               variable.name = "Scale", value.name = "Score")
+
+utClin[Stage == "T0", t.test(Score ~ UT_coc), by = Scale][, c(1:2,4:5)]
+utClin[Stage == "T0", cohen.d(Score ~ UT_coc), by = Scale][, c(1:2,4:7,9)]
+
+### Median separation
+
+grMedClin <- melt(
+    clin1, id.vars = 1:3, measure.vars = c(4:6, 10), 
+    variable.name = "Scale", value.name = "Score"
+)
+
+mediansClinTx <- grMedClin[
+    Group == "Tx" & Stage == "T0", .(Median = median(Score)), by = Scale
+]
+
+mediansClinSham <- grMedClin[
+    Group == "Sham" & Stage == "T0", .(Median = median(Score)), by = Scale
+]
+
+grMedClin[, Stage_Scale := ifelse(Stage == "T0",
+                                  paste0("Pre_", Scale),
+                                  paste0("Post_", Scale))]
+
+grMedClin <- dcast.data.table(grMedClin, Study.ID + Group ~ Stage_Scale, value.var = "Score")
+
+grMedClin[, `:=`(
+    GroupVAS = as.factor(
+        ifelse(Group == "Sham", "Sham", 
+            ifelse(Pre_VAS < mediansClinTx[[1,2]], "real_<", "real_>")
+            )
+        ),
+    GroupCCQG = as.factor(
+        ifelse(Group == "Sham", "Sham", 
+            ifelse(Pre_CCQG < mediansClinTx[[2,2]], "real_<", "real_>")
+            )
+        ),
+    GroupCCQN = as.factor(
+        ifelse(Group == "Sham", "Sham", 
+            ifelse(Pre_CCQN < mediansClinTx[[3,2]], "real_<", "real_>")
+            )
+        ),
+    GroupBIS = as.factor(
+        ifelse(Group == "Sham", "Sham", 
+            ifelse(Pre_B11Tot < mediansClinTx[[4,2]], "real_<", "real_>")
+            )
+        )
+    )
+]
+
+grMedClin[, `:=`(
+    GroupVAS2 = as.factor(
+        case_when(GroupVAS == "real_<" ~ "r_<", 
+            GroupVAS == "real_>" ~ "r_>",
+            GroupVAS == "Sham" & Pre_VAS <= mediansClinSham[[1,2]] ~ "s_<",
+            GroupVAS == "Sham" & Pre_VAS > mediansClinSham[[1,2]] ~ "s_>"
+            )
+        ),
+    GroupCCQG2 = as.factor(
+        case_when(GroupCCQG == "real_<" ~ "r_<",
+            GroupCCQG == "real_>" ~ "r_>",
+            GroupCCQG == "Sham" & Pre_CCQG <= mediansClinSham[[2,2]] ~ "s_<",
+            GroupCCQG == "Sham" & Pre_CCQG > mediansClinSham[[2,2]] ~ "s_>"
+            )
+        ),
+    GroupCCQN2 = as.factor(
+        case_when(GroupCCQN == "real_<" ~ "r_<",
+            GroupCCQN == "real_>" ~ "r_>",
+            GroupCCQN == "Sham" & Pre_CCQN <= mediansClinSham[[3,2]] ~ "s_<",
+            GroupCCQN == "Sham" & Pre_CCQN > mediansClinSham[[3,2]] ~ "s_>"
+            )
+        ),
+    GroupBIS2 = as.factor(
+        case_when(GroupBIS == "real_<" ~ "r_<",
+            GroupBIS == "real_>" ~ "r_>",
+            GroupBIS == "Sham" & Pre_B11Tot <= mediansClinSham[[4,2]] ~ "s_<",
+            GroupBIS == "Sham" & Pre_B11Tot > mediansClinSham[[4,2]] ~ "s_>"
+            )
+        )
+    )
+]
+
+grMedClin[, `:=`(
+    GroupVAS3 = as.factor(
+        ifelse(str_detect(GroupVAS2, ">"), ">", "<")
+        ),
+    GroupCCQG3 = as.factor(
+        ifelse(str_detect(GroupCCQG2, ">"), ">", "<")
+        ),
+    GroupCCQN3 = as.factor(
+        ifelse(str_detect(GroupCCQN2, ">"), ">", "<")
+        ),
+    GroupBIS3 = as.factor(
+        ifelse(str_detect(GroupBIS2, ">"), ">", "<")
+        )
+    )
+]
+
+grMedClin[, `:=`(
+    DeltaVAS = Post_VAS - Pre_VAS,
+    DeltaCCQG = Post_CCQG - Pre_CCQG,
+    DeltaCCQN = Post_CCQN - Pre_CCQN,
+    DeltaBIS = Post_B11Tot - Pre_B11Tot,
+    GroupVAS = NULL,
+    GroupCCQG = NULL,
+    GroupCCQN = NULL,
+    GroupBIS = NULL,
+    GroupVAS2 = NULL,
+    GroupCCQG2 = NULL,
+    GroupCCQN2 = NULL,
+    GroupBIS2 = NULL
+    )
+]
+
+grMedClinLong <- melt(
+    grMedClin, measure.vars = 3:10, 
+    variable.name = "Scale", value.name = "Score"
+)
+
+grMedClinLong[, c("Stage", "Scale") := tstrsplit(Scale, "[te]_")]
+grMedClinLong[, `:=`(
+    Scale = factor(Scale),
+    Stage = factor(Stage, levels = c("Pr", "Pos"), labels = c("T0", "T1")),
+    Delta = Score - rep(grMedClinLong[Stage == "Pr", Score],2)
+    )
+]
+
+### VAS
+
+grMedClinLong[Scale == "VAS", summary.lm(aov(Delta ~ GroupVAS3))]
+summary(lm(Post_VAS ~ Group + Pre_VAS + Pre_B11Tot, data = grMedClin))
+
+### CCQ General
+
+grMedClinLong[Scale == "CCQG", summary.lm(aov(Delta ~ GroupCCQG3))]
+summary(lm(Post_CCQG ~ Group + Pre_CCQG + Pre_B11Tot, data = grMedClin))
+
+### CCQ Now
+
+grMedClinLong[Scale == "CCQN", summary.lm(aov(Delta ~ GroupCCQN3))]
+summary(lm(Post_CCQN ~ Group + Pre_CCQN + Pre_B11Tot, data = grMedClin))
+
+### Barratt's
+
+grMedClinLong[Scale == "B11Tot", summary.lm(aov(Delta ~ GroupBIS3))]
+summary(lm(
+    Post_B11Tot ~ Group + Pre_B11Tot + Pre_CCQN + Pre_CCQG + Pre_VAS, 
+    data = grMedClin
+    )
+)
+
+#### X^2 
+clin1[, Improvement := factor(Improvement)]
+chisq.test(table(
+    clin1[Stage == 'T1', c('Consume', 'Group')]
+))
+chisq.test(table(
+    clin1[Stage == 'T1', c('Improvement', 'Group')]
+))
+
+
+
+
+# Longitudinal 1 ----------------------------------------------------------
+
+grMedClinL1 <- melt(
+    clin2, id.vars = 1:2, measure.vars = c(3:5, 9), 
+    variable.name = "Scale", value.name = "Score"
+)
+
+mediansClinL1 <- grMedClinL1[
+    Stage == "T0", .(Median = median(Score)), by = Scale
+    ]
+
+grMedClinL1 <- dcast.data.table(
+    grMedClinL1, Study.ID ~ Stage + Scale, value.var = "Score"
+)
+
+grMedClinL1[, `:=`(
+    GroupVAS = as.factor(
+        ifelse(T0_VAS < mediansClinL1[[1,2]], "<", ">")
+        ),
+    GroupCCQG = as.factor(
+        ifelse(T0_CCQG < mediansClinL1[[2,2]], "<", ">")
+        ),
+    GroupCCQN = as.factor(
+        ifelse(T0_CCQN < mediansClinL1[[3,2]], "<", ">")
+        ),
+    GroupBIS = as.factor(
+            ifelse(T0_B11Tot < mediansClinL1[[4,2]], "<", ">")
+        )
+    )
+]
+
+grMedClinLongL1 <- melt(
+    grMedClinL1, measure.vars = 2:13, 
+    variable.name = "Scale", value.name = "Score"
+)
+
+grMedClinLongL1[, c("Stage", "Scale") := tstrsplit(Scale, "_")]
+grMedClinLongL1[, `:=`(
+    Scale = factor(Scale)
+)
+    ]
+
+## VAS
+l1V0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL1[Scale == 'VAS'])
+l1V1 <- lmer(Score ~ GroupVAS + (1|Study.ID), grMedClinLongL1[Scale == 'VAS'])
+l1V2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL1[Scale == 'VAS'])
+l1V3 <- lmer(Score ~ Stage + GroupVAS + (1|Study.ID), 
+    grMedClinLongL1[Scale == 'VAS'])
+anova(l1V0, l1V1, l1V2, l1V3)
+summary(glht(l1V3, linfct = mcp(Stage = "Tukey")))
+
+## CCQ Now
+l1N0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL1[Scale == 'CCQN'])
+l1N1 <- lmer(Score ~ GroupCCQN + (1|Study.ID), grMedClinLongL1[Scale == 'CCQN'])
+l1N2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL1[Scale == 'CCQN'])
+l1N3 <- lmer(Score ~ Stage + GroupCCQN + (1|Study.ID), 
+    grMedClinLongL1[Scale == 'CCQN'])
+anova(l1N0, l1N1, l1N2, l1N3)
+summary(glht(l1N3, linfct = mcp(Stage = "Tukey")))
+
+## CCQ General
+l1G0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL1[Scale == 'CCQG'])
+l1G1 <- lmer(Score ~ GroupCCQN + (1|Study.ID), grMedClinLongL1[Scale == 'CCQG'])
+l1G2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL1[Scale == 'CCQG'])
+l1G3 <- lmer(Score ~ Stage + GroupCCQG + (1|Study.ID), 
+    grMedClinLongL1[Scale == 'CCQG'])
+anova(l1G0, l1G1, l1G2, l1G3)
+summary(glht(l1G3, linfct = mcp(Stage = "Tukey")))
+
+## Barrat's
+l1B0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL1[Scale == 'B11Tot'])
+l1B1 <- lmer(Score ~ GroupBIS + (1|Study.ID), grMedClinLongL1[Scale == 'B11Tot'])
+l1B2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL1[Scale == 'B11Tot'])
+l1B3 <- lmer(Score ~ Stage + GroupBIS + (1|Study.ID), 
+    grMedClinLongL1[Scale == 'B11Tot'])
+anova(l1B0, l1B1, l1B2, l1B3)
+summary(glht(l1B2, linfct = mcp(Stage = "Tukey")))
+
+
+# Longitudinal 2 ----------------------------------------------------------
+
+grMedClinL2 <- melt(
+    clin3, id.vars = 1:2, measure.vars = c(3:5, 9), 
+    variable.name = "Scale", value.name = "Score"
+)
+
+mediansClinL2 <- grMedClinL2[
+    Stage == "T0", .(Median = median(Score)), by = Scale
+    ]
+
+grMedClinL2 <- dcast.data.table(
+    grMedClinL2, Study.ID ~ Stage + Scale, value.var = "Score"
+)
+
+grMedClinL2[, `:=`(
+    GroupVAS = as.factor(
+        ifelse(T0_VAS < mediansClinL2[[1,2]], "<", ">")
+    ),
+    GroupCCQG = as.factor(
+        ifelse(T0_CCQG < mediansClinL2[[2,2]], "<", ">")
+    ),
+    GroupCCQN = as.factor(
+        ifelse(T0_CCQN < mediansClinL2[[3,2]], "<", ">")
+    ),
+    GroupBIS = as.factor(
+        ifelse(T0_B11Tot < mediansClinL2[[4,2]], "<", ">")
+    )
+)
+    ]
+
+grMedClinLongL2 <- melt(
+    grMedClinL2, measure.vars = 2:17, 
+    variable.name = "Scale", value.name = "Score"
+)
+
+grMedClinLongL2[, c("Stage", "Scale") := tstrsplit(Scale, "_")]
+grMedClinLongL2[, `:=`(
+    Scale = factor(Scale)
+)
+    ]
+
+## VAS
+l2V0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL2[Scale == 'VAS'])
+l2V1 <- lmer(Score ~ GroupVAS + (1|Study.ID), grMedClinLongL2[Scale == 'VAS'])
+l2V2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL2[Scale == 'VAS'])
+l2V3 <- lmer(Score ~ Stage + GroupVAS + (1|Study.ID), 
+    grMedClinLongL2[Scale == 'VAS'])
+anova(l2V0, l2V1, l2V2, l2V3)
+summary(glht(l2V3, linfct = mcp(Stage = "Tukey")))
+
+## CCQ Now
+l2N0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL2[Scale == 'CCQN'])
+l2N1 <- lmer(Score ~ GroupCCQN + (1|Study.ID), grMedClinLongL2[Scale == 'CCQN'])
+l2N2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL2[Scale == 'CCQN'])
+l2N3 <- lmer(Score ~ Stage + GroupCCQN + (1|Study.ID), 
+    grMedClinLongL2[Scale == 'CCQN'])
+anova(l2N0, l2N1, l2N2, l2N3)
+summary(glht(l2N3, linfct = mcp(Stage = "Tukey")))
+
+## CCQ General
+l2G0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL2[Scale == 'CCQG'])
+l2G1 <- lmer(Score ~ GroupCCQN + (1|Study.ID), grMedClinLongL2[Scale == 'CCQG'])
+l2G2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL2[Scale == 'CCQG'])
+l2G3 <- lmer(Score ~ Stage + GroupCCQG + (1|Study.ID), 
+    grMedClinLongL2[Scale == 'CCQG'])
+anova(l2G0, l2G1, l2G2, l2G3)
+summary(glht(l2G3, linfct = mcp(Stage = "Tukey")))
+
+## Barrat's
+l2B0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL2[Scale == 'B11Tot'])
+l2B1 <- lmer(Score ~ GroupBIS + (1|Study.ID), grMedClinLongL2[Scale == 'B11Tot'])
+l2B2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL2[Scale == 'B11Tot'])
+l2B3 <- lmer(Score ~ Stage + GroupBIS + (1|Study.ID), 
+    grMedClinLongL2[Scale == 'B11Tot'])
+anova(l2B0, l2B1, l2B2, l2B3)
+summary(glht(l2B2, linfct = mcp(Stage = "Tukey")))

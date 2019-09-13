@@ -2,8 +2,8 @@
 # Packages and functions --------------------------------------------------
 
 pacman::p_load(
-  brainGraph, data.table, tidyverse, reshape2, moonBook, xtable,
-  foreach, doParallel, afex, GGally, ggpubr, effsize, WRS2, readxl, plyr
+  brainGraph, data.table, tidyverse, foreach, doParallel, readxl, plyr, lme4, 
+  multcomp
 )
 
 registerDoParallel(cores = detectCores()/2)

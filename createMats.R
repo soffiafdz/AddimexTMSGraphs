@@ -1,5 +1,4 @@
 
-
 # Time Series -> Correlations ---------------------------------------------
 
 # timeSeries <- readTimeSeries(
@@ -7,7 +6,7 @@
 #     dirCTRL = 'inData/TimeSeries/Conn/power264'
 # )
 # writeCorMats(timeSeries2Corrs(timeSeries), 'outData/CorMatsRaw')
-# corMats <- readCorMats('outData/CorMatsRaw', CTRL = T)
+corMats <- readCorMats('outData/CorMatsRaw', CTRL = T)
 # writeCorMats(corMats, 'outData/CorMats')
 # subMats(corMats, T, 'outData/subNets')
 
@@ -30,17 +29,17 @@ matsT0 <- create_mats(
     mFiles$t0, modality = modality, threshold.by = "consensus",
     mat.thresh = thresholds, sub.thresh = subThresh, inds = inds1
 )
-
+    
 matsT1 <- create_mats(
     mFiles$t1, modality = modality, threshold.by = "consensus",
     mat.thresh = thresholds, sub.thresh = subThresh, inds = inds1
 )
-
+    
 matsL10 <- create_mats(
     mFiles$pre, modality = modality, threshold.by = "consensus",
     mat.thresh = thresholds, sub.thresh = subThresh, inds = inds2
 )
-
+    
 matsL11 <- create_mats(
     mFiles$post, modality = modality, threshold.by = "consensus",
     mat.thresh = thresholds, sub.thresh = subThresh, inds = inds2
@@ -91,16 +90,16 @@ matsL23 <- create_mats(
 # matsNgWBtx1 <- createMats(mFilesWBneg$post, inds2, "consensus")
 # matsNgWBl0 <- createMats(
 #     str_subset(
-#         mFilesWBneg$pre,
+#         mFilesWBneg$pre, 
 #         paste(covars3$Study.ID, collapse = '|')
-#     ),
+#     ), 
 #     inds3, "consensus"
 # )
 # matsNgWBl1 <- createMats(
 #     str_subset(
-#         mFilesWBneg$post,
+#         mFilesWBneg$post, 
 #         paste(covars3$Study.ID, collapse = '|')
-#     ),
+#     ), 
 #     inds3, "consensus"
 # )
 # matsNgWBl2 <- createMats(mFilesWBneg$t2, inds3, "consensus")

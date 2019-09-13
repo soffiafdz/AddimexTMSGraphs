@@ -76,79 +76,79 @@
 #
 #
 # # Closed label: T0 --------------------------------------------------------
-#
-# A.norm.sub <- matsT1$A.norm.sub
-# A.norm.mean <- matsT1$A.norm.mean
-# atlas <- "power264"
-# gGrT0 <- gT0 <- fnames <- vector('list', length=length(groups2))
-#
-# for (i in seq_along(groups2)) {
-#     for (j in seq_along(thresholds)) {
-#         print(
-#             paste0(
-#                 'Threshold ', j, '/', length(thresholds),
-#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-#             )
-#         )
-#
-#         foreach (k=seq_along(inds1[[i]])) %dopar% {
-#             g.tmp <- graph_from_adjacency_matrix(
-#                 A.norm.sub[[j]][, , inds1[[i]][k]],
-#                 mode='undirected', diag = F, weighted = T
-#             )
-#             V(g.tmp)$name <- as.character(power264$name)
-#             g.tmp <- setBgAttr(
-#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-#                 threshold = thresholds[j], subject = covars1[groups2[i],
-#                 Study.ID[k]], group = groups2[i], use.parallel = F,
-#                 A = A.norm.sub[[j]][, , inds1[[i]][k]]
-#             )
-#             write_rds(
-#                 g.tmp, paste0(
-#                     savedir1,
-#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-#                 )
-#             )
-#         }
-#     }
-#
-#     # group mean weighted graphs
-#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-#     gGrT0[[i]] <- lapply(seq_along(thresholds), function(x)
-#         graph_from_adjacency_matrix(
-#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-#         )
-#
-#     for (x in seq_along(thresholds)) {
-#         V(gGrT0[[i]][[x]])$name <- as.character(power264$name)
-#     }
-#
-#     gGrT0[[i]] <- llply(seq_along(thresholds), function(x)
-#         setBgAttr(
-#             gGrT0[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-#             threshold = thresholds[x], group = groups2[i],
-#             A = A.norm.mean[[x]][[i]], use.parallel = F
-#         ), .parallel = T
-#     )
-#
-# }
-#
-# for (i in seq_along(groups2)) {
-#     gT0[[i]] <- fnames[[i]] <- vector('list', length = length(thresholds))
-#     for (j in seq_along(thresholds)) {
-#         fnames[[i]][[j]] <- list.files(
-#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-#         )
-#         gT0[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-#     }
-#
-#     x <- all.equal(sapply(gT0[[i]][[1]], graph_attr, 'name'),
-#                    covars1[groups2[i], Study.ID])
-#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-# }
-#
-# write_rds(gT0, paste0(savedir1, 'gT0.RDS'))
-# write_rds(gGrT0, paste0(savedir1, 'gGrT0.RDS'))
+
+A.norm.sub <- matsT0$A.norm.sub
+A.norm.mean <- matsT0$A.norm.mean
+atlas <- "power264"
+gGrT0 <- gT0 <- fnames <- vector('list', length=length(groups2))
+
+for (i in seq_along(groups2)) {
+    for (j in seq_along(thresholds)) {
+        print(
+            paste0(
+                'Threshold ', j, '/', length(thresholds),
+                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+            )
+        )
+
+        foreach (k=seq_along(inds1[[i]])) %dopar% {
+            g.tmp <- graph_from_adjacency_matrix(
+                A.norm.sub[[j]][, , inds1[[i]][k]],
+                mode='undirected', diag = F, weighted = T
+            )
+            V(g.tmp)$name <- as.character(power264$name)
+            g.tmp <- setBgAttr(
+                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+                threshold = thresholds[j], subject = covars1[groups2[i],
+                Study.ID[k]], group = groups2[i], use.parallel = F,
+                A = A.norm.sub[[j]][, , inds1[[i]][k]]
+            )
+            write_rds(
+                g.tmp, paste0(
+                    savedir1,
+                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+                )
+            )
+        }
+    }
+
+    # group mean weighted graphs
+    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+    gGrT0[[i]] <- lapply(seq_along(thresholds), function(x)
+        graph_from_adjacency_matrix(
+            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+        )
+
+    for (x in seq_along(thresholds)) {
+        V(gGrT0[[i]][[x]])$name <- as.character(power264$name)
+    }
+
+    gGrT0[[i]] <- llply(seq_along(thresholds), function(x)
+        setBgAttr(
+            gGrT0[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+            threshold = thresholds[x], group = groups2[i],
+            A = A.norm.mean[[x]][[i]], use.parallel = F
+        ), .parallel = T
+    )
+
+}
+
+for (i in seq_along(groups2)) {
+    gT0[[i]] <- fnames[[i]] <- vector('list', length = length(thresholds))
+    for (j in seq_along(thresholds)) {
+        fnames[[i]][[j]] <- list.files(
+            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+        )
+        gT0[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+    }
+
+    x <- all.equal(sapply(gT0[[i]][[1]], graph_attr, 'name'),
+                   covars1[groups2[i], Study.ID])
+    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+}
+
+write_rds(gT0, paste0(savedir1, 'gT0.RDS'))
+write_rds(gGrT0, paste0(savedir1, 'gGrT0.RDS'))
 #
 # # Closed label: T1 --------------------------------------------------------
 #
@@ -156,7 +156,7 @@
 # A.norm.mean <- matsT1$A.norm.mean
 # atlas <- "power264"
 # gGrT1 <- gT1 <- fnames <- vector('list', length=length(groups2))
-#
+# 
 # for (i in seq_along(groups2)) {
 #     for (j in seq_along(thresholds)) {
 #         print(
@@ -165,7 +165,7 @@
 #                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
 #             )
 #         )
-#
+# 
 #         foreach (k=seq_along(inds1[[i]])) %dopar% {
 #             g.tmp <- graph_from_adjacency_matrix(
 #                 A.norm.sub[[j]][, , inds1[[i]][k]],
@@ -186,18 +186,18 @@
 #             )
 #         }
 #     }
-#
+# 
 #     # group mean weighted graphs
 #     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
 #     gGrT1[[i]] <- lapply(seq_along(thresholds), function(x)
 #         graph_from_adjacency_matrix(
 #             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
 #         )
-#
+# 
 #     for (x in seq_along(thresholds)) {
 #         V(gGrT1[[i]][[x]])$name <- as.character(power264$name)
 #     }
-#
+# 
 #     gGrT1[[i]] <- llply(seq_along(thresholds), function(x)
 #         setBgAttr(
 #             gGrT1[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
@@ -205,9 +205,9 @@
 #             A = A.norm.mean[[x]][[i]], use.parallel = F
 #         ), .parallel = T
 #     )
-#
+# 
 # }
-#
+# 
 # for (i in seq_along(groups2)) {
 #     gT1[[i]] <- fnames[[i]] <- vector('list', length = length(thresholds))
 #     for (j in seq_along(thresholds)) {
@@ -216,12 +216,12 @@
 #         )
 #         gT1[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
 #     }
-#
+# 
 #     x <- all.equal(sapply(gT1[[i]][[1]], graph_attr, 'name'),
 #                    covars1[groups2[i], Study.ID])
 #     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
 # }
-#
+
 # write_rds(gT1, paste0(savedir1, 'gT1.RDS'))
 # write_rds(gGrT1, paste0(savedir1, 'gGrT1.RDS'))
 #

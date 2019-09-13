@@ -16,7 +16,7 @@ library(effsize)
 library(Hotelling)
 source('customFunctions.R')
 
-clin1 <- data.table(read_rds("outData/rds/cl1.rds"))
+clin1 <- data.table(read_rds("outData/RDS/clin1.RDS"))
 
 theme_set(theme_linedraw(base_size = 12))
 pd <- position_dodge(0.25)          
@@ -27,15 +27,15 @@ pd <- position_dodge(0.25)
 ```{r}
 corrClin <- melt(clin1, id.vars = c(1, 3, 10), measure.vars = 4:6, 
                  variable.name = "Craving_measure", value.name = "Craving_value")
-corrClin[Stage == "t0", cor.test(Craving_value, B11_Tot), by = Craving_measure]
-corrClin[Stage == "t1", cor.test(Craving_value, B11_Tot), by = Craving_measure]
+corrClin[Stage == "T0", cor.test(Craving_value, B11Tot), by = Craving_measure]
+corrClin[Stage == "T1", cor.test(Craving_value, B11Tot), by = Craving_measure]
 ```
 
 ### Plot 
 
 ```{r}
 ggplot(mutate(corrClin, Stage = factor(Stage, labels = c("Pre-", "Post-"))),
-       aes(B11_Tot, Craving_value)) +
+       aes(B11Tot, Craving_value)) +
     geom_point() + 
     geom_smooth(method = lm, alpha = .3, col = "black", linetype = 5) + 
     labs(y = "Craving score", x = "Impulsivity score", 
@@ -50,14 +50,14 @@ ggplot(mutate(corrClin, Stage = factor(Stage, labels = c("Pre-", "Post-"))),
 utClin <- melt(clin1, id.vars = c(1,3,12), measure.vars = c(4:6, 10),
                variable.name = "Scale", value.name = "Score")
 
-utClin[Stage == "t0", t.test(Score ~ UT_coc), by = Scale]
-utClin[Stage == "t0", cohen.d(Score ~ UT_coc), by = Scale]
+utClin[Stage == "T0", t.test(Score ~ UT_coc), by = Scale]
+utClin[Stage == "T0", cohen.d(Score ~ UT_coc), by = Scale]
 ```
 
 ### Plot
 
 ```{r}
-ggplot(utClin[Stage == "t0"], aes(UT_coc, Score, fill = UT_coc)) +
+ggplot(utClin[Stage == "T0"], aes(UT_coc, Score, fill = UT_coc)) +
     geom_boxplot() +
     scale_fill_hue(name="UT results",
                    breaks=c("positive", "negative"),
@@ -78,11 +78,11 @@ ggplot(utClin[Stage == "t0"], aes(UT_coc, Score, fill = UT_coc)) +
 grMedClin <- melt(clin1, id.vars = 1:3, measure.vars = c(4:6, 10),
                   variable.name = "Scale", value.name = "Score")
 
-mediansClinTx <- grMedClin[Group == "tx" & Stage == "t0", 
+mediansClinTx <- grMedClin[Group == "Tx" & Stage == "T0", 
                            .(Median = median(Score)), 
                            by = Scale]
 
-mediansClinSham <- grMedClin[Group == "sham" & Stage == "t0", 
+mediansClinSham <- grMedClin[Group == "Sham" & Stage == "T0", 
                              .(Median = median(Score)), 
                              by = Scale]
 
@@ -91,7 +91,7 @@ mediansClinSham <- grMedClin[Group == "sham" & Stage == "t0",
 #### Separating Pre- and Post- Scores
 
 ```{r }
-grMedClin[, Stage_Scale := ifelse(Stage == "t0",
+grMedClin[, Stage_Scale := ifelse(Stage == "T0",
                                   paste0("Pre_", Scale),
                                   paste0("Post_", Scale))]
 
@@ -102,43 +102,43 @@ grMedClin <- dcast.data.table(grMedClin, Study.ID + Group ~ Stage_Scale, value.v
 #### Create median-separated groups 
 
 ```{r}
-grMedClin[, `:=` (GroupVAS = as.factor(ifelse(Group == "sham", "sham", 
+grMedClin[, `:=` (GroupVAS = as.factor(ifelse(Group == "Sham", "Sham", 
                                               ifelse(Pre_VAS < mediansClinTx[[1,2]], "real_<", 
                                                      "real_>"))),
-                  GroupCCQG = as.factor(ifelse(Group == "sham", "sham", 
-                                               ifelse(Pre_CCQ_G < mediansClinTx[[2,2]], "real_<", 
+                  GroupCCQG = as.factor(ifelse(Group == "Sham", "Sham", 
+                                               ifelse(Pre_CCQG < mediansClinTx[[2,2]], "real_<", 
                                                       "real_>"))),
-                  GroupCCQN = as.factor(ifelse(Group == "sham", "sham", 
-                                               ifelse(Pre_CCQ_N < mediansClinTx[[3,2]], "real_<", 
+                  GroupCCQN = as.factor(ifelse(Group == "Sham", "Sham", 
+                                               ifelse(Pre_CCQN < mediansClinTx[[3,2]], "real_<", 
                                                       "real_>"))),
-                  GroupBIS = as.factor(ifelse(Group == "sham", "sham", 
-                                              ifelse(Pre_B11_Tot < mediansClinTx[[4,2]], "real_<", 
+                  GroupBIS = as.factor(ifelse(Group == "Sham", "Sham", 
+                                              ifelse(Pre_B11Tot < mediansClinTx[[4,2]], "real_<", 
                                                      "real_>"))))]
 
 grMedClin[, `:=` (GroupVAS2 = as.factor(case_when(GroupVAS == "real_<" ~ "r_<",    
                                                   GroupVAS == "real_>" ~ "r_>",
-                                                  GroupVAS == "sham" & 
+                                                  GroupVAS == "Sham" & 
                                                       Pre_VAS <= mediansClinSham[[1,2]] ~ "s_<",
-                                                  GroupVAS == "sham" & 
+                                                  GroupVAS == "Sham" & 
                                                       Pre_VAS > mediansClinSham[[1,2]] ~ "s_>")),
                   GroupCCQG2 = as.factor(case_when(GroupCCQG == "real_<" ~ "r_<",    
                                                    GroupCCQG == "real_>" ~ "r_>",
-                                                   GroupCCQG == "sham" & 
-                                                       Pre_CCQ_G <= mediansClinSham[[2,2]] ~ "s_<",
-                                                   GroupCCQG == "sham" & 
-                                                       Pre_CCQ_G > mediansClinSham[[2,2]] ~ "s_>")),
+                                                   GroupCCQG == "Sham" & 
+                                                       Pre_CCQG <= mediansClinSham[[2,2]] ~ "s_<",
+                                                   GroupCCQG == "Sham" & 
+                                                       Pre_CCQG > mediansClinSham[[2,2]] ~ "s_>")),
                   GroupCCQN2 = as.factor(case_when(GroupCCQN == "real_<" ~ "r_<",    
                                                    GroupCCQN == "real_>" ~ "r_>",
-                                                   GroupCCQN == "sham" & 
-                                                       Pre_CCQ_N <= mediansClinSham[[3,2]] ~ "s_<",
-                                                   GroupCCQN == "sham" & 
-                                                       Pre_CCQ_N > mediansClinSham[[3,2]] ~ "s_>")),
+                                                   GroupCCQN == "Sham" & 
+                                                       Pre_CCQN <= mediansClinSham[[3,2]] ~ "s_<",
+                                                   GroupCCQN == "Sham" & 
+                                                       Pre_CCQN > mediansClinSham[[3,2]] ~ "s_>")),
                   GroupBIS2 = as.factor(case_when(GroupBIS == "real_<" ~ "r_<",    
                                                   GroupBIS == "real_>" ~ "r_>",
-                                                  GroupBIS == "sham" & 
-                                                      Pre_B11_Tot <= mediansClinSham[[4,2]] ~ "s_<",
-                                                  GroupBIS == "sham" & 
-                                                      Pre_B11_Tot > mediansClinSham[[4,2]] ~ "s_>")))]
+                                                  GroupBIS == "Sham" & 
+                                                      Pre_B11Tot <= mediansClinSham[[4,2]] ~ "s_<",
+                                                  GroupBIS == "Sham" & 
+                                                      Pre_B11Tot > mediansClinSham[[4,2]] ~ "s_>")))]
 
 grMedClin[, `:=` (GroupVAS3 = as.factor(ifelse(str_detect(GroupVAS2, ">"), ">", "<")),
                   GroupCCQG3 = as.factor(ifelse(str_detect(GroupCCQG2, ">"), ">", "<")),
@@ -146,9 +146,9 @@ grMedClin[, `:=` (GroupVAS3 = as.factor(ifelse(str_detect(GroupVAS2, ">"), ">", 
                   GroupBIS3 = as.factor(ifelse(str_detect(GroupBIS2, ">"), ">", "<")))]
 
 grMedClin[, `:=` (DeltaVAS = Post_VAS - Pre_VAS,
-                  DeltaCCQG = Post_CCQ_G - Pre_CCQ_G,
-                  DeltaCCQN = Post_CCQ_N - Pre_CCQ_N,
-                  DeltaBIS = Post_B11_Tot - Pre_B11_Tot)]
+                  DeltaCCQG = Post_CCQG - Pre_CCQG,
+                  DeltaCCQN = Post_CCQN - Pre_CCQN,
+                  DeltaBIS = Post_B11Tot - Pre_B11Tot)]
 
 head(grMedClin)
 ```
@@ -164,35 +164,11 @@ grMedClinLong <- melt(grMedClin,
 grMedClinLong[, c("Stage", "Scale") := tstrsplit(Scale, "[te]_")]
 grMedClinLong[, `:=` (Scale = factor(Scale),
                       Stage = factor(Stage, levels = c("Pr", "Pos"),
-                                     labels = c("t0", "t1")),
+                                     labels = c("T0", "T1")),
                       Delta = Score - rep(grMedClinLong[Stage == "Pr", Score],2))]
 grMedClinLong
 ```
 
-
-#### Setting up planned comparisons' contrasts
-
-
-First contrast: Real (high) + Real (low) vs Sham  
-Second contrast: Real (high) vs Real (low)
-
-
-```{r}
-contr1 <- c(1,1,-2)
-contr2 <- c(1,-1,0)
-
-contrasts(grMedClin$GroupVAS) <- cbind(contr1, contr2)
-contrasts(grMedClin$GroupCCQG) <- cbind(contr1, contr2)
-contrasts(grMedClin$GroupCCQN) <- cbind(contr1, contr2)
-contrasts(grMedClin$GroupBIS) <- cbind(contr1, contr2)
-
-# contrasts(grMedClinLong$GroupVAS) <- cbind(contr1, contr2)
-# contrasts(grMedClinLong$GroupCCQG) <- cbind(contr1, contr2)
-# contrasts(grMedClinLong$GroupCCQN) <- cbind(contr1, contr2)
-# contrasts(grMedClinLong$GroupBIS) <- cbind(contr1, contr2)
-
-contrasts(grMedClin$GroupVAS)
-```
 
 ### Multivariate Hotelling $T^2$ test
 
@@ -248,7 +224,7 @@ grMedClinLong[Scale == "VAS"] %>%
 ##### Detailed changes 
 
 ```{r}
-grMedClinLong[Scale == "VAS" & Stage == "t1"] %>% 
+grMedClinLong[Scale == "VAS" & Stage == "T1"] %>% 
     ggplot(aes(Stage, Delta, fill = GroupVAS3)) +
     geom_boxplot(col = "black") +
     scale_fill_hue(name = "Group by Median",
@@ -288,7 +264,7 @@ summary(lm(Post_VAS ~ Group + Pre_VAS + Pre_B11_Tot, data = grMedClin))
 ##### Score change in Stages
 
 ```{r}
-grMedClinLong[Scale == "CCQ_G"] %>% 
+grMedClinLong[Scale == "CCQG"] %>% 
     summarySE(measurevar = "Delta", groupvars = c("GroupCCQG2", "GroupCCQG3", "Group", "Stage")) %>%
     ggplot(aes(Stage, Delta, group = GroupCCQG2)) +
     geom_errorbar(aes(ymin = Delta - sd, ymax = Delta + sd, col = GroupCCQG3),
@@ -308,7 +284,7 @@ grMedClinLong[Scale == "CCQ_G"] %>%
 ##### Detailed changes 
 
 ```{r}
-grMedClinLong[Scale == "CCQ_G" & Stage == "t1"] %>% 
+grMedClinLong[Scale == "CCQ_G" & Stage == "T1"] %>% 
     ggplot(aes(Stage, Delta, fill = GroupCCQG3)) +
     geom_boxplot(col = "black") +
 scale_fill_hue(name = "Group by Median",
@@ -369,7 +345,7 @@ grMedClinLong[Scale == "CCQ_N"] %>%
 ##### Detailed changes 
 
 ```{r}
-grMedClinLong[Scale == "CCQ_N" & Stage == "t1"] %>% 
+grMedClinLong[Scale == "CCQ_N" & Stage == "T1"] %>% 
     ggplot(aes(Stage, Delta, fill = GroupCCQN3)) +
     geom_boxplot(col = "black") +
 scale_fill_hue(name = "Group by Median",
@@ -427,7 +403,7 @@ grMedClinLong[Scale == "B11_Tot"] %>%
 ##### Detailed changes 
 
 ```{r}
-grMedClinLong[Scale == "B11_Tot" & Stage == "t1"] %>% 
+grMedClinLong[Scale == "B11_Tot" & Stage == "T1"] %>% 
     ggplot(aes(Stage, Delta, fill = GroupBIS3)) +
     geom_boxplot(col = "black") +
 scale_fill_hue(name = "Group by Median",
