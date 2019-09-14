@@ -18,67 +18,67 @@ corMats <- readCorMats('outData/CorMatsRaw', CTRL = T)
 # Adjacency Matrices ------------------------------------------------------
 ## Positive
 
-mFiles <- readCorMats('outData/CorMats', Files = T, CTRL = T)
-
-matsP <- create_mats(
-    mFiles$hc_cu, modality = modality, threshold.by = "consensus",
-    mat.thresh = thresholds, sub.thresh = subThresh, inds = indsP
-)
-
-matsT0 <- create_mats(
-    mFiles$t0, modality = modality, threshold.by = "consensus",
-    mat.thresh = thresholds, sub.thresh = subThresh, inds = inds1
-)
-    
-matsT1 <- create_mats(
-    mFiles$t1, modality = modality, threshold.by = "consensus",
-    mat.thresh = thresholds, sub.thresh = subThresh, inds = inds1
-)
-    
-matsL10 <- create_mats(
-    mFiles$pre, modality = modality, threshold.by = "consensus",
-    mat.thresh = thresholds, sub.thresh = subThresh, inds = inds2
-)
-    
-matsL11 <- create_mats(
-    mFiles$post, modality = modality, threshold.by = "consensus",
-    mat.thresh = thresholds, sub.thresh = subThresh, inds = inds2
-)
-
-matsL12 <- create_mats(
-    mFiles$t2, modality = modality, threshold.by = "consensus",
-    mat.thresh = thresholds, sub.thresh = subThresh, inds = inds2
-)
-
-matsL20 <- create_mats(
-    str_subset(mFiles$pre, paste(covars3$Study.ID, collapse = '|')),
-    modality = modality, threshold.by = "consensus", mat.thresh = thresholds,
-    sub.thresh = subThresh, inds = inds3
-)
-
-matsL20 <- create_mats(
-    str_subset(mFiles$pre, paste(covars3$Study.ID, collapse = '|')),
-    modality = modality, threshold.by = "consensus", mat.thresh = thresholds,
-    sub.thresh = subThresh, inds = inds3
-)
-
-matsL21 <- create_mats(
-    str_subset(mFiles$post, paste(covars3$Study.ID, collapse = '|')),
-    modality = modality, threshold.by = "consensus", mat.thresh = thresholds,
-    sub.thresh = subThresh, inds = inds3
-)
-
-matsL22 <- create_mats(
-    str_subset(mFiles$t2, paste(covars3$Study.ID, collapse = '|')),
-    modality = modality, threshold.by = "consensus", mat.thresh = thresholds,
-    sub.thresh = subThresh, inds = inds3
-)
-
-matsL23 <- create_mats(
-    str_subset(mFiles$t3, paste(covars3$Study.ID, collapse = '|')),
-    modality = modality, threshold.by = "consensus", mat.thresh = thresholds,
-    sub.thresh = subThresh, inds = inds3
-)
+# mFiles <- readCorMats('outData/CorMats', Files = T, CTRL = T)
+#
+# matsP <- create_mats(
+#     mFiles$hc_cu, modality = modality, threshold.by = "consensus",
+#     mat.thresh = thresholds, sub.thresh = subThresh, inds = indsP
+# )
+#
+# matsT0 <- create_mats(
+#     mFiles$t0, modality = modality, threshold.by = "consensus",
+#     mat.thresh = thresholds, sub.thresh = subThresh, inds = inds1
+# )
+#
+# matsT1 <- create_mats(
+#     mFiles$t1, modality = modality, threshold.by = "consensus",
+#     mat.thresh = thresholds, sub.thresh = subThresh, inds = inds1
+# )
+#
+# matsL10 <- create_mats(
+#     mFiles$pre, modality = modality, threshold.by = "consensus",
+#     mat.thresh = thresholds, sub.thresh = subThresh, inds = inds2
+# )
+#
+# matsL11 <- create_mats(
+#     mFiles$post, modality = modality, threshold.by = "consensus",
+#     mat.thresh = thresholds, sub.thresh = subThresh, inds = inds2
+# )
+#
+# matsL12 <- create_mats(
+#     mFiles$t2, modality = modality, threshold.by = "consensus",
+#     mat.thresh = thresholds, sub.thresh = subThresh, inds = inds2
+# )
+#
+# matsL20 <- create_mats(
+#     str_subset(mFiles$pre, paste(covars3$Study.ID, collapse = '|')),
+#     modality = modality, threshold.by = "consensus", mat.thresh = thresholds,
+#     sub.thresh = subThresh, inds = inds3
+# )
+#
+# matsL20 <- create_mats(
+#     str_subset(mFiles$pre, paste(covars3$Study.ID, collapse = '|')),
+#     modality = modality, threshold.by = "consensus", mat.thresh = thresholds,
+#     sub.thresh = subThresh, inds = inds3
+# )
+#
+# matsL21 <- create_mats(
+#     str_subset(mFiles$post, paste(covars3$Study.ID, collapse = '|')),
+#     modality = modality, threshold.by = "consensus", mat.thresh = thresholds,
+#     sub.thresh = subThresh, inds = inds3
+# )
+#
+# matsL22 <- create_mats(
+#     str_subset(mFiles$t2, paste(covars3$Study.ID, collapse = '|')),
+#     modality = modality, threshold.by = "consensus", mat.thresh = thresholds,
+#     sub.thresh = subThresh, inds = inds3
+# )
+#
+# matsL23 <- create_mats(
+#     str_subset(mFiles$t3, paste(covars3$Study.ID, collapse = '|')),
+#     modality = modality, threshold.by = "consensus", mat.thresh = thresholds,
+#     sub.thresh = subThresh, inds = inds3
+# )
 
 ## Negative
 
@@ -90,16 +90,16 @@ matsL23 <- create_mats(
 # matsNgWBtx1 <- createMats(mFilesWBneg$post, inds2, "consensus")
 # matsNgWBl0 <- createMats(
 #     str_subset(
-#         mFilesWBneg$pre, 
+#         mFilesWBneg$pre,
 #         paste(covars3$Study.ID, collapse = '|')
-#     ), 
+#     ),
 #     inds3, "consensus"
 # )
 # matsNgWBl1 <- createMats(
 #     str_subset(
-#         mFilesWBneg$post, 
+#         mFilesWBneg$post,
 #         paste(covars3$Study.ID, collapse = '|')
-#     ), 
+#     ),
 #     inds3, "consensus"
 # )
 # matsNgWBl2 <- createMats(mFilesWBneg$t2, inds3, "consensus")
@@ -107,16 +107,16 @@ matsL23 <- create_mats(
 
 # Write RDS ---------------------------------------------------------------
 
-write_rds(matsP, 'outData/RDS/matsP.RDS')
-write_rds(matsT0, 'outData/RDS/matsT0.RDS')
-write_rds(matsT1, 'outData/RDS/matsT1.RDS')
-write_rds(matsL10, 'outData/RDS/matsL10.RDS')
-write_rds(matsL11, 'outData/RDS/matsL11.RDS')
-write_rds(matsL12, 'outData/RDS/matsL12.RDS')
-write_rds(matsL20, 'outData/RDS/matsL20.RDS')
-write_rds(matsL21, 'outData/RDS/matsL21.RDS')
-write_rds(matsL22, 'outData/RDS/matsL22.RDS')
-write_rds(matsL23, 'outData/RDS/matsL23.RDS')
+# write_rds(matsP, 'outData/RDS/matsP.RDS')
+# write_rds(matsT0, 'outData/RDS/matsT0.RDS')
+# write_rds(matsT1, 'outData/RDS/matsT1.RDS')
+# write_rds(matsL10, 'outData/RDS/matsL10.RDS')
+# write_rds(matsL11, 'outData/RDS/matsL11.RDS')
+# write_rds(matsL12, 'outData/RDS/matsL12.RDS')
+# write_rds(matsL20, 'outData/RDS/matsL20.RDS')
+# write_rds(matsL21, 'outData/RDS/matsL21.RDS')
+# write_rds(matsL22, 'outData/RDS/matsL22.RDS')
+# write_rds(matsL23, 'outData/RDS/matsL23.RDS')
 
 # Read RDS ----------------------------------------------------------------
 
