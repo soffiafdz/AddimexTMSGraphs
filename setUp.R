@@ -23,7 +23,6 @@ groups2 <- c("Sham", "Tx")
 
 atlas <- "power264"
 modality <- "fmri"
-# thresholds <- 0.25
 thresholds <- rev(seq(0.4, 0.01, -0.025))
 subThresh <- 0.5
 
