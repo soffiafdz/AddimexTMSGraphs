@@ -2,3051 +2,3051 @@
 # CON ---------------------------------------------------------------------
 # Cocaine Dependent vs Healthy Controls -----------------------------------
 
-thresholdsSubNets <- thresholds[1:8]
-A.norm.sub <- matsCONp$A.norm.sub
-A.norm.mean <- matsCONp$A.norm.mean
-atlas <- "pCON"
-CONGrP <- CONp <- fnames <- vector('list', length=length(groups1))
-
-for (i in seq_along(groups1)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(indsP[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , indsP[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pCON$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covarsP[groups1[i],
-                Study.ID[k]], group = groups1[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , indsP[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    CONGrP[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(CONGrP[[i]][[x]])$name <- as.character(pCON$name)
-    }
-
-    CONGrP[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            CONGrP[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups1[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups1)) {
-    CONp[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        CONp[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(CONp[[i]][[1]], graph_attr, 'name'),
-                   covarsP[groups1[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(CONp, paste0(savedir1, 'CONp.RDS'))
-write_rds(CONGrP, paste0(savedir1, 'CONGrP.RDS'))
-
-
-# Closed label: T0 --------------------------------------------------------
-
-thresholdsSubNets <- thresholds[1:12]
-A.norm.sub <- matsT0$A.norm.sub
-A.norm.mean <- matsT0$A.norm.mean
-atlas <- "pCON"
-CONGrT0 <- CONt0 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds1[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds1[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pCON$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars1[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds1[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    CONGrT0[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(CONGrT0[[i]][[x]])$name <- as.character(pCON$name)
-    }
-
-    CONGrT0[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            CONGrT0[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    CONt0[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        CONt0[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(CONt0[[i]][[1]], graph_attr, 'name'),
-                   covars1[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(CONt0, paste0(savedir1, 'CONt0.RDS'))
-write_rds(CONGrT0, paste0(savedir1, 'CONGrT0.RDS'))
-
-# Closed label: T1 --------------------------------------------------------
-
-A.norm.sub <- matsT1$A.norm.sub
-A.norm.mean <- matsT1$A.norm.mean
-atlas <- "pCON"
-CONGrT1 <- CONt1 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds1[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds1[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pCON$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars1[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds1[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    CONGrT1[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(CONGrT1[[i]][[x]])$name <- as.character(pCON$name)
-    }
-
-    CONGrT1[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            CONGrT1[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    CONt1[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        CONt1[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(CONt1[[i]][[1]], graph_attr, 'name'),
-                   covars1[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(CONt1, paste0(savedir1, 'CONt1.RDS'))
-write_rds(CONGrT1, paste0(savedir1, 'CONGrT1.RDS'))
-
-
-# Longitudinal 1: Baseline ------------------------------------------------
-
-A.norm.sub <- matsL10$A.norm.sub
-A.norm.mean <- matsL10$A.norm.mean
-atlas <- "pCON"
-CONGrL10 <- CONl10 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds2[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds2[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pCON$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds2[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    CONGrL10[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(CONGrL10[[i]][[x]])$name <- as.character(pCON$name)
-    }
-
-    CONGrL10[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            CONGrL10[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    CONl10[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        CONl10[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(CONl10[[i]][[1]], graph_attr, 'name'),
-                   covars2[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(CONl10, paste0(savedir1, 'CONl10.RDS'))
-write_rds(CONGrL10, paste0(savedir1, 'CONGrL10.RDS'))
-
-# Longitudinal 1: Two weeks -----------------------------------------------
-
-A.norm.sub <- matsL11$A.norm.sub
-A.norm.mean <- matsL11$A.norm.mean
-atlas <- "pCON"
-CONGrL11 <- CONl11 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds2[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds2[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pCON$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds2[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    CONGrL11[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(CONGrL11[[i]][[x]])$name <- as.character(pCON$name)
-    }
-
-    CONGrL11[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            CONGrL11[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    CONl11[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        CONl11[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(CONl11[[i]][[1]], graph_attr, 'name'),
-                   covars2[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(CONl11, paste0(savedir1, 'CONl11.RDS'))
-write_rds(CONGrL11, paste0(savedir1, 'CONGrL11.RDS'))
-
-
-# Longitudinal 1: Three months --------------------------------------------
-
-A.norm.sub <- matsL12$A.norm.sub
-A.norm.mean <- matsL12$A.norm.mean
-atlas <- "pCON"
-CONGrL12 <- CONl12 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds2[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds2[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pCON$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds2[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    CONGrL12[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(CONGrL12[[i]][[x]])$name <- as.character(pCON$name)
-    }
-
-    CONGrL12[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            CONGrL12[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    CONl12[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        CONl12[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(CONl12[[i]][[1]], graph_attr, 'name'),
-                   covars2[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(CONl12, paste0(savedir1, 'CONl12.RDS'))
-write_rds(CONGrL12, paste0(savedir1, 'CONGrL12.RDS'))
-
-
-# Longitudinal 2: Baseline ------------------------------------------------
-
-A.norm.sub <- matsL20$A.norm.sub
-A.norm.mean <- matsL20$A.norm.mean
-atlas <- "pCON"
-CONGrL20 <- CONl20 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds3[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds3[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pCON$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds3[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    CONGrL20[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(CONGrL20[[i]][[x]])$name <- as.character(pCON$name)
-    }
-
-    CONGrL20[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            CONGrL20[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    CONl20[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        CONl20[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(CONl20[[i]][[1]], graph_attr, 'name'),
-                   covars3[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(CONl20, paste0(savedir1, 'CONl20.RDS'))
-write_rds(CONGrL20, paste0(savedir1, 'CONGrL20.RDS'))
-
-# Longitudinal 2: Two weeks -----------------------------------------------
-
-A.norm.sub <- matsL21$A.norm.sub
-A.norm.mean <- matsL21$A.norm.mean
-atlas <- "pCON"
-CONGrL21 <- CONl21 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds3[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds3[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pCON$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds3[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    CONGrL21[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(CONGrL21[[i]][[x]])$name <- as.character(pCON$name)
-    }
-
-    CONGrL21[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            CONGrL21[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    CONl21[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        CONl21[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(CONl21[[i]][[1]], graph_attr, 'name'),
-                   covars3[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(CONl21, paste0(savedir1, 'CONl21.RDS'))
-write_rds(CONGrL21, paste0(savedir1, 'CONGrL21.RDS'))
-
-
-# Longitudinal 2: Three months --------------------------------------------
-
-A.norm.sub <- matsL22$A.norm.sub
-A.norm.mean <- matsL22$A.norm.mean
-atlas <- "pCON"
-CONGrL22 <- CONl22 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds3[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds3[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pCON$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds3[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    CONGrL22[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(CONGrL22[[i]][[x]])$name <- as.character(pCON$name)
-    }
-
-    CONGrL22[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            CONGrL22[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    CONl22[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        CONl22[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(CONl22[[i]][[1]], graph_attr, 'name'),
-                   covars3[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(CONl22, paste0(savedir1, 'CONl22.RDS'))
-write_rds(CONGrL22, paste0(savedir1, 'CONGrL22.RDS'))
-
-
-# Longitudinal 2: Six months ----------------------------------------------
-
-A.norm.sub <- matsL23$A.norm.sub
-A.norm.mean <- matsL23$A.norm.mean
-atlas <- "pCON"
-CONGrL23 <- CONl23 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds3[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds3[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pCON$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds3[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    CONGrL23[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(CONGrL23[[i]][[x]])$name <- as.character(pCON$name)
-    }
-
-    CONGrL23[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            CONGrL23[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    CONl23[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        CONl23[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(CONl23[[i]][[1]], graph_attr, 'name'),
-                   covars3[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(CONl23, paste0(savedir1, 'CONl23.RDS'))
-write_rds(CONGrL23, paste0(savedir1, 'CONGrL23.RDS'))
-
+# thresholdsSubNets <- thresholds[1:8]
+# A.norm.sub <- matsCONp$A.norm.sub
+# A.norm.mean <- matsCONp$A.norm.mean
+# atlas <- "pCON"
+# CONGrP <- CONp <- fnames <- vector('list', length=length(groups1))
+#
+# for (i in seq_along(groups1)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(indsP[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , indsP[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pCON$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covarsP[groups1[i],
+#                 Study.ID[k]], group = groups1[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , indsP[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     CONGrP[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(CONGrP[[i]][[x]])$name <- as.character(pCON$name)
+#     }
+#
+#     CONGrP[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             CONGrP[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups1[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups1)) {
+#     CONp[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         CONp[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(CONp[[i]][[1]], graph_attr, 'name'),
+#                    covarsP[groups1[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(CONp, paste0(savedir1, 'CONp.RDS'))
+# write_rds(CONGrP, paste0(savedir1, 'CONGrP.RDS'))
+#
+#
+# # Closed label: T0 --------------------------------------------------------
+#
+# thresholdsSubNets <- thresholds[1:12]
+# A.norm.sub <- matsT0$A.norm.sub
+# A.norm.mean <- matsT0$A.norm.mean
+# atlas <- "pCON"
+# CONGrT0 <- CONt0 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds1[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds1[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pCON$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars1[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds1[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     CONGrT0[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(CONGrT0[[i]][[x]])$name <- as.character(pCON$name)
+#     }
+#
+#     CONGrT0[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             CONGrT0[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     CONt0[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         CONt0[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(CONt0[[i]][[1]], graph_attr, 'name'),
+#                    covars1[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(CONt0, paste0(savedir1, 'CONt0.RDS'))
+# write_rds(CONGrT0, paste0(savedir1, 'CONGrT0.RDS'))
+#
+# # Closed label: T1 --------------------------------------------------------
+#
+# A.norm.sub <- matsT1$A.norm.sub
+# A.norm.mean <- matsT1$A.norm.mean
+# atlas <- "pCON"
+# CONGrT1 <- CONt1 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds1[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds1[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pCON$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars1[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds1[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     CONGrT1[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(CONGrT1[[i]][[x]])$name <- as.character(pCON$name)
+#     }
+#
+#     CONGrT1[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             CONGrT1[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     CONt1[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         CONt1[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(CONt1[[i]][[1]], graph_attr, 'name'),
+#                    covars1[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(CONt1, paste0(savedir1, 'CONt1.RDS'))
+# write_rds(CONGrT1, paste0(savedir1, 'CONGrT1.RDS'))
+#
+#
+# # Longitudinal 1: Baseline ------------------------------------------------
+#
+# A.norm.sub <- matsL10$A.norm.sub
+# A.norm.mean <- matsL10$A.norm.mean
+# atlas <- "pCON"
+# CONGrL10 <- CONl10 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds2[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds2[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pCON$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds2[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     CONGrL10[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(CONGrL10[[i]][[x]])$name <- as.character(pCON$name)
+#     }
+#
+#     CONGrL10[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             CONGrL10[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     CONl10[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         CONl10[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(CONl10[[i]][[1]], graph_attr, 'name'),
+#                    covars2[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(CONl10, paste0(savedir1, 'CONl10.RDS'))
+# write_rds(CONGrL10, paste0(savedir1, 'CONGrL10.RDS'))
+#
+# # Longitudinal 1: Two weeks -----------------------------------------------
+#
+# A.norm.sub <- matsL11$A.norm.sub
+# A.norm.mean <- matsL11$A.norm.mean
+# atlas <- "pCON"
+# CONGrL11 <- CONl11 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds2[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds2[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pCON$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds2[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     CONGrL11[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(CONGrL11[[i]][[x]])$name <- as.character(pCON$name)
+#     }
+#
+#     CONGrL11[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             CONGrL11[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     CONl11[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         CONl11[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(CONl11[[i]][[1]], graph_attr, 'name'),
+#                    covars2[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(CONl11, paste0(savedir1, 'CONl11.RDS'))
+# write_rds(CONGrL11, paste0(savedir1, 'CONGrL11.RDS'))
+#
+#
+# # Longitudinal 1: Three months --------------------------------------------
+#
+# A.norm.sub <- matsL12$A.norm.sub
+# A.norm.mean <- matsL12$A.norm.mean
+# atlas <- "pCON"
+# CONGrL12 <- CONl12 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds2[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds2[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pCON$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds2[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     CONGrL12[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(CONGrL12[[i]][[x]])$name <- as.character(pCON$name)
+#     }
+#
+#     CONGrL12[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             CONGrL12[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     CONl12[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         CONl12[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(CONl12[[i]][[1]], graph_attr, 'name'),
+#                    covars2[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(CONl12, paste0(savedir1, 'CONl12.RDS'))
+# write_rds(CONGrL12, paste0(savedir1, 'CONGrL12.RDS'))
+#
+#
+# # Longitudinal 2: Baseline ------------------------------------------------
+#
+# A.norm.sub <- matsL20$A.norm.sub
+# A.norm.mean <- matsL20$A.norm.mean
+# atlas <- "pCON"
+# CONGrL20 <- CONl20 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds3[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds3[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pCON$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds3[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     CONGrL20[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(CONGrL20[[i]][[x]])$name <- as.character(pCON$name)
+#     }
+#
+#     CONGrL20[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             CONGrL20[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     CONl20[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         CONl20[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(CONl20[[i]][[1]], graph_attr, 'name'),
+#                    covars3[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(CONl20, paste0(savedir1, 'CONl20.RDS'))
+# write_rds(CONGrL20, paste0(savedir1, 'CONGrL20.RDS'))
+#
+# # Longitudinal 2: Two weeks -----------------------------------------------
+#
+# A.norm.sub <- matsL21$A.norm.sub
+# A.norm.mean <- matsL21$A.norm.mean
+# atlas <- "pCON"
+# CONGrL21 <- CONl21 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds3[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds3[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pCON$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds3[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     CONGrL21[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(CONGrL21[[i]][[x]])$name <- as.character(pCON$name)
+#     }
+#
+#     CONGrL21[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             CONGrL21[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     CONl21[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         CONl21[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(CONl21[[i]][[1]], graph_attr, 'name'),
+#                    covars3[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(CONl21, paste0(savedir1, 'CONl21.RDS'))
+# write_rds(CONGrL21, paste0(savedir1, 'CONGrL21.RDS'))
+#
+#
+# # Longitudinal 2: Three months --------------------------------------------
+#
+# A.norm.sub <- matsL22$A.norm.sub
+# A.norm.mean <- matsL22$A.norm.mean
+# atlas <- "pCON"
+# CONGrL22 <- CONl22 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds3[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds3[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pCON$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds3[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     CONGrL22[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(CONGrL22[[i]][[x]])$name <- as.character(pCON$name)
+#     }
+#
+#     CONGrL22[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             CONGrL22[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     CONl22[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         CONl22[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(CONl22[[i]][[1]], graph_attr, 'name'),
+#                    covars3[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(CONl22, paste0(savedir1, 'CONl22.RDS'))
+# write_rds(CONGrL22, paste0(savedir1, 'CONGrL22.RDS'))
+#
+#
+# # Longitudinal 2: Six months ----------------------------------------------
+#
+# A.norm.sub <- matsL23$A.norm.sub
+# A.norm.mean <- matsL23$A.norm.mean
+# atlas <- "pCON"
+# CONGrL23 <- CONl23 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds3[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds3[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pCON$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds3[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     CONGrL23[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(CONGrL23[[i]][[x]])$name <- as.character(pCON$name)
+#     }
+#
+#     CONGrL23[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             CONGrL23[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     CONl23[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         CONl23[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(CONl23[[i]][[1]], graph_attr, 'name'),
+#                    covars3[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(CONl23, paste0(savedir1, 'CONl23.RDS'))
+# write_rds(CONGrL23, paste0(savedir1, 'CONGrL23.RDS'))
+#
 
 # DAN ---------------------------------------------------------------------
 
-# Cocaine Dependent vs Healthy Controls -----------------------------------
-
-thresholdsSubNets <- thresholds[1:8]
-A.norm.sub <- matsDANp$A.norm.sub
-A.norm.mean <- matsDANp$A.norm.mean
-atlas <- "pDAN"
-DANGrP <- DANp <- fnames <- vector('list', length=length(groups1))
-
-for (i in seq_along(groups1)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(indsP[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , indsP[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pDAN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covarsP[groups1[i],
-                Study.ID[k]], group = groups1[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , indsP[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    DANGrP[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(DANGrP[[i]][[x]])$name <- as.character(pDAN$name)
-    }
-
-    DANGrP[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            DANGrP[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups1[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups1)) {
-    DANp[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        DANp[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(DANp[[i]][[1]], graph_attr, 'name'),
-                   covarsP[groups1[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(DANp, paste0(savedir1, 'DANp.RDS'))
-write_rds(DANGrP, paste0(savedir1, 'DANGrP.RDS'))
-
-
-# Closed label: T0 --------------------------------------------------------
-
-thresholdsSubNets <- thresholds[1:12]
-A.norm.sub <- matsT0$A.norm.sub
-A.norm.mean <- matsT0$A.norm.mean
-atlas <- "pDAN"
-DANGrT0 <- DANt0 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds1[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds1[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pDAN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars1[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds1[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    DANGrT0[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(DANGrT0[[i]][[x]])$name <- as.character(pDAN$name)
-    }
-
-    DANGrT0[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            DANGrT0[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    DANt0[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        DANt0[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(DANt0[[i]][[1]], graph_attr, 'name'),
-                   covars1[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(DANt0, paste0(savedir1, 'DANt0.RDS'))
-write_rds(DANGrT0, paste0(savedir1, 'DANGrT0.RDS'))
-
-# Closed label: T1 --------------------------------------------------------
-
-A.norm.sub <- matsT1$A.norm.sub
-A.norm.mean <- matsT1$A.norm.mean
-atlas <- "pDAN"
-DANGrT1 <- DANt1 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds1[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds1[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pDAN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars1[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds1[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    DANGrT1[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(DANGrT1[[i]][[x]])$name <- as.character(pDAN$name)
-    }
-
-    DANGrT1[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            DANGrT1[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    DANt1[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        DANt1[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(DANt1[[i]][[1]], graph_attr, 'name'),
-                   covars1[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(DANt1, paste0(savedir1, 'DANt1.RDS'))
-write_rds(DANGrT1, paste0(savedir1, 'DANGrT1.RDS'))
-
-
-# Longitudinal 1: Baseline ------------------------------------------------
-
-A.norm.sub <- matsL10$A.norm.sub
-A.norm.mean <- matsL10$A.norm.mean
-atlas <- "pDAN"
-DANGrL10 <- DANl10 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds2[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds2[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pDAN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds2[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    DANGrL10[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(DANGrL10[[i]][[x]])$name <- as.character(pDAN$name)
-    }
-
-    DANGrL10[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            DANGrL10[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    DANl10[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        DANl10[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(DANl10[[i]][[1]], graph_attr, 'name'),
-                   covars2[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(DANl10, paste0(savedir1, 'DANl10.RDS'))
-write_rds(DANGrL10, paste0(savedir1, 'DANGrL10.RDS'))
-
-# Longitudinal 1: Two weeks -----------------------------------------------
-
-A.norm.sub <- matsL11$A.norm.sub
-A.norm.mean <- matsL11$A.norm.mean
-atlas <- "pDAN"
-DANGrL11 <- DANl11 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds2[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds2[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pDAN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds2[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    DANGrL11[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(DANGrL11[[i]][[x]])$name <- as.character(pDAN$name)
-    }
-
-    DANGrL11[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            DANGrL11[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    DANl11[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        DANl11[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(DANl11[[i]][[1]], graph_attr, 'name'),
-                   covars2[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(DANl11, paste0(savedir1, 'DANl11.RDS'))
-write_rds(DANGrL11, paste0(savedir1, 'DANGrL11.RDS'))
-
-
-# Longitudinal 1: Three months --------------------------------------------
-
-A.norm.sub <- matsL12$A.norm.sub
-A.norm.mean <- matsL12$A.norm.mean
-atlas <- "pDAN"
-DANGrL12 <- DANl12 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds2[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds2[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pDAN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds2[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    DANGrL12[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(DANGrL12[[i]][[x]])$name <- as.character(pDAN$name)
-    }
-
-    DANGrL12[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            DANGrL12[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    DANl12[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        DANl12[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(DANl12[[i]][[1]], graph_attr, 'name'),
-                   covars2[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(DANl12, paste0(savedir1, 'DANl12.RDS'))
-write_rds(DANGrL12, paste0(savedir1, 'DANGrL12.RDS'))
-
-
-# Longitudinal 2: Baseline ------------------------------------------------
-
-A.norm.sub <- matsL20$A.norm.sub
-A.norm.mean <- matsL20$A.norm.mean
-atlas <- "pDAN"
-DANGrL20 <- DANl20 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds3[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds3[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pDAN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds3[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    DANGrL20[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(DANGrL20[[i]][[x]])$name <- as.character(pDAN$name)
-    }
-
-    DANGrL20[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            DANGrL20[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    DANl20[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        DANl20[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(DANl20[[i]][[1]], graph_attr, 'name'),
-                   covars3[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(DANl20, paste0(savedir1, 'DANl20.RDS'))
-write_rds(DANGrL20, paste0(savedir1, 'DANGrL20.RDS'))
-
-# Longitudinal 2: Two weeks -----------------------------------------------
-
-A.norm.sub <- matsL21$A.norm.sub
-A.norm.mean <- matsL21$A.norm.mean
-atlas <- "pDAN"
-DANGrL21 <- DANl21 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds3[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds3[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pDAN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds3[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    DANGrL21[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(DANGrL21[[i]][[x]])$name <- as.character(pDAN$name)
-    }
-
-    DANGrL21[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            DANGrL21[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    DANl21[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        DANl21[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(DANl21[[i]][[1]], graph_attr, 'name'),
-                   covars3[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(DANl21, paste0(savedir1, 'DANl21.RDS'))
-write_rds(DANGrL21, paste0(savedir1, 'DANGrL21.RDS'))
-
-
-# Longitudinal 2: Three months --------------------------------------------
-
-A.norm.sub <- matsL22$A.norm.sub
-A.norm.mean <- matsL22$A.norm.mean
-atlas <- "pDAN"
-DANGrL22 <- DANl22 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds3[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds3[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pDAN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds3[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    DANGrL22[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(DANGrL22[[i]][[x]])$name <- as.character(pDAN$name)
-    }
-
-    DANGrL22[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            DANGrL22[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    DANl22[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        DANl22[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(DANl22[[i]][[1]], graph_attr, 'name'),
-                   covars3[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(DANl22, paste0(savedir1, 'DANl22.RDS'))
-write_rds(DANGrL22, paste0(savedir1, 'DANGrL22.RDS'))
-
-
-# Longitudinal 2: Six months ----------------------------------------------
-
-A.norm.sub <- matsL23$A.norm.sub
-A.norm.mean <- matsL23$A.norm.mean
-atlas <- "pDAN"
-DANGrL23 <- DANl23 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds3[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds3[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pDAN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds3[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    DANGrL23[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(DANGrL23[[i]][[x]])$name <- as.character(pDAN$name)
-    }
-
-    DANGrL23[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            DANGrL23[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    DANl23[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        DANl23[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(DANl23[[i]][[1]], graph_attr, 'name'),
-                   covars3[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(DANl23, paste0(savedir1, 'DANl23.RDS'))
-write_rds(DANGrL23, paste0(savedir1, 'DANGrL23.RDS'))
-
-
-# DMN ---------------------------------------------------------------------
-
-# Cocaine Dependent vs Healthy Controls -----------------------------------
-
-thresholdsSubNets <- thresholds[1:8]
-A.norm.sub <- matsDMNp$A.norm.sub
-A.norm.mean <- matsDMNp$A.norm.mean
-atlas <- "pDMN"
-DMNGrP <- DMNp <- fnames <- vector('list', length=length(groups1))
-
-for (i in seq_along(groups1)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(indsP[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , indsP[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pDMN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covarsP[groups1[i],
-                Study.ID[k]], group = groups1[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , indsP[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    DMNGrP[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(DMNGrP[[i]][[x]])$name <- as.character(pDMN$name)
-    }
-
-    DMNGrP[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            DMNGrP[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups1[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups1)) {
-    DMNp[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        DMNp[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(DMNp[[i]][[1]], graph_attr, 'name'),
-                   covarsP[groups1[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(DMNp, paste0(savedir1, 'DMNp.RDS'))
-write_rds(DMNGrP, paste0(savedir1, 'DMNGrP.RDS'))
-
-
-# Closed label: T0 --------------------------------------------------------
-
-thresholdsSubNets <- thresholds[1:12]
-A.norm.sub <- matsT0$A.norm.sub
-A.norm.mean <- matsT0$A.norm.mean
-atlas <- "pDMN"
-DMNGrT0 <- DMNt0 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds1[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds1[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pDMN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars1[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds1[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    DMNGrT0[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(DMNGrT0[[i]][[x]])$name <- as.character(pDMN$name)
-    }
-
-    DMNGrT0[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            DMNGrT0[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    DMNt0[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        DMNt0[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(DMNt0[[i]][[1]], graph_attr, 'name'),
-                   covars1[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(DMNt0, paste0(savedir1, 'DMNt0.RDS'))
-write_rds(DMNGrT0, paste0(savedir1, 'DMNGrT0.RDS'))
-
-# Closed label: T1 --------------------------------------------------------
-
-A.norm.sub <- matsT1$A.norm.sub
-A.norm.mean <- matsT1$A.norm.mean
-atlas <- "pDMN"
-DMNGrT1 <- DMNt1 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds1[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds1[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pDMN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars1[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds1[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    DMNGrT1[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(DMNGrT1[[i]][[x]])$name <- as.character(pDMN$name)
-    }
-
-    DMNGrT1[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            DMNGrT1[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    DMNt1[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        DMNt1[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(DMNt1[[i]][[1]], graph_attr, 'name'),
-                   covars1[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(DMNt1, paste0(savedir1, 'DMNt1.RDS'))
-write_rds(DMNGrT1, paste0(savedir1, 'DMNGrT1.RDS'))
-
-
-# Longitudinal 1: Baseline ------------------------------------------------
-
-A.norm.sub <- matsL10$A.norm.sub
-A.norm.mean <- matsL10$A.norm.mean
-atlas <- "pDMN"
-DMNGrL10 <- DMNl10 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds2[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds2[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pDMN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds2[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    DMNGrL10[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(DMNGrL10[[i]][[x]])$name <- as.character(pDMN$name)
-    }
-
-    DMNGrL10[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            DMNGrL10[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    DMNl10[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        DMNl10[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(DMNl10[[i]][[1]], graph_attr, 'name'),
-                   covars2[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(DMNl10, paste0(savedir1, 'DMNl10.RDS'))
-write_rds(DMNGrL10, paste0(savedir1, 'DMNGrL10.RDS'))
-
-# Longitudinal 1: Two weeks -----------------------------------------------
-
-A.norm.sub <- matsL11$A.norm.sub
-A.norm.mean <- matsL11$A.norm.mean
-atlas <- "pDMN"
-DMNGrL11 <- DMNl11 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds2[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds2[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pDMN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds2[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    DMNGrL11[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(DMNGrL11[[i]][[x]])$name <- as.character(pDMN$name)
-    }
-
-    DMNGrL11[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            DMNGrL11[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    DMNl11[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        DMNl11[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(DMNl11[[i]][[1]], graph_attr, 'name'),
-                   covars2[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(DMNl11, paste0(savedir1, 'DMNl11.RDS'))
-write_rds(DMNGrL11, paste0(savedir1, 'DMNGrL11.RDS'))
-
-
-# Longitudinal 1: Three months --------------------------------------------
-
-A.norm.sub <- matsL12$A.norm.sub
-A.norm.mean <- matsL12$A.norm.mean
-atlas <- "pDMN"
-DMNGrL12 <- DMNl12 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds2[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds2[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pDMN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds2[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    DMNGrL12[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(DMNGrL12[[i]][[x]])$name <- as.character(pDMN$name)
-    }
-
-    DMNGrL12[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            DMNGrL12[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    DMNl12[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        DMNl12[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(DMNl12[[i]][[1]], graph_attr, 'name'),
-                   covars2[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(DMNl12, paste0(savedir1, 'DMNl12.RDS'))
-write_rds(DMNGrL12, paste0(savedir1, 'DMNGrL12.RDS'))
-
-
-# Longitudinal 2: Baseline ------------------------------------------------
-
-A.norm.sub <- matsL20$A.norm.sub
-A.norm.mean <- matsL20$A.norm.mean
-atlas <- "pDMN"
-DMNGrL20 <- DMNl20 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds3[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds3[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pDMN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds3[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    DMNGrL20[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(DMNGrL20[[i]][[x]])$name <- as.character(pDMN$name)
-    }
-
-    DMNGrL20[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            DMNGrL20[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    DMNl20[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        DMNl20[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(DMNl20[[i]][[1]], graph_attr, 'name'),
-                   covars3[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(DMNl20, paste0(savedir1, 'DMNl20.RDS'))
-write_rds(DMNGrL20, paste0(savedir1, 'DMNGrL20.RDS'))
-
-# Longitudinal 2: Two weeks -----------------------------------------------
-
-A.norm.sub <- matsL21$A.norm.sub
-A.norm.mean <- matsL21$A.norm.mean
-atlas <- "pDMN"
-DMNGrL21 <- DMNl21 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds3[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds3[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pDMN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds3[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    DMNGrL21[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(DMNGrL21[[i]][[x]])$name <- as.character(pDMN$name)
-    }
-
-    DMNGrL21[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            DMNGrL21[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    DMNl21[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        DMNl21[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(DMNl21[[i]][[1]], graph_attr, 'name'),
-                   covars3[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(DMNl21, paste0(savedir1, 'DMNl21.RDS'))
-write_rds(DMNGrL21, paste0(savedir1, 'DMNGrL21.RDS'))
-
-
-# Longitudinal 2: Three months --------------------------------------------
-
-A.norm.sub <- matsL22$A.norm.sub
-A.norm.mean <- matsL22$A.norm.mean
-atlas <- "pDMN"
-DMNGrL22 <- DMNl22 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds3[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds3[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pDMN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds3[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    DMNGrL22[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(DMNGrL22[[i]][[x]])$name <- as.character(pDMN$name)
-    }
-
-    DMNGrL22[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            DMNGrL22[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    DMNl22[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        DMNl22[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(DMNl22[[i]][[1]], graph_attr, 'name'),
-                   covars3[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(DMNl22, paste0(savedir1, 'DMNl22.RDS'))
-write_rds(DMNGrL22, paste0(savedir1, 'DMNGrL22.RDS'))
-
-
-# Longitudinal 2: Six months ----------------------------------------------
-
-A.norm.sub <- matsL23$A.norm.sub
-A.norm.mean <- matsL23$A.norm.mean
-atlas <- "pDMN"
-DMNGrL23 <- DMNl23 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds3[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds3[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pDMN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds3[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    DMNGrL23[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(DMNGrL23[[i]][[x]])$name <- as.character(pDMN$name)
-    }
-
-    DMNGrL23[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            DMNGrL23[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    DMNl23[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        DMNl23[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(DMNl23[[i]][[1]], graph_attr, 'name'),
-                   covars3[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(DMNl23, paste0(savedir1, 'DMNl23.RDS'))
-write_rds(DMNGrL23, paste0(savedir1, 'DMNGrL23.RDS'))
-
-
-# FPN ---------------------------------------------------------------------
-
-# Cocaine Dependent vs Healthy Controls -----------------------------------
-
-thresholdsSubNets <- thresholds[1:8]
-A.norm.sub <- matsFPNp$A.norm.sub
-A.norm.mean <- matsFPNp$A.norm.mean
-atlas <- "pFPN"
-FPNGrP <- FPNp <- fnames <- vector('list', length=length(groups1))
-
-for (i in seq_along(groups1)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(indsP[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , indsP[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pFPN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covarsP[groups1[i],
-                Study.ID[k]], group = groups1[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , indsP[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    FPNGrP[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(FPNGrP[[i]][[x]])$name <- as.character(pFPN$name)
-    }
-
-    FPNGrP[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            FPNGrP[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups1[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups1)) {
-    FPNp[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        FPNp[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(FPNp[[i]][[1]], graph_attr, 'name'),
-                   covarsP[groups1[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(FPNp, paste0(savedir1, 'FPNp.RDS'))
-write_rds(FPNGrP, paste0(savedir1, 'FPNGrP.RDS'))
-
-
-# Closed label: T0 --------------------------------------------------------
-
-thresholdsSubNets <- thresholds[1:12]
-A.norm.sub <- matsT0$A.norm.sub
-A.norm.mean <- matsT0$A.norm.mean
-atlas <- "pFPN"
-FPNGrT0 <- FPNt0 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds1[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds1[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pFPN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars1[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds1[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    FPNGrT0[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(FPNGrT0[[i]][[x]])$name <- as.character(pFPN$name)
-    }
-
-    FPNGrT0[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            FPNGrT0[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    FPNt0[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        FPNt0[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(FPNt0[[i]][[1]], graph_attr, 'name'),
-                   covars1[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(FPNt0, paste0(savedir1, 'FPNt0.RDS'))
-write_rds(FPNGrT0, paste0(savedir1, 'FPNGrT0.RDS'))
-
-# Closed label: T1 --------------------------------------------------------
-
-A.norm.sub <- matsT1$A.norm.sub
-A.norm.mean <- matsT1$A.norm.mean
-atlas <- "pFPN"
-FPNGrT1 <- FPNt1 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds1[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds1[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pFPN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars1[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds1[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    FPNGrT1[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(FPNGrT1[[i]][[x]])$name <- as.character(pFPN$name)
-    }
-
-    FPNGrT1[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            FPNGrT1[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    FPNt1[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        FPNt1[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(FPNt1[[i]][[1]], graph_attr, 'name'),
-                   covars1[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(FPNt1, paste0(savedir1, 'FPNt1.RDS'))
-write_rds(FPNGrT1, paste0(savedir1, 'FPNGrT1.RDS'))
-
-
-# Longitudinal 1: Baseline ------------------------------------------------
-
-A.norm.sub <- matsL10$A.norm.sub
-A.norm.mean <- matsL10$A.norm.mean
-atlas <- "pFPN"
-FPNGrL10 <- FPNl10 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds2[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds2[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pFPN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds2[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    FPNGrL10[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(FPNGrL10[[i]][[x]])$name <- as.character(pFPN$name)
-    }
-
-    FPNGrL10[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            FPNGrL10[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    FPNl10[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        FPNl10[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(FPNl10[[i]][[1]], graph_attr, 'name'),
-                   covars2[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(FPNl10, paste0(savedir1, 'FPNl10.RDS'))
-write_rds(FPNGrL10, paste0(savedir1, 'FPNGrL10.RDS'))
-
-# Longitudinal 1: Two weeks -----------------------------------------------
-
-A.norm.sub <- matsL11$A.norm.sub
-A.norm.mean <- matsL11$A.norm.mean
-atlas <- "pFPN"
-FPNGrL11 <- FPNl11 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds2[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds2[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pFPN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds2[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    FPNGrL11[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(FPNGrL11[[i]][[x]])$name <- as.character(pFPN$name)
-    }
-
-    FPNGrL11[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            FPNGrL11[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    FPNl11[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        FPNl11[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(FPNl11[[i]][[1]], graph_attr, 'name'),
-                   covars2[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(FPNl11, paste0(savedir1, 'FPNl11.RDS'))
-write_rds(FPNGrL11, paste0(savedir1, 'FPNGrL11.RDS'))
-
-
-# Longitudinal 1: Three months --------------------------------------------
-
-A.norm.sub <- matsL12$A.norm.sub
-A.norm.mean <- matsL12$A.norm.mean
-atlas <- "pFPN"
-FPNGrL12 <- FPNl12 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds2[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds2[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pFPN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds2[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    FPNGrL12[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(FPNGrL12[[i]][[x]])$name <- as.character(pFPN$name)
-    }
-
-    FPNGrL12[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            FPNGrL12[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    FPNl12[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        FPNl12[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(FPNl12[[i]][[1]], graph_attr, 'name'),
-                   covars2[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(FPNl12, paste0(savedir1, 'FPNl12.RDS'))
-write_rds(FPNGrL12, paste0(savedir1, 'FPNGrL12.RDS'))
-
-
-# Longitudinal 2: Baseline ------------------------------------------------
-
-A.norm.sub <- matsL20$A.norm.sub
-A.norm.mean <- matsL20$A.norm.mean
-atlas <- "pFPN"
-FPNGrL20 <- FPNl20 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds3[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds3[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pFPN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds3[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    FPNGrL20[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(FPNGrL20[[i]][[x]])$name <- as.character(pFPN$name)
-    }
-
-    FPNGrL20[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            FPNGrL20[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    FPNl20[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        FPNl20[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(FPNl20[[i]][[1]], graph_attr, 'name'),
-                   covars3[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(FPNl20, paste0(savedir1, 'FPNl20.RDS'))
-write_rds(FPNGrL20, paste0(savedir1, 'FPNGrL20.RDS'))
-
-# Longitudinal 2: Two weeks -----------------------------------------------
-
-A.norm.sub <- matsL21$A.norm.sub
-A.norm.mean <- matsL21$A.norm.mean
-atlas <- "pFPN"
-FPNGrL21 <- FPNl21 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds3[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds3[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pFPN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds3[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    FPNGrL21[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(FPNGrL21[[i]][[x]])$name <- as.character(pFPN$name)
-    }
-
-    FPNGrL21[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            FPNGrL21[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    FPNl21[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        FPNl21[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(FPNl21[[i]][[1]], graph_attr, 'name'),
-                   covars3[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(FPNl21, paste0(savedir1, 'FPNl21.RDS'))
-write_rds(FPNGrL21, paste0(savedir1, 'FPNGrL21.RDS'))
-
-
-# Longitudinal 2: Three months --------------------------------------------
-
-A.norm.sub <- matsL22$A.norm.sub
-A.norm.mean <- matsL22$A.norm.mean
-atlas <- "pFPN"
-FPNGrL22 <- FPNl22 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds3[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds3[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pFPN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds3[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    FPNGrL22[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(FPNGrL22[[i]][[x]])$name <- as.character(pFPN$name)
-    }
-
-    FPNGrL22[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            FPNGrL22[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    FPNl22[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        FPNl22[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(FPNl22[[i]][[1]], graph_attr, 'name'),
-                   covars3[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(FPNl22, paste0(savedir1, 'FPNl22.RDS'))
-write_rds(FPNGrL22, paste0(savedir1, 'FPNGrL22.RDS'))
-
-
-# Longitudinal 2: Six months ----------------------------------------------
-
-A.norm.sub <- matsL23$A.norm.sub
-A.norm.mean <- matsL23$A.norm.mean
-atlas <- "pFPN"
-FPNGrL23 <- FPNl23 <- fnames <- vector('list', length=length(groups2))
-
-for (i in seq_along(groups2)) {
-    for (j in seq_along(thresholdsSubNets)) {
-        print(
-            paste0(
-                'Threshold ', j, '/', length(thresholdsSubNets),
-                '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
-            )
-        )
-
-        foreach (k=seq_along(inds3[[i]])) %dopar% {
-            g.tmp <- graph_from_adjacency_matrix(
-                A.norm.sub[[j]][, , inds3[[i]][k]],
-                mode='undirected', diag = F, weighted = T
-            )
-            V(g.tmp)$name <- as.character(pFPN$name)
-            g.tmp <- setBgAttr(
-                g.tmp, atlas, modality = 'fmri', weighting = 'sld',
-                threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
-                Study.ID[k]], group = groups2[i], use.parallel = F,
-                A = A.norm.sub[[j]][, , inds3[[i]][k]]
-            )
-            write_rds(
-                g.tmp, paste0(
-                    savedir1,
-                    sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
-                )
-            )
-        }
-    }
-
-    # group mean weighted graphs
-    print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
-    FPNGrL23[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
-        graph_from_adjacency_matrix(
-            A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
-        )
-
-    for (x in seq_along(thresholdsSubNets)) {
-        V(FPNGrL23[[i]][[x]])$name <- as.character(pFPN$name)
-    }
-
-    FPNGrL23[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
-        setBgAttr(
-            FPNGrL23[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
-            threshold = thresholdsSubNets[x], group = groups2[i],
-            A = A.norm.mean[[x]][[i]], use.parallel = F
-        ), .parallel = T
-    )
-
-}
-
-for (i in seq_along(groups2)) {
-    FPNl23[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
-    for (j in seq_along(thresholdsSubNets)) {
-        fnames[[i]][[j]] <- list.files(
-            savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
-        )
-        FPNl23[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
-    }
-
-    x <- all.equal(sapply(FPNl23[[i]][[1]], graph_attr, 'name'),
-                   covars3[groups2[i], Study.ID])
-    if (isTRUE(x)) lapply(fnames[[i]], file.remove)
-}
-
-write_rds(FPNl23, paste0(savedir1, 'FPNl23.RDS'))
-write_rds(FPNGrL23, paste0(savedir1, 'FPNGrL23.RDS'))
+# # Cocaine Dependent vs Healthy Controls -----------------------------------
+#
+# thresholdsSubNets <- thresholds[1:6]
+# A.norm.sub <- matsDANp$A.norm.sub
+# A.norm.mean <- matsDANp$A.norm.mean
+# atlas <- "pDAN"
+# DANGrP <- DANp <- fnames <- vector('list', length=length(groups1))
+#
+# for (i in seq_along(groups1)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(indsP[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , indsP[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pDAN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covarsP[groups1[i],
+#                 Study.ID[k]], group = groups1[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , indsP[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     DANGrP[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(DANGrP[[i]][[x]])$name <- as.character(pDAN$name)
+#     }
+#
+#     DANGrP[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             DANGrP[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups1[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups1)) {
+#     DANp[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         DANp[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(DANp[[i]][[1]], graph_attr, 'name'),
+#                    covarsP[groups1[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(DANp, paste0(savedir1, 'DANp.RDS'))
+# write_rds(DANGrP, paste0(savedir1, 'DANGrP.RDS'))
+#
+#
+# # Closed label: T0 --------------------------------------------------------
+#
+# thresholdsSubNets <- thresholds[1:12]
+# A.norm.sub <- matsT0$A.norm.sub
+# A.norm.mean <- matsT0$A.norm.mean
+# atlas <- "pDAN"
+# DANGrT0 <- DANt0 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds1[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds1[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pDAN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars1[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds1[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     DANGrT0[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(DANGrT0[[i]][[x]])$name <- as.character(pDAN$name)
+#     }
+#
+#     DANGrT0[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             DANGrT0[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     DANt0[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         DANt0[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(DANt0[[i]][[1]], graph_attr, 'name'),
+#                    covars1[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(DANt0, paste0(savedir1, 'DANt0.RDS'))
+# write_rds(DANGrT0, paste0(savedir1, 'DANGrT0.RDS'))
+#
+# # Closed label: T1 --------------------------------------------------------
+#
+# A.norm.sub <- matsT1$A.norm.sub
+# A.norm.mean <- matsT1$A.norm.mean
+# atlas <- "pDAN"
+# DANGrT1 <- DANt1 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds1[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds1[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pDAN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars1[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds1[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     DANGrT1[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(DANGrT1[[i]][[x]])$name <- as.character(pDAN$name)
+#     }
+#
+#     DANGrT1[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             DANGrT1[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     DANt1[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         DANt1[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(DANt1[[i]][[1]], graph_attr, 'name'),
+#                    covars1[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(DANt1, paste0(savedir1, 'DANt1.RDS'))
+# write_rds(DANGrT1, paste0(savedir1, 'DANGrT1.RDS'))
+#
+#
+# # Longitudinal 1: Baseline ------------------------------------------------
+#
+# A.norm.sub <- matsL10$A.norm.sub
+# A.norm.mean <- matsL10$A.norm.mean
+# atlas <- "pDAN"
+# DANGrL10 <- DANl10 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds2[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds2[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pDAN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds2[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     DANGrL10[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(DANGrL10[[i]][[x]])$name <- as.character(pDAN$name)
+#     }
+#
+#     DANGrL10[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             DANGrL10[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     DANl10[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         DANl10[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(DANl10[[i]][[1]], graph_attr, 'name'),
+#                    covars2[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(DANl10, paste0(savedir1, 'DANl10.RDS'))
+# write_rds(DANGrL10, paste0(savedir1, 'DANGrL10.RDS'))
+#
+# # Longitudinal 1: Two weeks -----------------------------------------------
+#
+# A.norm.sub <- matsL11$A.norm.sub
+# A.norm.mean <- matsL11$A.norm.mean
+# atlas <- "pDAN"
+# DANGrL11 <- DANl11 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds2[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds2[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pDAN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds2[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     DANGrL11[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(DANGrL11[[i]][[x]])$name <- as.character(pDAN$name)
+#     }
+#
+#     DANGrL11[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             DANGrL11[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     DANl11[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         DANl11[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(DANl11[[i]][[1]], graph_attr, 'name'),
+#                    covars2[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(DANl11, paste0(savedir1, 'DANl11.RDS'))
+# write_rds(DANGrL11, paste0(savedir1, 'DANGrL11.RDS'))
+#
+#
+# # Longitudinal 1: Three months --------------------------------------------
+#
+# A.norm.sub <- matsL12$A.norm.sub
+# A.norm.mean <- matsL12$A.norm.mean
+# atlas <- "pDAN"
+# DANGrL12 <- DANl12 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds2[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds2[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pDAN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds2[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     DANGrL12[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(DANGrL12[[i]][[x]])$name <- as.character(pDAN$name)
+#     }
+#
+#     DANGrL12[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             DANGrL12[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     DANl12[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         DANl12[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(DANl12[[i]][[1]], graph_attr, 'name'),
+#                    covars2[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(DANl12, paste0(savedir1, 'DANl12.RDS'))
+# write_rds(DANGrL12, paste0(savedir1, 'DANGrL12.RDS'))
+#
+#
+# # Longitudinal 2: Baseline ------------------------------------------------
+#
+# A.norm.sub <- matsL20$A.norm.sub
+# A.norm.mean <- matsL20$A.norm.mean
+# atlas <- "pDAN"
+# DANGrL20 <- DANl20 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds3[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds3[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pDAN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds3[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     DANGrL20[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(DANGrL20[[i]][[x]])$name <- as.character(pDAN$name)
+#     }
+#
+#     DANGrL20[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             DANGrL20[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     DANl20[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         DANl20[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(DANl20[[i]][[1]], graph_attr, 'name'),
+#                    covars3[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(DANl20, paste0(savedir1, 'DANl20.RDS'))
+# write_rds(DANGrL20, paste0(savedir1, 'DANGrL20.RDS'))
+#
+# # Longitudinal 2: Two weeks -----------------------------------------------
+#
+# A.norm.sub <- matsL21$A.norm.sub
+# A.norm.mean <- matsL21$A.norm.mean
+# atlas <- "pDAN"
+# DANGrL21 <- DANl21 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds3[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds3[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pDAN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds3[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     DANGrL21[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(DANGrL21[[i]][[x]])$name <- as.character(pDAN$name)
+#     }
+#
+#     DANGrL21[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             DANGrL21[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     DANl21[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         DANl21[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(DANl21[[i]][[1]], graph_attr, 'name'),
+#                    covars3[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(DANl21, paste0(savedir1, 'DANl21.RDS'))
+# write_rds(DANGrL21, paste0(savedir1, 'DANGrL21.RDS'))
+#
+#
+# # Longitudinal 2: Three months --------------------------------------------
+#
+# A.norm.sub <- matsL22$A.norm.sub
+# A.norm.mean <- matsL22$A.norm.mean
+# atlas <- "pDAN"
+# DANGrL22 <- DANl22 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds3[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds3[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pDAN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds3[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     DANGrL22[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(DANGrL22[[i]][[x]])$name <- as.character(pDAN$name)
+#     }
+#
+#     DANGrL22[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             DANGrL22[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     DANl22[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         DANl22[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(DANl22[[i]][[1]], graph_attr, 'name'),
+#                    covars3[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(DANl22, paste0(savedir1, 'DANl22.RDS'))
+# write_rds(DANGrL22, paste0(savedir1, 'DANGrL22.RDS'))
+#
+#
+# # Longitudinal 2: Six months ----------------------------------------------
+#
+# A.norm.sub <- matsL23$A.norm.sub
+# A.norm.mean <- matsL23$A.norm.mean
+# atlas <- "pDAN"
+# DANGrL23 <- DANl23 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds3[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds3[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pDAN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds3[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     DANGrL23[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(DANGrL23[[i]][[x]])$name <- as.character(pDAN$name)
+#     }
+#
+#     DANGrL23[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             DANGrL23[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     DANl23[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         DANl23[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(DANl23[[i]][[1]], graph_attr, 'name'),
+#                    covars3[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(DANl23, paste0(savedir1, 'DANl23.RDS'))
+# write_rds(DANGrL23, paste0(savedir1, 'DANGrL23.RDS'))
+#
+#
+# # DMN ---------------------------------------------------------------------
+#
+# # Cocaine Dependent vs Healthy Controls -----------------------------------
+#
+# thresholdsSubNets <- thresholds[1:8]
+# A.norm.sub <- matsDMNp$A.norm.sub
+# A.norm.mean <- matsDMNp$A.norm.mean
+# atlas <- "pDMN"
+# DMNGrP <- DMNp <- fnames <- vector('list', length=length(groups1))
+#
+# for (i in seq_along(groups1)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(indsP[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , indsP[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pDMN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covarsP[groups1[i],
+#                 Study.ID[k]], group = groups1[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , indsP[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     DMNGrP[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(DMNGrP[[i]][[x]])$name <- as.character(pDMN$name)
+#     }
+#
+#     DMNGrP[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             DMNGrP[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups1[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups1)) {
+#     DMNp[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         DMNp[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(DMNp[[i]][[1]], graph_attr, 'name'),
+#                    covarsP[groups1[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(DMNp, paste0(savedir1, 'DMNp.RDS'))
+# write_rds(DMNGrP, paste0(savedir1, 'DMNGrP.RDS'))
+#
+#
+# # Closed label: T0 --------------------------------------------------------
+#
+# thresholdsSubNets <- thresholds[1:12]
+# A.norm.sub <- matsT0$A.norm.sub
+# A.norm.mean <- matsT0$A.norm.mean
+# atlas <- "pDMN"
+# DMNGrT0 <- DMNt0 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds1[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds1[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pDMN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars1[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds1[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     DMNGrT0[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(DMNGrT0[[i]][[x]])$name <- as.character(pDMN$name)
+#     }
+#
+#     DMNGrT0[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             DMNGrT0[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     DMNt0[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         DMNt0[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(DMNt0[[i]][[1]], graph_attr, 'name'),
+#                    covars1[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(DMNt0, paste0(savedir1, 'DMNt0.RDS'))
+# write_rds(DMNGrT0, paste0(savedir1, 'DMNGrT0.RDS'))
+#
+# # Closed label: T1 --------------------------------------------------------
+#
+# A.norm.sub <- matsT1$A.norm.sub
+# A.norm.mean <- matsT1$A.norm.mean
+# atlas <- "pDMN"
+# DMNGrT1 <- DMNt1 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds1[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds1[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pDMN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars1[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds1[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     DMNGrT1[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(DMNGrT1[[i]][[x]])$name <- as.character(pDMN$name)
+#     }
+#
+#     DMNGrT1[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             DMNGrT1[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     DMNt1[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         DMNt1[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(DMNt1[[i]][[1]], graph_attr, 'name'),
+#                    covars1[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(DMNt1, paste0(savedir1, 'DMNt1.RDS'))
+# write_rds(DMNGrT1, paste0(savedir1, 'DMNGrT1.RDS'))
+#
+#
+# # Longitudinal 1: Baseline ------------------------------------------------
+#
+# A.norm.sub <- matsL10$A.norm.sub
+# A.norm.mean <- matsL10$A.norm.mean
+# atlas <- "pDMN"
+# DMNGrL10 <- DMNl10 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds2[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds2[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pDMN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds2[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     DMNGrL10[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(DMNGrL10[[i]][[x]])$name <- as.character(pDMN$name)
+#     }
+#
+#     DMNGrL10[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             DMNGrL10[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     DMNl10[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         DMNl10[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(DMNl10[[i]][[1]], graph_attr, 'name'),
+#                    covars2[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(DMNl10, paste0(savedir1, 'DMNl10.RDS'))
+# write_rds(DMNGrL10, paste0(savedir1, 'DMNGrL10.RDS'))
+#
+# # Longitudinal 1: Two weeks -----------------------------------------------
+#
+# A.norm.sub <- matsL11$A.norm.sub
+# A.norm.mean <- matsL11$A.norm.mean
+# atlas <- "pDMN"
+# DMNGrL11 <- DMNl11 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds2[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds2[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pDMN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds2[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     DMNGrL11[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(DMNGrL11[[i]][[x]])$name <- as.character(pDMN$name)
+#     }
+#
+#     DMNGrL11[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             DMNGrL11[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     DMNl11[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         DMNl11[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(DMNl11[[i]][[1]], graph_attr, 'name'),
+#                    covars2[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(DMNl11, paste0(savedir1, 'DMNl11.RDS'))
+# write_rds(DMNGrL11, paste0(savedir1, 'DMNGrL11.RDS'))
+#
+#
+# # Longitudinal 1: Three months --------------------------------------------
+#
+# A.norm.sub <- matsL12$A.norm.sub
+# A.norm.mean <- matsL12$A.norm.mean
+# atlas <- "pDMN"
+# DMNGrL12 <- DMNl12 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds2[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds2[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pDMN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds2[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     DMNGrL12[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(DMNGrL12[[i]][[x]])$name <- as.character(pDMN$name)
+#     }
+#
+#     DMNGrL12[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             DMNGrL12[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     DMNl12[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         DMNl12[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(DMNl12[[i]][[1]], graph_attr, 'name'),
+#                    covars2[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(DMNl12, paste0(savedir1, 'DMNl12.RDS'))
+# write_rds(DMNGrL12, paste0(savedir1, 'DMNGrL12.RDS'))
+#
+#
+# # Longitudinal 2: Baseline ------------------------------------------------
+#
+# A.norm.sub <- matsL20$A.norm.sub
+# A.norm.mean <- matsL20$A.norm.mean
+# atlas <- "pDMN"
+# DMNGrL20 <- DMNl20 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds3[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds3[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pDMN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds3[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     DMNGrL20[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(DMNGrL20[[i]][[x]])$name <- as.character(pDMN$name)
+#     }
+#
+#     DMNGrL20[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             DMNGrL20[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     DMNl20[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         DMNl20[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(DMNl20[[i]][[1]], graph_attr, 'name'),
+#                    covars3[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(DMNl20, paste0(savedir1, 'DMNl20.RDS'))
+# write_rds(DMNGrL20, paste0(savedir1, 'DMNGrL20.RDS'))
+#
+# # Longitudinal 2: Two weeks -----------------------------------------------
+#
+# A.norm.sub <- matsL21$A.norm.sub
+# A.norm.mean <- matsL21$A.norm.mean
+# atlas <- "pDMN"
+# DMNGrL21 <- DMNl21 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds3[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds3[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pDMN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds3[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     DMNGrL21[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(DMNGrL21[[i]][[x]])$name <- as.character(pDMN$name)
+#     }
+#
+#     DMNGrL21[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             DMNGrL21[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     DMNl21[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         DMNl21[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(DMNl21[[i]][[1]], graph_attr, 'name'),
+#                    covars3[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(DMNl21, paste0(savedir1, 'DMNl21.RDS'))
+# write_rds(DMNGrL21, paste0(savedir1, 'DMNGrL21.RDS'))
+#
+#
+# # Longitudinal 2: Three months --------------------------------------------
+#
+# A.norm.sub <- matsL22$A.norm.sub
+# A.norm.mean <- matsL22$A.norm.mean
+# atlas <- "pDMN"
+# DMNGrL22 <- DMNl22 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds3[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds3[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pDMN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds3[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     DMNGrL22[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(DMNGrL22[[i]][[x]])$name <- as.character(pDMN$name)
+#     }
+#
+#     DMNGrL22[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             DMNGrL22[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     DMNl22[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         DMNl22[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(DMNl22[[i]][[1]], graph_attr, 'name'),
+#                    covars3[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(DMNl22, paste0(savedir1, 'DMNl22.RDS'))
+# write_rds(DMNGrL22, paste0(savedir1, 'DMNGrL22.RDS'))
+#
+#
+# # Longitudinal 2: Six months ----------------------------------------------
+#
+# A.norm.sub <- matsL23$A.norm.sub
+# A.norm.mean <- matsL23$A.norm.mean
+# atlas <- "pDMN"
+# DMNGrL23 <- DMNl23 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds3[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds3[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pDMN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds3[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     DMNGrL23[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(DMNGrL23[[i]][[x]])$name <- as.character(pDMN$name)
+#     }
+#
+#     DMNGrL23[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             DMNGrL23[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     DMNl23[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         DMNl23[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(DMNl23[[i]][[1]], graph_attr, 'name'),
+#                    covars3[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(DMNl23, paste0(savedir1, 'DMNl23.RDS'))
+# write_rds(DMNGrL23, paste0(savedir1, 'DMNGrL23.RDS'))
+#
+#
+# # FPN ---------------------------------------------------------------------
+#
+# # Cocaine Dependent vs Healthy Controls -----------------------------------
+#
+# thresholdsSubNets <- thresholds[1:8]
+# A.norm.sub <- matsFPNp$A.norm.sub
+# A.norm.mean <- matsFPNp$A.norm.mean
+# atlas <- "pFPN"
+# FPNGrP <- FPNp <- fnames <- vector('list', length=length(groups1))
+#
+# for (i in seq_along(groups1)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(indsP[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , indsP[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pFPN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covarsP[groups1[i],
+#                 Study.ID[k]], group = groups1[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , indsP[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     FPNGrP[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(FPNGrP[[i]][[x]])$name <- as.character(pFPN$name)
+#     }
+#
+#     FPNGrP[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             FPNGrP[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups1[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups1)) {
+#     FPNp[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         FPNp[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(FPNp[[i]][[1]], graph_attr, 'name'),
+#                    covarsP[groups1[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(FPNp, paste0(savedir1, 'FPNp.RDS'))
+# write_rds(FPNGrP, paste0(savedir1, 'FPNGrP.RDS'))
+#
+#
+# # Closed label: T0 --------------------------------------------------------
+#
+# thresholdsSubNets <- thresholds[1:12]
+# A.norm.sub <- matsT0$A.norm.sub
+# A.norm.mean <- matsT0$A.norm.mean
+# atlas <- "pFPN"
+# FPNGrT0 <- FPNt0 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds1[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds1[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pFPN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars1[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds1[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     FPNGrT0[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(FPNGrT0[[i]][[x]])$name <- as.character(pFPN$name)
+#     }
+#
+#     FPNGrT0[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             FPNGrT0[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     FPNt0[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         FPNt0[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(FPNt0[[i]][[1]], graph_attr, 'name'),
+#                    covars1[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(FPNt0, paste0(savedir1, 'FPNt0.RDS'))
+# write_rds(FPNGrT0, paste0(savedir1, 'FPNGrT0.RDS'))
+#
+# # Closed label: T1 --------------------------------------------------------
+#
+# A.norm.sub <- matsT1$A.norm.sub
+# A.norm.mean <- matsT1$A.norm.mean
+# atlas <- "pFPN"
+# FPNGrT1 <- FPNt1 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds1[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds1[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pFPN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars1[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds1[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     FPNGrT1[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(FPNGrT1[[i]][[x]])$name <- as.character(pFPN$name)
+#     }
+#
+#     FPNGrT1[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             FPNGrT1[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     FPNt1[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         FPNt1[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(FPNt1[[i]][[1]], graph_attr, 'name'),
+#                    covars1[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(FPNt1, paste0(savedir1, 'FPNt1.RDS'))
+# write_rds(FPNGrT1, paste0(savedir1, 'FPNGrT1.RDS'))
+#
+#
+# # Longitudinal 1: Baseline ------------------------------------------------
+#
+# A.norm.sub <- matsL10$A.norm.sub
+# A.norm.mean <- matsL10$A.norm.mean
+# atlas <- "pFPN"
+# FPNGrL10 <- FPNl10 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds2[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds2[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pFPN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds2[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     FPNGrL10[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(FPNGrL10[[i]][[x]])$name <- as.character(pFPN$name)
+#     }
+#
+#     FPNGrL10[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             FPNGrL10[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     FPNl10[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         FPNl10[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(FPNl10[[i]][[1]], graph_attr, 'name'),
+#                    covars2[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(FPNl10, paste0(savedir1, 'FPNl10.RDS'))
+# write_rds(FPNGrL10, paste0(savedir1, 'FPNGrL10.RDS'))
+#
+# # Longitudinal 1: Two weeks -----------------------------------------------
+#
+# A.norm.sub <- matsL11$A.norm.sub
+# A.norm.mean <- matsL11$A.norm.mean
+# atlas <- "pFPN"
+# FPNGrL11 <- FPNl11 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds2[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds2[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pFPN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds2[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     FPNGrL11[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(FPNGrL11[[i]][[x]])$name <- as.character(pFPN$name)
+#     }
+#
+#     FPNGrL11[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             FPNGrL11[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     FPNl11[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         FPNl11[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(FPNl11[[i]][[1]], graph_attr, 'name'),
+#                    covars2[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(FPNl11, paste0(savedir1, 'FPNl11.RDS'))
+# write_rds(FPNGrL11, paste0(savedir1, 'FPNGrL11.RDS'))
+#
+#
+# # Longitudinal 1: Three months --------------------------------------------
+#
+# A.norm.sub <- matsL12$A.norm.sub
+# A.norm.mean <- matsL12$A.norm.mean
+# atlas <- "pFPN"
+# FPNGrL12 <- FPNl12 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds2[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds2[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pFPN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars2[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds2[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     FPNGrL12[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(FPNGrL12[[i]][[x]])$name <- as.character(pFPN$name)
+#     }
+#
+#     FPNGrL12[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             FPNGrL12[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     FPNl12[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         FPNl12[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(FPNl12[[i]][[1]], graph_attr, 'name'),
+#                    covars2[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(FPNl12, paste0(savedir1, 'FPNl12.RDS'))
+# write_rds(FPNGrL12, paste0(savedir1, 'FPNGrL12.RDS'))
+#
+#
+# # Longitudinal 2: Baseline ------------------------------------------------
+#
+# A.norm.sub <- matsL20$A.norm.sub
+# A.norm.mean <- matsL20$A.norm.mean
+# atlas <- "pFPN"
+# FPNGrL20 <- FPNl20 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds3[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds3[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pFPN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds3[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     FPNGrL20[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(FPNGrL20[[i]][[x]])$name <- as.character(pFPN$name)
+#     }
+#
+#     FPNGrL20[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             FPNGrL20[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     FPNl20[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         FPNl20[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(FPNl20[[i]][[1]], graph_attr, 'name'),
+#                    covars3[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(FPNl20, paste0(savedir1, 'FPNl20.RDS'))
+# write_rds(FPNGrL20, paste0(savedir1, 'FPNGrL20.RDS'))
+#
+# # Longitudinal 2: Two weeks -----------------------------------------------
+#
+# A.norm.sub <- matsL21$A.norm.sub
+# A.norm.mean <- matsL21$A.norm.mean
+# atlas <- "pFPN"
+# FPNGrL21 <- FPNl21 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds3[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds3[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pFPN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds3[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     FPNGrL21[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(FPNGrL21[[i]][[x]])$name <- as.character(pFPN$name)
+#     }
+#
+#     FPNGrL21[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             FPNGrL21[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     FPNl21[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         FPNl21[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(FPNl21[[i]][[1]], graph_attr, 'name'),
+#                    covars3[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(FPNl21, paste0(savedir1, 'FPNl21.RDS'))
+# write_rds(FPNGrL21, paste0(savedir1, 'FPNGrL21.RDS'))
+#
+#
+# # Longitudinal 2: Three months --------------------------------------------
+#
+# A.norm.sub <- matsL22$A.norm.sub
+# A.norm.mean <- matsL22$A.norm.mean
+# atlas <- "pFPN"
+# FPNGrL22 <- FPNl22 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds3[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds3[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pFPN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds3[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     FPNGrL22[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(FPNGrL22[[i]][[x]])$name <- as.character(pFPN$name)
+#     }
+#
+#     FPNGrL22[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             FPNGrL22[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     FPNl22[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         FPNl22[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(FPNl22[[i]][[1]], graph_attr, 'name'),
+#                    covars3[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(FPNl22, paste0(savedir1, 'FPNl22.RDS'))
+# write_rds(FPNGrL22, paste0(savedir1, 'FPNGrL22.RDS'))
+#
+#
+# # Longitudinal 2: Six months ----------------------------------------------
+#
+# A.norm.sub <- matsL23$A.norm.sub
+# A.norm.mean <- matsL23$A.norm.mean
+# atlas <- "pFPN"
+# FPNGrL23 <- FPNl23 <- fnames <- vector('list', length=length(groups2))
+#
+# for (i in seq_along(groups2)) {
+#     for (j in seq_along(thresholdsSubNets)) {
+#         print(
+#             paste0(
+#                 'Threshold ', j, '/', length(thresholdsSubNets),
+#                 '; group ', i, '; ', format(Sys.time(), '%H:%M:%S')
+#             )
+#         )
+#
+#         foreach (k=seq_along(inds3[[i]])) %dopar% {
+#             g.tmp <- graph_from_adjacency_matrix(
+#                 A.norm.sub[[j]][, , inds3[[i]][k]],
+#                 mode='undirected', diag = F, weighted = T
+#             )
+#             V(g.tmp)$name <- as.character(pFPN$name)
+#             g.tmp <- setBgAttr(
+#                 g.tmp, atlas, modality = 'fmri', weighting = 'sld',
+#                 threshold = thresholdsSubNets[j], subject = covars3[groups2[i],
+#                 Study.ID[k]], group = groups2[i], use.parallel = F,
+#                 A = A.norm.sub[[j]][, , inds3[[i]][k]]
+#             )
+#             write_rds(
+#                 g.tmp, paste0(
+#                     savedir1,
+#                     sprintf('g%i_thr%02i_subj%03i%s', i, j, k, '.RDS')
+#                 )
+#             )
+#         }
+#     }
+#
+#     # group mean weighted graphs
+#     print(paste0('Group', i, '; ', format(Sys.time(), '%H:%M:%S')))
+#     FPNGrL23[[i]] <- lapply(seq_along(thresholdsSubNets), function(x)
+#         graph_from_adjacency_matrix(
+#             A.norm.mean[[x]][[i]], mode = 'undirected', diag = F, weighted = T)
+#         )
+#
+#     for (x in seq_along(thresholdsSubNets)) {
+#         V(FPNGrL23[[i]][[x]])$name <- as.character(pFPN$name)
+#     }
+#
+#     FPNGrL23[[i]] <- llply(seq_along(thresholdsSubNets), function(x)
+#         setBgAttr(
+#             FPNGrL23[[i]][[x]], atlas, modality = 'fmri', weighting = 'sld',
+#             threshold = thresholdsSubNets[x], group = groups2[i],
+#             A = A.norm.mean[[x]][[i]], use.parallel = F
+#         ), .parallel = T
+#     )
+#
+# }
+#
+# for (i in seq_along(groups2)) {
+#     FPNl23[[i]] <- fnames[[i]] <- vector('list', length = length(thresholdsSubNets))
+#     for (j in seq_along(thresholdsSubNets)) {
+#         fnames[[i]][[j]] <- list.files(
+#             savedir, sprintf('*g%i_thr%02i.*', i, j), full.names = T
+#         )
+#         FPNl23[[i]][[j]] <- lapply(fnames[[i]][[j]], readRDS)
+#     }
+#
+#     x <- all.equal(sapply(FPNl23[[i]][[1]], graph_attr, 'name'),
+#                    covars3[groups2[i], Study.ID])
+#     if (isTRUE(x)) lapply(fnames[[i]], file.remove)
+# }
+#
+# write_rds(FPNl23, paste0(savedir1, 'FPNl23.RDS'))
+# write_rds(FPNGrL23, paste0(savedir1, 'FPNGrL23.RDS'))
 
 
 # SAL ---------------------------------------------------------------------
 
 # Cocaine Dependent vs Healthy Controls -----------------------------------
 
-thresholdsSubNets <- thresholds[1:8]
+thresholdsSubNets <- thresholds[1:6]
 A.norm.sub <- matsSALp$A.norm.sub
 A.norm.mean <- matsSALp$A.norm.mean
 atlas <- "pSAL"
@@ -5326,10 +5326,10 @@ write_rds(VANGrL23, paste0(savedir1, 'VANGrL23.RDS'))
 
 
 # Read all graphs ---------------------------------------------------------
-# 
+#
 # prefix <- '20190910_'
 # prefix1 <- '20190913_'
-# 
+#
 # CONp <- read_rds(paste0(savedir, prefix, 'CONp', '.RDS'))
 # CONt0 <- read_rds(paste0(savedir, prefix1, 'CONt0', '.RDS'))
 # CONt1 <- read_rds(paste0(savedir, prefix1, 'CONt1', '.RDS'))

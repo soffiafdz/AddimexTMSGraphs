@@ -7,9 +7,9 @@ readTimeSeries <- function(dirTMS, dirCTRL = NULL) {
   ls <- function(dir1, dir2 = dir1, dt) {
     return(c(
       str_subset(list.files(dirTMS, dir1, full.names = T),
-                 dt[group == "Sham", paste(Study.ID, collapse = "|")]),
+                 dt[Group == "Sham", paste(Study.ID, collapse = "|")]),
       str_subset(list.files(dirTMS, dir2, full.names = T),
-                 dt[group == "Tx", paste(Study.ID, collapse = "|")])
+                 dt[Group == "Tx", paste(Study.ID, collapse = "|")])
       )
     )
   }
@@ -20,7 +20,7 @@ readTimeSeries <- function(dirTMS, dirCTRL = NULL) {
       dt = covars1
     ),
     t1 = ls(
-      dir1 = "*ses-t1_power264_ts.1D", 
+      dir1 = "*ses-t1_power264_ts.1D",
       dt = covars1
     ),
     pre = ls(
@@ -47,12 +47,12 @@ readTimeSeries <- function(dirTMS, dirCTRL = NULL) {
     dirs[["hc_cu"]] <- c(
       str_subset(
         list.files(dirCTRL, "*_power264_ts.1D", full.names = T),
-        covarsP[group == "HC", 
+        covarsP[Group == "HC",
                 paste(Study.ID, collapse = "|")]
       ),
       str_subset(
         list.files(dirTMS, "*ses-t0_power264_ts.1D", full.names = T),
-        covarsP[group == "CU", paste(Study.ID, collapse = "|")]
+        covarsP[Group == "CU", paste(Study.ID, collapse = "|")]
       )
     )
   }
@@ -69,7 +69,7 @@ writeCorMats <- function(Corrs, outDir) {
   for (i in 1:length(Corrs)) {
     midDir <- names(Corrs)[[i]]
     dir.create(
-      paste(outDir, midDir, sep = "/"), 
+      paste(outDir, midDir, sep = "/"),
       showWarnings = F, recursive = T
     )
     fullDir <- paste(
@@ -79,11 +79,11 @@ writeCorMats <- function(Corrs, outDir) {
     )
     walk2(Corrs[[i]], fullDir,
          ~ fwrite(
-           .x, 
+           .x,
            file = paste0(
              outDir, "/", .y, ".tsv"
            ),
-           col.names = F, 
+           col.names = F,
            sep = "\t",
            na = 0
          )
@@ -98,7 +98,7 @@ readCorMats <- function(directory, Neg = F, CTRL = F, Files = F) {
       c(
         str_subset(list.files(list.dirs(
           paste(directory, subdir, sep = "/"), recursive = T),
-          "sub-[0-9]{3}.tsv", full.names = T), 
+          "sub-[0-9]{3}.tsv", full.names = T),
           dt[Group == "Sham", paste(Study.ID, collapse = "|")]),
         str_subset(list.files(list.dirs(
           paste(directory, subdir, sep = "/"), recursive = T),
@@ -114,7 +114,7 @@ readCorMats <- function(directory, Neg = F, CTRL = F, Files = F) {
       dt = covars1
     ),
     t1 = ls(
-      subdir = "t1", 
+      subdir = "t1",
       dt = covars1
     ),
     pre = ls(
@@ -141,14 +141,14 @@ readCorMats <- function(directory, Neg = F, CTRL = F, Files = F) {
         list.files(list.dirs(
           paste(directory, "hc_cu", sep = "/"), recursive = T),
           "sub-[0-9]{3}.tsv", full.names = T),
-        covarsP[Group == "CU", 
+        covarsP[Group == "CU",
                 paste(Study.ID, collapse = "|")]
       ),
       str_subset(
         list.files(list.dirs(
           paste(directory, "hc_cu", sep = "/"), recursive = T),
           "ctr-[0-9]{3}.tsv", full.names = T),
-        covarsP[Group == "HC", 
+        covarsP[Group == "HC",
                 paste(Study.ID, collapse = "|")]
       )
     )
@@ -158,7 +158,7 @@ readCorMats <- function(directory, Neg = F, CTRL = F, Files = F) {
     return(dirs)
   } else {
     if (Neg) {
-      # Only Negative values 
+      # Only Negative values
       corMapsNeg <- map_depth(dirs, 2, fread)
       for (i in seq_along(corMapsNeg)) {
         for (j in seq_along(corMapsNeg[[i]])) {
@@ -182,7 +182,7 @@ readCorMats <- function(directory, Neg = F, CTRL = F, Files = F) {
       return(map2(corMapsNeg, subs, set_names))
     } else {
       corMapsPos <- map_depth(dirs, 2, fread)
-      # Only Positive values 
+      # Only Positive values
       for (i in seq_along(corMapsPos)) {
         for (j in seq_along(corMapsPos[[i]])) {
           for (k in seq_along(corMapsPos[[i]][[j]])) {
@@ -204,7 +204,7 @@ subMats <- function(Corrs, write = F, outDir = NULL) {
   subCorrs <- vector(mode = "list", length = length(subnets))
   names(subCorrs) <- subnets
   for (i in subnets) {
-    index <- power264[networkLabel == i, index] 
+    index <- power264[networkLabel == i, index]
     subCorrs[[i]] <- copy(Corrs)
     for (j in seq_along(Corrs)) {
       for (k in seq_along(Corrs[[j]])) {
@@ -374,9 +374,9 @@ setBgAttr <- function(
 }
 
 setBgAttr1 <- function(
-  g, 
-  atlas = NULL, 
-  rand = FALSE, 
+  g,
+  atlas = NULL,
+  rand = FALSE,
   use.parallel = TRUE,
   A = NULL,
   xfm.type = c("1/w", "-log(w)", "1-w"),
@@ -586,7 +586,7 @@ vertexAttrDt <- function(
 }
 
 makeBg <- function(
-  g, 
+  g,
   atlas,
   rand = FALSE,
   modality = NULL,
