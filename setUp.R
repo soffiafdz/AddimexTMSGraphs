@@ -3,7 +3,7 @@
 
 pacman::p_load(
   brainGraph, data.table, tidyverse, foreach, doParallel, readxl, plyr, lme4, 
-  multcomp
+  multcomp, stargazer
 )
 
 registerDoParallel(cores = detectCores()/2)
@@ -30,10 +30,10 @@ subThresh <- 0.5
 covars <- fread("inData/participants.csv", na.strings = 'NA')
 setnames(covars, 1, "Study.ID")
 covars[,`:=`(
-  group = factor(group, labels = c("Sham", "Tx")),
+  Group = factor(group, labels = c("Sham", "Tx")),
   sex = factor(sex, labels = c("M", "F"))
-)]
-setkey(covars, group, Study.ID)
+)][, group := NULL]
+setkey(covars, Group, Study.ID)
 
 covars1 <- covars[exclusion == 0]
 covars2 <- covars1[Study.ID %in% sprintf("sub-%03d",
@@ -50,20 +50,21 @@ covarsP <- covarsP[, `:=`(
 )][,c(1:4,17,12:15)]
 covarsP <- rbind(covarsP, covars, fill = T)
 covarsP[, `:=`(
-  group = factor(c(rep("HC", 45), rep("CU", 46))),
+  Group = factor(c(rep("HC", 45), rep("CU", 46))),
+  group = NULL,
   sex = as.factor(sex),
     exclusion = NULL
 )]
-setkey(covarsP, group, Study.ID)
+setkey(covarsP, Group, Study.ID)
 
 indsP <- lapply(seq_along(groups1), function(x)
-    covarsP[, which(group == groups1[x])])
+    covarsP[, which(Group == groups1[x])])
 inds1 <- lapply(seq_along(groups2), function(x)
-    covars1[, which(group == groups2[x])])
+    covars1[, which(Group == groups2[x])])
 inds2 <- lapply(seq_along(groups2), function(x)
-    covars2[, which(group == groups2[x])])
+    covars2[, which(Group == groups2[x])])
 inds3 <- lapply(seq_along(groups2), function(x)
-    covars3[, which(group == groups2[x])])
+    covars3[, which(Group == groups2[x])])
 
 # Atlas -------------------------------------------------------------------
 
@@ -83,12 +84,12 @@ power264[network == "Salience", networkLabel := "SAL"]
 power264[network == "Subcortical", networkLabel := "SUB"]
 power264[network == "Ventral attention", networkLabel := "VAN"]
 
-# pCON <- power[networkLabel == "CON"]
-# pDAN <- power[networkLabel == "DAN"]
-# pDMN <- power[networkLabel == "DMN"]
-# pFPN <- power[networkLabel == "FPN"]
-# pSAL <- power[networkLabel == "SAL"]
-# pSUB <- power[networkLabel == "SUB"]
-# pVAN <- power[networkLabel == "VAN"]
+pCON <- power264[networkLabel == "CON"]
+pDAN <- power264[networkLabel == "DAN"]
+pDMN <- power264[networkLabel == "DMN"]
+pFPN <- power264[networkLabel == "FPN"]
+pSAL <- power264[networkLabel == "SAL"]
+pSUB <- power264[networkLabel == "SUB"]
+pVAN <- power264[networkLabel == "VAN"]
 
 

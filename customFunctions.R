@@ -99,11 +99,11 @@ readCorMats <- function(directory, Neg = F, CTRL = F, Files = F) {
         str_subset(list.files(list.dirs(
           paste(directory, subdir, sep = "/"), recursive = T),
           "sub-[0-9]{3}.tsv", full.names = T), 
-          dt[group == "Sham", paste(Study.ID, collapse = "|")]),
+          dt[Group == "Sham", paste(Study.ID, collapse = "|")]),
         str_subset(list.files(list.dirs(
           paste(directory, subdir, sep = "/"), recursive = T),
           "sub-[0-9]{3}.tsv", full.names = T),
-          dt[group == "Tx", paste(Study.ID, collapse = "|")])
+          dt[Group == "Tx", paste(Study.ID, collapse = "|")])
       )
     )
   }
@@ -141,14 +141,14 @@ readCorMats <- function(directory, Neg = F, CTRL = F, Files = F) {
         list.files(list.dirs(
           paste(directory, "hc_cu", sep = "/"), recursive = T),
           "sub-[0-9]{3}.tsv", full.names = T),
-        covarsP[group == "CU", 
+        covarsP[Group == "CU", 
                 paste(Study.ID, collapse = "|")]
       ),
       str_subset(
         list.files(list.dirs(
           paste(directory, "hc_cu", sep = "/"), recursive = T),
           "ctr-[0-9]{3}.tsv", full.names = T),
-        covarsP[group == "HC", 
+        covarsP[Group == "HC", 
                 paste(Study.ID, collapse = "|")]
       )
     )
@@ -200,11 +200,11 @@ readCorMats <- function(directory, Neg = F, CTRL = F, Files = F) {
 }
 
 subMats <- function(Corrs, write = F, outDir = NULL) {
-  subnets <- power[!is.na(networkLabel), unique((networkLabel))]
+  subnets <- power264[!is.na(networkLabel), unique((networkLabel))]
   subCorrs <- vector(mode = "list", length = length(subnets))
   names(subCorrs) <- subnets
   for (i in subnets) {
-    index <- power[networkLabel == i, index] 
+    index <- power264[networkLabel == i, index] 
     subCorrs[[i]] <- copy(Corrs)
     for (j in seq_along(Corrs)) {
       for (k in seq_along(Corrs[[j]])) {

@@ -22,15 +22,15 @@ rnetsP <- randNetsP$rand
 
 # Closed label: T0 --------------------------------------------------------
 
-outdir <- paste0(savedir, 'randT0', today)
+# outdir <- paste0(savedir, 'randT0', today)
+# 
+# randNetsT0 <- analysis_random_graphs(
+#     gT0, kNumRand, savedir = outdir, clustering = F
+# )
+# 
+# write_rds(randNetsT0, paste0(savedir1, 'randNetsT0.RDS'))
 
-randNetsT0 <- analysis_random_graphs(
-    gT0, kNumRand, savedir = outdir, clustering = F
-)
-
-write_rds(randNetsT0, paste0(savedir1, 'randNetsT0.RDS'))
-
-randNetsT0 <- read_rds('outData/graphs/20190910_randNetsT0.RDS')
+randNetsT0 <- read_rds('outData/graphs/20190913_randNetsT0.RDS')
 
 richT0 <- na.omit(randNetsT0$rich)
 smallT0 <- randNetsT0$small[, `:=`(
@@ -42,15 +42,15 @@ rnetsT0 <- randNetsT0$rand
 
 # # Closed label: T1 --------------------------------------------------------
 
-outdir <- paste0(savedir, 'randT1', today)
+# outdir <- paste0(savedir, 'randT1', today)
+# 
+# randNetsT1 <- analysis_random_graphs(
+#     gT1, kNumRand, savedir = outdir, clustering = F
+# )
+# 
+# write_rds(randNetsT1, paste0(savedir1, 'randNetsT1.RDS'))
 
-randNetsT1 <- analysis_random_graphs(
-    gT1, kNumRand, savedir = outdir, clustering = F
-)
-
-write_rds(randNetsT1, paste0(savedir1, 'randNetsT1.RDS'))
-
-randNetsT1 <- read_rds('outData/graphs/20190910_randNetsT1.RDS')
+randNetsT1 <- read_rds('outData/graphs/20190913_randNetsT1.RDS')
 
 richT1 <- na.omit(randNetsT1$rich)
 smallT1 <- randNetsT1$small[, `:=`(
