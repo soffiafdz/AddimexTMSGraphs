@@ -1,3 +1,6 @@
+source('setUp.R')
+source('clinicalData.R')
+
 # Set up - dataframe ------------------------------------------------------
 
 # attrP <- attrT <- attrL1 <- attrL2 <-
@@ -181,7 +184,7 @@ attrL2 <- read_rds('outData/RDS/attrL2.RDS')
 
 ## VS
 setkey(attrP, Group, Study.ID, threshold)
-dt <- attrP[covarsP][threshold == thresholds[10]]
+dt <- attrP[covarsP][threshold == thresholds[12]]
 
 summary(lm(density ~ Group + sex + age, dt))
 summary(lm(strength ~ Group + sex + age, dt))
@@ -196,6 +199,8 @@ summary(lm(sigma ~ Group + sex + age, dt))
 setkey(clin1, Study.ID, Stage)
 setkey(attrT, Study.ID, Stage)
 dt <- attrT[clin1][threshold == thresholds[11]]
+setkey(dt, Study.ID)
+setkey(covars1, Study.ID)
 dt <- dt[covars1]
 ### Density
 
