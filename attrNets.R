@@ -1,5 +1,6 @@
-source('setUp.R')
-source('clinicalData.R')
+# source('setUp.R')
+# source('clinicalData.R')
+# source('sigma.R')
 
 # Set up - dataframe ------------------------------------------------------
 
@@ -184,77 +185,157 @@ attrL2 <- read_rds('outData/RDS/attrL2.RDS')
 
 ## VS
 setkey(attrP, Group, Study.ID, threshold)
-dt <- attrP[covarsP][threshold == thresholds[12]]
+dt <- attrP[covarsP][threshold == thresholds[10]]
 
-summary(lm(density ~ Group + sex + age, dt))
-summary(lm(strength ~ Group + sex + age, dt))
-summary(lm(Lp ~ Group + sex + age, dt))
-summary(lm(Cp ~ Group + sex + age, dt))
-summary(lm(E.global ~ Group + sex + age, dt))
-summary(lm(E.local ~ Group + sex + age, dt))
-summary(lm(sigma ~ Group + sex + age, dt))
+vsMod1 <- lm(density ~ Group + sex + age + education, dt)
+vsMod2 <- lm(strength ~ Group + sex + age + education, dt)
+vsMod3 <- lm(E.global ~ Group + sex + age + education, dt)
+vsMod4 <- lm(E.local ~ Group + sex + age + education, dt)
+vsMod5 <- lm(Lp ~ Group + sex + age + education, dt)
+vsMod6 <- lm(Cp ~ Group + sex + age + education, dt)
+vsMod7 <- lm(sigma ~ Group + sex + age + education, dt)
+
+stargazer(vsMod1, vsMod2, vsMod3, vsMod4, vsMod7, 
+    title = "Regresiones lineales multivariadas de la topología de red con
+    sexo, edad y educación como covariantes", 
+    dep.var.caption = 'Variables dependientes', 
+    dep.var.labels = c("Densidad", "Fuerza", "E.Global", "E.Local", "P.Mundo"),
+    covariate.labels = c("Grupo(HC)", "Sexo(F)", "Edad", "Educación"), 
+    no.space = T)
 
 
 ## Closed-label
 setkey(clin1, Study.ID, Stage)
 setkey(attrT, Study.ID, Stage)
-dt <- attrT[clin1][threshold == thresholds[11]]
+dt <- attrT[clin1][threshold == thresholds[10]]
 setkey(dt, Study.ID)
 setkey(covars1, Study.ID)
 dt <- dt[covars1]
+
 ### Density
 
-densT0 <- lmer(density ~ Stage + (1|Study.ID), dt)
-densT1 <- lmer(density ~ Stage*Group + (1|Study.ID), dt)
-densT2 <- lmer(density ~ Stage*Group + B11Tot + (1|Study.ID), dt)
-densT3 <- lmer(density ~ Stage*Group + VAS + B11Tot + (1|Study.ID), dt)
-anova(densT0, densT1, densT2, densT3)
-summary(densT1)
+densT0 <- lmer(
+    density ~ Stage + sex + age + education + (1|Study.ID), dt
+)
+densT1 <- lmer(
+    density ~ Stage*Group + sex + age + education + (1|Study.ID), dt
+)
+densT2 <- lmer(
+    density ~ Stage*Group + VAS + B11Tot + sex + age + education +
+        (1|Study.ID), dt
+)
+anova(densT0, densT1, densT2)
+stargazer(densT0, densT1, densT2)
 
 ### Strength
 
-strT0 <- lmer(strength ~ Stage + (1|Study.ID), dt)
-strT1 <- lmer(strength ~ Stage*Group + (1|Study.ID), dt)
-strT2 <- lmer(strength ~ Stage*Group + B11Tot + (1|Study.ID), dt)
-strT3 <- lmer(strength ~ Stage*Group + VAS + B11Tot + (1|Study.ID), dt)
-# anova(strT0, strT1, strT2, strT3)
-summary(strT1)
+strT0 <- lmer(
+    strength ~ Stage + sex + age + education + (1|Study.ID), dt
+)
+strT1 <- lmer(
+    strength ~ Stage*Group + sex + age + education + (1|Study.ID), dt
+)
+strT2 <- lmer(
+    strength ~ Stage*Group + VAS + B11Tot + sex + age + education +
+        (1|Study.ID), dt
+)
+anova(strT0, strT1, strT2)
+stargazer(strT0, strT1, strT2)
 
 ### Efficiency (local)
 
-elT0 <- lmer(E.local ~ Stage + (1|Study.ID), dt)
-elT1 <- lmer(E.local ~ Stage*Group + (1|Study.ID), dt)
-elT2 <- lmer(E.local ~ Stage*Group + B11Tot + (1|Study.ID), dt)
-elT3 <- lmer(E.local ~ Stage*Group + VAS + B11Tot + (1|Study.ID), dt)
-anova(elT0, elT1, elT2, elT3)
-summary(elT1)
+elT0 <- lmer(
+    E.local ~ Stage + sex + age + education + (1|Study.ID), dt
+)
+elT1 <- lmer(
+    E.local ~ Stage*Group + sex + age + education + (1|Study.ID), dt
+)
+elT2 <- lmer(
+    E.local ~ Stage*Group + VAS + B11Tot + sex + age + education +
+        (1|Study.ID), dt
+)
+anova(elT0, elT1, elT2)
+stargazer(elT0, elT1, elT2)
 
 ### Efficiency (global)
 
-egT0 <- lmer(E.global ~ Stage + (1|Study.ID), dt)
-egT1 <- lmer(E.global ~ Stage*Group + (1|Study.ID), dt)
-egT2 <- lmer(E.global ~ Stage*Group + B11Tot + (1|Study.ID), dt)
-egT3 <- lmer(E.global ~ Stage*Group + VAS + B11Tot + (1|Study.ID), dt)
-anova(egT0, egT1, egT2, egT3)
-summary(egT1)
+egT0 <- lmer(
+    E.global ~ Stage + sex + age + education + (1|Study.ID), dt
+)
+egT1 <- lmer(
+    E.global ~ Stage*Group + sex + age + education + (1|Study.ID), dt
+)
+egT2 <- lmer(
+    E.global ~ Stage*Group + VAS + B11Tot + sex + age + education +
+        (1|Study.ID), dt
+)
+anova(egT0, egT1, egT2)
+stargazer(egT0, egT1, egT2)
+
+### Lp
+
+lpT0 <- lmer(
+    Lp ~ Stage + sex + age + education + (1|Study.ID), dt
+)
+lpT1 <- lmer(
+    Lp ~ Stage*Group + sex + age + education + (1|Study.ID), dt
+)
+lpT2 <- lmer(
+    Lp ~ Stage*Group + VAS + B11Tot + sex + age + education +
+        (1|Study.ID), dt
+)
+anova(lpT0, lpT1, lpT2)
+stargazer(lpT0, lpT1, lpT2)
+
+### Cp
+
+cpT0 <- lmer(
+    Cp ~ Stage + sex + age + education + (1|Study.ID), dt
+)
+cpT1 <- lmer(
+    Cp ~ Stage*Group + sex + age + education + (1|Study.ID), dt
+)
+cpT2 <- lmer(
+    Cp ~ Stage*Group + VAS + B11Tot + sex + age + education +
+        (1|Study.ID), dt
+)
+anova(cpT0, cpT1, cpT2)
+stargazer(cpT0, cpT1, cpT2)
 
 ### Sigma
 
-sigmaT0 <- lmer(sigma ~ Stage + (1|Study.ID), dt)
-sigmaT1 <- lmer(sigma ~ Stage*Group + (1|Study.ID), dt)
-sigmaT2 <- lmer(sigma ~ Stage * Group + B11Tot + (1|Study.ID), dt)
-sigmaT3 <- lmer(sigma ~ Stage * Group + VAS + B11Tot + (1|Study.ID), dt)
-anova(sigmaT0, sigmaT1, sigmaT2, sigmaT3)
-summary(sigmaT1)
+sigmaT0 <- lmer(
+    sigma ~ Stage + sex + age + education + (1|Study.ID), dt
+)
+sigmaT1 <- lmer(
+    sigma ~ Stage*Group + sex + age + education + (1|Study.ID), dt
+)
+sigmaT2 <- lmer(
+    sigma ~ Stage*Group + VAS + B11Tot + sex + age + education +
+        (1|Study.ID), dt
+)
+anova(sigmaT0, sigmaT1, sigmaT2)
+stargazer(sigmaT0, sigmaT1, sigmaT2)
 
+stargazer(densT2, strT2, elT2, egT2,
+    title = "Regresiones lineales multivariadas de topología de red en fase cerrada de tratamiento con sexo, edad y educación como covariantes", 
+    dep.var.caption = 'Variables dependientes', 
+    dep.var.labels = c("Densidad", "Fuerza", "E.Local", "E.Global"),
+    covariate.labels = c(
+        "Fase(Post-)", "Grupo(Real)", "VAS", "B11", "Sexo(F)", "Edad", 
+        "Educación", "Fase:Grupo"
+    ),
+    no.space = T)
 
-
-
-
-
-
-
-
+stargazer(lpT2, cpT2, sigmaT2,
+    title = "Regresiones lineales multivariadas de métricas de pequeño mundo en fase cerrada de tratamiento con sexo, edad y educación como covariantes", 
+    dep.var.caption = 'Variables dependientes', 
+    dep.var.labels = c("L.Camino", "C.Agrupamiento", "P.Mundo"),
+    covariate.labels = c(
+        "Fase(Post-)", "Grupo(Real)", "VAS", "B11", "Sexo(F)", "Edad", 
+        "Educación", "Fase:Grupo"
+    ),
+    no.space = T)
 
 
 
