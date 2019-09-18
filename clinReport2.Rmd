@@ -205,9 +205,9 @@ print(hotelling.test(DeltaVAS + DeltaCCQN + DeltaBIS ~ GroupCCQN, data = grMedCl
 
 ```{r}
 grMedClinLong[Scale == "VAS"] %>% 
-    summarySE(measurevar = "Delta", groupvars = c("GroupVAS2", "GroupVAS3", "Group", "Stage")) %>%
-    ggplot(aes(Stage, Delta, group = GroupVAS2)) +
-    geom_errorbar(aes(ymin = Delta - sd, ymax = Delta + sd, col = GroupVAS3),
+    summarySE(measurevar = "Score", groupvars = c("GroupVAS2", "GroupVAS3", "Group", "Stage")) %>%
+    ggplot(aes(Stage, Score, group = GroupVAS2)) +
+    geom_errorbar(aes(ymin = Score - sd, ymax = Score + sd, col = GroupVAS3),
                   width = 0.1, position = pd) +
     geom_line(position = pd, aes(col = GroupVAS3)) +
     geom_point(shape = 21, size = 4, fill = "white", position = pd) +
