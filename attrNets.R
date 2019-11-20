@@ -1,6 +1,6 @@
-# source('setUp.R')
-# source('clinicalData.R')
-# source('sigma.R')
+source('setUp.R')
+source('clinicalData.R')
+source('sigma.R')
 
 # Set up - dataframe ------------------------------------------------------
 
@@ -211,7 +211,6 @@ dt <- attrT[clin1][threshold == thresholds[10]]
 setkey(dt, Study.ID)
 setkey(covars1, Study.ID)
 dt <- dt[covars1]
-
 ### Density
 
 densT0 <- lmer(
@@ -337,24 +336,229 @@ stargazer(lpT2, cpT2, sigmaT2,
     ),
     no.space = T)
 
+## Longitudinal 1
+setkey(clin2, Study.ID, Stage)
+setkey(attrL1, Study.ID, Stage)
+dt <- attrL1[clin2][threshold == thresholds[10]]
+setkey(dt, Study.ID)
+setkey(covars2, Study.ID)
+dt <- dt[covars2]
+
+### Density
+
+densL10 <- lmer(
+    density ~ Stage + sex + age + education + (1|Study.ID), dt
+)
+densL11 <- lmer(
+    density ~ Stage + VAS + B11Tot + sex + age + education +
+        (1|Study.ID), dt
+)
+anova(densL10, densL11)
+summary(glht(densL11, linfct = mcp(Stage = "Tukey")))
+
+### Strength
+
+strL10 <- lmer(
+    strength ~ Stage + sex + age + education + (1|Study.ID), dt
+)
+strL11 <- lmer(
+    strength ~ Stage + VAS + B11Tot + sex + age + education +
+        (1|Study.ID), dt
+)
+anova(strL10, strL11)
+summary(glht(strL11, linfct = mcp(Stage = "Tukey")))
+
+### Efficiency (local)
+
+elL10 <- lmer(
+    E.local ~ Stage + sex + age + education + (1|Study.ID), dt
+)
+elL11 <- lmer(
+    E.local ~ Stage + VAS + B11Tot + sex + age + education +
+        (1|Study.ID), dt
+)
+anova(elL10, elL11)
+summary(glht(elL11, linfct = mcp(Stage = "Tukey")))
+
+### Efficiency (global)
+
+egL10 <- lmer(
+    E.global ~ Stage + sex + age + education + (1|Study.ID), dt
+)
+egL11 <- lmer(
+    E.global ~ Stage + VAS + B11Tot + sex + age + education +
+        (1|Study.ID), dt
+)
+anova(egL10, egL11)
+summary(glht(egL11, linfct = mcp(Stage = "Tukey")))
+
+### Lp
+
+lpL10 <- lmer(
+    Lp ~ Stage + sex + age + education + (1|Study.ID), dt
+)
+lpL11 <- lmer(
+    Lp ~ Stage + VAS + B11Tot + sex + age + education +
+        (1|Study.ID), dt
+)
+anova(lpL10, lpL11)
+summary(glht(lpL11, linfct = mcp(Stage = "Tukey")))
+
+### Cp
+
+cpL10 <- lmer(
+    Cp ~ Stage + sex + age + education + (1|Study.ID), dt
+)
+cpL11 <- lmer(
+    Cp ~ Stage + VAS + B11Tot + sex + age + education +
+        (1|Study.ID), dt
+)
+anova(cpL10, cpL11)
+summary(glht(cpL11, linfct = mcp(Stage = "Tukey")))
+
+### Sigma
+
+sigmaL10 <- lmer(
+    sigma ~ Stage + sex + age + education + (1|Study.ID), dt
+)
+sigmaL11 <- lmer(
+    sigma ~ Stage + VAS + B11Tot + sex + age + education +
+        (1|Study.ID), dt
+)
+anova(sigmaL10, sigmaL11)
+summary(glht(sigmaL11, linfct = mcp(Stage = "Tukey")))
+
+stargazer(densL11, strL11, elL11, egL11,
+    title = "Modelos de efectos mixtos de topología de red en fase abierta de tratamiento (tres meses) con sexo, edad y educación como covariantes", 
+    dep.var.caption = 'Variables dependientes', 
+    dep.var.labels = c("Densidad", "Fuerza", "E.Local", "E.Global"),
+    covariate.labels = c(
+        "Fase(T1)", "Fase(T2)", "VAS", "BIS-11", "Sexo(F)", "Edad",
+        "Educación", "Constante"
+    ),
+    no.space = T)
+
+stargazer(lpL11, cpL11, sigmaL11,
+    title = "Modelos de efectos mixtos de pequeño mundo en fase abierta de tratamiento (tres meses) con sexo, edad y educación como covariantes", 
+    dep.var.caption = 'Variables dependientes', 
+    dep.var.labels = c("L.Camino", "C.Agrupamiento", "P.Mundo"),
+    covariate.labels = c(
+        "Fase(T1)", "Fase(T2)", "VAS", "BIS-11", "Sexo(F)", "Edad",
+        "Educación", "Constante"
+    ),
+    no.space = T)
+
+## Longitudinal 2
+setkey(clin3, Study.ID, Stage)
+setkey(attrL2, Study.ID, Stage)
+dt <- attrL2[clin3][threshold == thresholds[10]]
+setkey(dt, Study.ID)
+setkey(covars3, Study.ID)
+dt <- dt[covars3]
+
+### Density
+
+densL20 <- lmer(
+    density ~ Stage + sex + age + education + (1|Study.ID), dt
+)
+densL21 <- lmer(
+    density ~ Stage + VAS + B11Tot + sex + age + education +
+        (1|Study.ID), dt
+)
+# anova(densL20, densL21)
+summary(glht(densL21, linfct = mcp(Stage = "Tukey")))
+
+### Strength
+
+strL20 <- lmer(
+    strength ~ Stage + sex + age + education + (1|Study.ID), dt
+)
+strL21 <- lmer(
+    strength ~ Stage + VAS + B11Tot + sex + age + education +
+        (1|Study.ID), dt
+)
+# anova(strL20, strL21)
+summary(glht(strL21, linfct = mcp(Stage = "Tukey")))
+
+### Efficiency (local)
+
+elL20 <- lmer(
+    E.local ~ Stage + sex + age + education + (1|Study.ID), dt
+)
+elL21 <- lmer(
+    E.local ~ Stage + VAS + B11Tot + sex + age + education +
+        (1|Study.ID), dt
+)
+# anova(elL20, elL21)
+summary(glht(elL21, linfct = mcp(Stage = "Tukey")))
+
+### Efficiency (global)
+
+egL20 <- lmer(
+    E.global ~ Stage + sex + age + education + (1|Study.ID), dt
+)
+egL21 <- lmer(
+    E.global ~ Stage + VAS + B11Tot + sex + age + education +
+        (1|Study.ID), dt
+)
+# anova(egL20, egL21)
+summary(glht(egL21, linfct = mcp(Stage = "Tukey")))
+
+### Lp
+
+lpL20 <- lmer(
+    Lp ~ Stage + sex + age + education + (1|Study.ID), dt
+)
+lpL21 <- lmer(
+    Lp ~ Stage + VAS + B11Tot + sex + age + education +
+        (1|Study.ID), dt
+)
+# anova(lpL20, lpL21)
+summary(glht(lpL21, linfct = mcp(Stage = "Tukey")))
+
+### Cp
+
+cpL20 <- lmer(
+    Cp ~ Stage + sex + age + education + (1|Study.ID), dt
+)
+cpL21 <- lmer(
+    Cp ~ Stage + VAS + B11Tot + sex + age + education +
+        (1|Study.ID), dt
+)
+# anova(cpL20, cpL21)
+summary(glht(cpL21, linfct = mcp(Stage = "Tukey")))
+
+### Sigma
+
+sigmaL20 <- lmer(
+    sigma ~ Stage + sex + age + education + (1|Study.ID), dt
+)
+sigmaL21 <- lmer(
+    sigma ~ Stage + VAS + B11Tot + sex + age + education +
+        (1|Study.ID), dt
+)
+# anova(sigmaL20, sigmaL21)
+summary(glht(sigmaL21, linfct = mcp(Stage = "Tukey")))
+
+stargazer(densL21, strL21, elL21, egL21,
+    title = "Modelos de efectos mixtos de topología de red en fase abierta de tratamiento (seis meses) con sexo, edad y educación como covariantes", 
+    dep.var.caption = 'Variables dependientes', 
+    dep.var.labels = c("Densidad", "Fuerza", "E.Local", "E.Global"),
+    covariate.labels = c(
+        "Fase(T1)", "Fase(T2)", "Fase(T3)", "VAS", "BIS-11", "Sexo(F)", "Edad",
+        "Educación", "Constante"
+    ),
+    no.space = T)
+
+stargazer(lpL21, cpL21, sigmaL21,
+    title = "Modelos de efectos mixtos de pequeño mundo en fase abierta de tratamiento (seis meses) con sexo, edad y educación como covariantes", 
+    dep.var.caption = 'Variables dependientes', 
+    dep.var.labels = c("L.Camino", "C.Agrupamiento", "P.Mundo"),
+    covariate.labels = c(
+        "Fase(T1)", "Fase(T2)", "Fase(T3)", "VAS", "BIS-11", "Sexo(F)", "Edad",
+        "Educación", "Constante"
+    ),
+    no.space = T)
 
 
-
-
-
-
-
-
-
-
-
-
-
-l2B0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL2[Scale == 'B11Tot'])
-l2B1 <- lmer(Score ~ GroupBIS + (1|Study.ID), grMedClinLongL2[Scale == 'B11Tot'])
-l2B2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL2[Scale == 'B11Tot'])
-l2B3 <- lmer(Score ~ Stage + GroupBIS + (1|Study.ID), 
-    grMedClinLongL2[Scale == 'B11Tot'])
-anova(l2B0, l2B1, l2B2, l2B3)
-summary(glht(l2B2, linfct = mcp(Stage = "Tukey"))) 
 
