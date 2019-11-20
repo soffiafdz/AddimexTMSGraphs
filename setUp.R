@@ -3,7 +3,7 @@
 
 pacman::p_load(
   brainGraph, data.table, tidyverse, foreach, doParallel, readxl, plyr, lme4, 
-  multcomp, stargazer
+  multcomp, stargazer, effsize, moonBook, corrplot
 )
 
 registerDoParallel(cores = detectCores()/2)
@@ -49,7 +49,7 @@ covarsP <- covarsP[, `:=`(
 )][,c(1:4,17,12:15)]
 covarsP <- rbind(covarsP, covars, fill = T)
 covarsP[, `:=`(
-  Group = factor(c(rep("HC", 45), rep("CU", 46))),
+  Group = factor(c(rep("HC", 45), rep("CU", 51))),
   group = NULL,
   sex = as.factor(sex),
     exclusion = NULL
