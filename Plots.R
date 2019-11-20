@@ -1,6 +1,6 @@
 
 # Plots -------------------------------------------------------------------
-theme_set(theme_linedraw(base_size = 14))
+theme_set(theme_linedraw(base_size = 21))
 pd <- position_dodge(0.5)   
 
 #### VS ####
@@ -17,11 +17,11 @@ attrP[threshold %in% thresholds[1:14], c(1:3,17,22)][
         aes(ymin = value - sd, ymax = value + sd, col = Group)) +
     geom_line(position = pd, aes(col = Group)) +
     geom_point(shape = 21, size = 3, fill = "white", position = pd) +
-    scale_colour_hue(name = "Grupo",
+    scale_colour_hue(name = NULL,
         breaks=c("CU", "HC"),
-        labels=c("Pacientes adictos", "Controles sanos"),
+        labels=c("Pacientes", "Controles"),
         l=10) +
-    labs(y = "Valor", x = expression(tau)) +
+    labs(y = NULL, x = expression(tau)) +
     facet_grid(variable ~ ., scales = 'free') + 
     theme(legend.position = 'top')
 
@@ -38,18 +38,19 @@ attrP[threshold %in% thresholds[1:14], c(1:3,9,11)][
         aes(ymin = value - sd, ymax = value + sd, col = Group)) +
     geom_line(position = pd, aes(col = Group)) +
     geom_point(shape = 21, size = 3, fill = "white", position = pd) +
-    scale_colour_hue(name = "Grupo",
+    scale_colour_hue(name = NULL,
         breaks=c("CU", "HC"),
-        labels=c("Pacientes adictos", "Controles sanos"),
+        labels=c("Pacientes", "Controles"),
         l=10) +
-    labs(y = "Valor", x = expression(tau)) +
+    labs(y = NULL, x = expression(tau)) +
     facet_grid(variable ~ ., scales = 'free') + 
     theme(legend.position = 'top')
 
 # Sigmas
+pd <- position_dodge(0.4)   
 attrP[threshold %in% thresholds[1:8], c(1:3,4,6,8)][
     , threshold := factor(threshold)] %>% 
-    dplyr::rename(P.Mundo = sigma, L.Camino = Lp, C.Agrup. = Cp) %>% 
+    dplyr::rename(MundoP. = sigma, L.Camino = Lp, C.Agrup. = Cp) %>% 
     melt( measure.vars = 4:6) %>% 
     as.data.frame() %>% 
     summarySE(measurevar = "value",
@@ -59,17 +60,17 @@ attrP[threshold %in% thresholds[1:8], c(1:3,4,6,8)][
         aes(ymin = value - sd, ymax = value + sd, col = Group)) +
     geom_line(position = pd, aes(col = Group)) +
     geom_point(shape = 21, size = 3, fill = "white", position = pd) +
-    scale_colour_hue(name = "Grupo",
+    scale_colour_hue(name = NULL,
         breaks=c("CU", "HC"),
-        labels=c("Pacientes adictos", "Controles sanos"),
+        labels=c("Pacientes", "Controles"),
         l=10) +
-    labs(y = "Valor", x = expression(tau)) +
+    labs(y = NULL, x = NULL) +
     facet_grid(variable ~ ., scales = 'free') + 
     theme(legend.position = 'top')
 
 attrP[threshold %in% thresholds[9:14], c(1:3,4,6,8)][
     , threshold := factor(threshold)] %>% 
-    dplyr::rename(P.Mundo = sigma, L.Camino = Lp, C.Agrup. = Cp) %>% 
+    dplyr::rename(MundoP. = sigma, L.Camino = Lp, C.Agrup. = Cp) %>% 
     melt( measure.vars = 4:6) %>% 
     as.data.frame() %>% 
     summarySE(measurevar = "value",
@@ -79,13 +80,13 @@ attrP[threshold %in% thresholds[9:14], c(1:3,4,6,8)][
         aes(ymin = value - sd, ymax = value + sd, col = Group)) +
     geom_line(position = pd, aes(col = Group)) +
     geom_point(shape = 21, size = 3, fill = "white", position = pd) +
-    scale_colour_hue(name = "Grupo",
+    scale_colour_hue(name = NULL,
         breaks=c("CU", "HC"),
-        labels=c("Pacientes adictos", "Controles sanos"),
+        labels=c("Pacientes", "Controles"),
         l=10) +
-    labs(y = "Valor", x = expression(tau)) +
+    labs(y = NULL, x = expression(tau)) +
     facet_grid(variable ~ ., scales = 'free') + 
-    theme(legend.position = 'top')
+    theme(legend.position = 'none')
 
 
 
@@ -111,6 +112,7 @@ corrplot.mixed(M2, tl.col = "black", upper = 'ellipse', )
 grMedClinPlot <- read_rds('outData/RDS/grMedClinLongPLOT.RDS')
 
 #### Cambios por Mediana ####
+pd <- position_dodge(0.25)   
 grMedClinPlot[Scale == "VAS"] %>% 
     summarySE(measurevar = "Score", groupvars = c("GroupVAS2", "GroupVAS3", "Group", "Stage")) %>%
     ggplot(aes(Stage, Score, group = GroupVAS2)) +
@@ -118,11 +120,11 @@ grMedClinPlot[Scale == "VAS"] %>%
         width = 0.1, position = pd) +
     geom_line(position = pd, aes(col = GroupVAS3)) +
     geom_point(shape = 21, size = 5, fill = "white", position = pd) +
-    scale_colour_hue(name = "División por mediana",
+    scale_colour_hue(name = NULL,
         breaks=c("<", ">"),
         labels=c("Puntaje bajo", "Puntaje alto"),
         l=10) +
-    labs(y = "Puntaje", x = NULL) +
+    labs(y = NULL, x = NULL) +
     scale_x_discrete(labels = c("Pre-", "Post-")) +
     facet_grid(. ~ factor(Group, labels = c("EMTr Sham", "EMTr Real"))) +
     theme(legend.position = "none")
@@ -134,14 +136,14 @@ grMedClinPlot[Scale == "CCQG"] %>%
         width = 0.1, position = pd) +
     geom_line(position = pd, aes(col = GroupCCQG3)) +
     geom_point(shape = 21, size = 5, fill = "white", position = pd) +
-    scale_colour_hue(name = "División por mediana",
+    scale_colour_hue(name = NULL,
         breaks=c("<", ">"),
         labels=c("Puntaje bajo", "Puntaje alto"),
         l=10) +
     labs(y = NULL, x = NULL) +
     scale_x_discrete(labels = c("Pre-", "Post-")) +
     facet_grid(. ~ factor(Group, labels = c("EMTr Sham", "EMTr Real"))) +
-    theme(legend.position = c(0.83, 0.875))
+    theme(legend.position = c(0.85, 0.88))
 
 grMedClinPlot[Scale == "CCQN"] %>% 
     summarySE(measurevar = "Score", groupvars = c("GroupCCQN2", "GroupCCQN3", "Group", "Stage")) %>%
@@ -150,11 +152,11 @@ grMedClinPlot[Scale == "CCQN"] %>%
         width = 0.1, position = pd) +
     geom_line(position = pd, aes(col = GroupCCQN3)) +
     geom_point(shape = 21, size = 5, fill = "white", position = pd) +
-    scale_colour_hue(name = "División por mediana",
+    scale_colour_hue(name = NULL,
         breaks=c("<", ">"),
         labels=c("Puntaje bajo", "Puntaje alto"),
         l=10) +
-    labs(y = "Puntaje", x = "Fase") +
+    labs(y = NULL, x = "Fase") +
     scale_x_discrete(labels = c("Pre-", "Post-")) +
     facet_grid(. ~ factor(Group, labels = c("EMTr Sham", "EMTr Real"))) +
     theme(legend.position = "none")
@@ -192,7 +194,7 @@ graphTplot <- melt(
 graphTplot[Stage == "T0", Delta := 0][, `:=`(
     Stage = factor(Stage, labels = c("Pre-", "Post-")),
     variable = factor(variable, labels = c(
-        "L.Camino", "C.Agrupamiento", "P.Mundo",
+        "L.Camino", "C.Agrupamiento", "MundoP.",
         "E.Global", "E.Local", "Densidad", "Fuerza"
         ))
 )]
@@ -207,7 +209,7 @@ graphTplot %>%
         position = pd, width = 0.25) +
     geom_line(position = pd, aes(col = Group)) +
     geom_point(shape = 21, size = 5, fill = "white", position = pd) +
-    scale_colour_hue(name = "Grupo",
+    scale_colour_hue(name = NULL,
         breaks=c("Sham", "Tx"),
         labels=c("EMTr Sham", "EMTr Real"),
         l=10) +
@@ -224,7 +226,7 @@ graphTplot %>%
         position = pd, width = 0.25) +
     geom_line(position = pd, aes(col = Group)) +
     geom_point(shape = 21, size = 5, fill = "white", position = pd) +
-    scale_colour_hue(name = "Grupo",
+    scale_colour_hue(name = NULL,
         breaks=c("Sham", "Tx"),
         labels=c("EMTr Sham", "EMTr Real"),
         l=10) +
@@ -233,7 +235,7 @@ graphTplot %>%
     theme(legend.position = 'top')
 
 graphTplot %>% 
-    filter(variable %in% c("L.Camino", "C.Agrupamiento", "P.Mundo")) %>% 
+    filter(variable %in% c("L.Camino", "C.Agrupamiento", "MundoP.")) %>% 
     summarySE(measurevar = "Delta",
         groupvars = c("Group", "Stage", "variable"), na.rm = T) %>% 
     ggplot(aes(Stage, Delta, group = Group)) +
@@ -241,10 +243,249 @@ graphTplot %>%
         position = pd, width = 0.25) +
     geom_line(position = pd, aes(col = Group)) +
     geom_point(shape = 21, size = 5, fill = "white", position = pd) +
-    scale_colour_hue(name = "Grupo",
+    scale_colour_hue(name = NULL,
         breaks=c("Sham", "Tx"),
         labels=c("EMTr Sham", "EMTr Real"),
         l=10) +
     labs(y = NULL, x = NULL) +
     facet_wrap(variable ~ ., scales = 'free') +
     theme(legend.position = 'top')
+
+
+
+# Longitudinal ------------------------------------------------------------
+
+grMedClinLongL1[Scale == "VAS"] %>% 
+   summarySE(measurevar = "Score", groupvars = c("GroupVAS", "Stage")) %>% 
+    ggplot(aes(Stage, Score, group = GroupVAS)) +
+    geom_errorbar(aes(ymin = Score - sd, ymax = Score + sd, col = GroupVAS),
+        width = 0.1, position = pd) +
+    geom_line(position = pd, aes(col = GroupVAS)) +
+    geom_point(shape = 21, size = 5, fill = 'white', position = pd) + 
+    scale_colour_hue(name = NULL, 
+        breaks = c("<", ">"),
+        labels = c("Puntaje bajo", "Puntaje alto"),
+        l=10) +
+    labs(y = NULL, x = NULL) +
+    scale_x_discrete(labels = c("Basal", "Dos semanas", "Tres meses")) + 
+    theme(legend.position = 'none')
+
+grMedClinLongL1[Scale == "CCQG"] %>% 
+   summarySE(measurevar = "Score", groupvars = c("GroupCCQG", "Stage")) %>% 
+    ggplot(aes(Stage, Score, group = GroupCCQG)) +
+    geom_errorbar(aes(ymin = Score - sd, ymax = Score + sd, col = GroupCCQG),
+        width = 0.1, position = pd) +
+    geom_line(position = pd, aes(col = GroupCCQG)) +
+    geom_point(shape = 21, size = 5, fill = 'white', position = pd) + 
+    scale_colour_hue(name = NULL, 
+        breaks = c("<", ">"),
+        labels = c("Puntaje bajo", "Puntaje alto"),
+        l=10) +
+    labs(y = NULL, x = NULL) +
+    scale_x_discrete(labels = c("Basal", "Dos semanas", "Tres meses")) + 
+    theme(legend.position = c(0.82,0.86))
+
+grMedClinLongL1[Scale == "CCQN"] %>% 
+   summarySE(measurevar = "Score", groupvars = c("GroupCCQN", "Stage")) %>% 
+    ggplot(aes(Stage, Score, group = GroupCCQN)) +
+    geom_errorbar(aes(ymin = Score - sd, ymax = Score + sd, col = GroupCCQN),
+        width = 0.1, position = pd) +
+    geom_line(position = pd, aes(col = GroupCCQN)) +
+    geom_point(shape = 21, size = 5, fill = 'white', position = pd) + 
+    scale_colour_hue(name = NULL, 
+        breaks = c("<", ">"),
+        labels = c("Puntaje bajo", "Puntaje alto"),
+        l=10) +
+    labs(y = NULL, x = NULL) +
+    scale_x_discrete(labels = c("Basal", "Dos semanas", "Tres meses")) + 
+    theme(legend.position = 'none')
+
+grMedClinLongL1[Scale == "B11Tot"] %>% 
+   summarySE(measurevar = "Score", groupvars = c("GroupBIS", "Stage")) %>% 
+    ggplot(aes(Stage, Score, group = GroupBIS)) +
+    geom_errorbar(aes(ymin = Score - sd, ymax = Score + sd, col = GroupBIS),
+        width = 0.1, position = pd) +
+    geom_line(position = pd, aes(col = GroupBIS)) +
+    geom_point(shape = 21, size = 5, fill = 'white', position = pd) + 
+    scale_colour_hue(name = NULL, 
+        breaks = c("<", ">"),
+        labels = c("Puntaje bajo", "Puntaje alto"),
+        l=10) +
+    labs(y = NULL, x = NULL) +
+    scale_x_discrete(labels = c("Basal", "Dos semanas", "Tres meses")) + 
+    theme(legend.position = 'none')
+
+#### Graphs ####
+
+graphL1plot <- melt(
+    attrL1[threshold == thresholds[10],c(1:2,4,6,8,9,11,17,22)], 
+    measure.vars = 3:9, value.name = "Score"
+)
+graphL1plot[, `:=`(
+    Stage = factor(Stage, labels = c("T0", "T1", "T2")),
+    variable = factor(variable, labels = c(
+        "L.Camino", "C.Agrupamiento", "MundoP.",
+        "E.Global", "E.Local", "Densidad", "Fuerza"
+        ))
+)]
+
+graphL1plot %>% 
+    filter(variable %in% c("Densidad", "Fuerza")) %>% 
+    summarySE(measurevar = "Score",
+        groupvars = c("Stage", "variable"), na.rm = T) %>% 
+    ggplot(aes(Stage, Score, group = 1)) +
+    geom_errorbar(aes(ymin = Score - sd, ymax = Score + sd), 
+        position = pd, width = 0.25) +
+    geom_line(position = pd) +
+    geom_point(shape = 21, size = 5, fill = "white", position = pd) +
+    labs(y = NULL, x = NULL) +
+    facet_wrap(variable ~ ., scales = 'free')
+
+graphL1plot %>% 
+    filter(variable %in% c("E.Global", "E.Local")) %>% 
+    summarySE(measurevar = "Score",
+        groupvars = c("Stage", "variable"), na.rm = T) %>% 
+    ggplot(aes(Stage, Score, group = 1)) +
+    geom_errorbar(aes(ymin = Score - sd, ymax = Score + sd), 
+        position = pd, width = 0.25) +
+    geom_line(position = pd) +
+    geom_point(shape = 21, size = 5, fill = "white", position = pd) +
+    labs(y = NULL, x = NULL) +
+    facet_wrap(variable ~ ., scales = 'free')
+
+graphL1plot %>% 
+    filter(variable %in% c("L.Camino", "C.Agrupamiento", "MundoP.")) %>% 
+    summarySE(measurevar = "Score",
+        groupvars = c("Stage", "variable"), na.rm = T) %>% 
+    ggplot(aes(Stage, Score, group = 1)) +
+    geom_errorbar(aes(ymin = Score - sd, ymax = Score + sd), 
+        position = pd, width = 0.25) +
+    geom_line(position = pd) +
+    geom_point(shape = 21, size = 5, fill = "white", position = pd) +
+    labs(y = NULL, x = NULL) +
+    facet_wrap(variable ~ ., scales = 'free')
+
+#### 6 meses ####
+grMedClinLongL2[Scale == "VAS"] %>% 
+   summarySE(
+       measurevar = "Score", groupvars = c("GroupVAS", "Stage"), na.rm = T
+       ) %>% 
+    ggplot(aes(Stage, Score, group = GroupVAS)) +
+    geom_errorbar(aes(ymin = Score - sd, ymax = Score + sd, col = GroupVAS),
+        width = 0.1, position = pd) +
+    geom_line(position = pd, aes(col = GroupVAS)) +
+    geom_point(shape = 21, size = 5, fill = 'white', position = pd) + 
+    scale_colour_hue(name = NULL, 
+        breaks = c("<", ">"),
+        labels = c("Puntaje bajo", "Puntaje alto"),
+        l=10) +
+    labs(y = NULL, x = NULL) +
+    scale_x_discrete(
+        labels = c("Basal", "Dos semanas", "Tres meses", "Seis meses")
+        ) + theme(legend.position = 'none')
+
+grMedClinLongL2[Scale == "CCQG"] %>% 
+   summarySE(
+       measurevar = "Score", groupvars = c("GroupCCQG", "Stage"), na.rm = T
+       ) %>% 
+    ggplot(aes(Stage, Score, group = GroupCCQG)) +
+    geom_errorbar(aes(ymin = Score - sd, ymax = Score + sd, col = GroupCCQG),
+        width = 0.1, position = pd) +
+    geom_line(position = pd, aes(col = GroupCCQG)) +
+    geom_point(shape = 21, size = 5, fill = 'white', position = pd) + 
+    scale_colour_hue(name = NULL, 
+        breaks = c("<", ">"),
+        labels = c("Puntaje bajo", "Puntaje alto"),
+        l=10) +
+    labs(y = NULL, x = NULL) +
+    scale_x_discrete(
+        labels = c("Basal", "Dos semanas", "Tres meses", "Seis meses")
+        ) + theme(legend.position = c(0.6,0.85))
+
+grMedClinLongL2[Scale == "CCQN"] %>% 
+   summarySE(
+       measurevar = "Score", groupvars = c("GroupCCQN", "Stage"), na.rm = T
+       ) %>% 
+    ggplot(aes(Stage, Score, group = GroupCCQN)) +
+    geom_errorbar(aes(ymin = Score - sd, ymax = Score + sd, col = GroupCCQN),
+        width = 0.1, position = pd) +
+    geom_line(position = pd, aes(col = GroupCCQN)) +
+    geom_point(shape = 21, size = 5, fill = 'white', position = pd) + 
+    scale_colour_hue(name = NULL, 
+        breaks = c("<", ">"),
+        labels = c("Puntaje bajo", "Puntaje alto"),
+        l=10) +
+    labs(y = NULL, x = NULL) +
+    scale_x_discrete(
+        labels = c("Basal", "Dos semanas", "Tres meses", "Seis meses")
+        ) + 
+    theme(legend.position = 'none')
+
+grMedClinLongL2[Scale == "B11Tot"] %>% 
+   summarySE(
+       measurevar = "Score", groupvars = c("GroupBIS", "Stage"), na.rm = T
+       ) %>% 
+    ggplot(aes(Stage, Score, group = GroupBIS)) +
+    geom_errorbar(aes(ymin = Score - sd, ymax = Score + sd, col = GroupBIS),
+        width = 0.1, position = pd) +
+    geom_line(position = pd, aes(col = GroupBIS)) +
+    geom_point(shape = 21, size = 5, fill = 'white', position = pd) + 
+    scale_colour_hue(name = NULL, 
+        breaks = c("<", ">"),
+        labels = c("Puntaje bajo", "Puntaje alto"),
+        l=10) +
+    labs(y = NULL, x = NULL) +
+    scale_x_discrete(
+        labels = c("Basal", "Dos semanas", "Tres meses", "Seis meses")
+        ) + 
+    theme(legend.position = 'none')
+
+#### Graphs ####
+
+graphL2plot <- melt(
+    attrL2[threshold == thresholds[10],c(1:2,4,6,8,9,11,17,22)], 
+    measure.vars = 3:9, value.name = "Score"
+)
+graphL2plot[, `:=`(
+    Stage = factor(Stage, labels = c("T0", "T1", "T2", "T3")),
+    variable = factor(variable, labels = c(
+        "L.Camino", "C.Agrupamiento", "MundoP.",
+        "E.Global", "E.Local", "Densidad", "Fuerza"
+        ))
+)]
+
+graphL2plot %>% 
+    filter(variable %in% c("Densidad", "Fuerza")) %>% 
+    summarySE(measurevar = "Score",
+        groupvars = c("Stage", "variable"), na.rm = T) %>% 
+    ggplot(aes(Stage, Score, group = 1)) +
+    geom_errorbar(aes(ymin = Score - sd, ymax = Score + sd), 
+        position = pd, width = 0.25) +
+    geom_line(position = pd) +
+    geom_point(shape = 21, size = 5, fill = "white", position = pd) +
+    labs(y = NULL, x = NULL) +
+    facet_wrap(variable ~ ., scales = 'free')
+
+graphL2plot %>% 
+    filter(variable %in% c("E.Global", "E.Local")) %>% 
+    summarySE(measurevar = "Score",
+        groupvars = c("Stage", "variable"), na.rm = T) %>% 
+    ggplot(aes(Stage, Score, group = 1)) +
+    geom_errorbar(aes(ymin = Score - sd, ymax = Score + sd), 
+        position = pd, width = 0.25) +
+    geom_line(position = pd) +
+    geom_point(shape = 21, size = 5, fill = "white", position = pd) +
+    labs(y = NULL, x = NULL) +
+    facet_wrap(variable ~ ., scales = 'free')
+
+graphL2plot %>% 
+    filter(variable %in% c("L.Camino", "C.Agrupamiento", "MundoP.")) %>% 
+    summarySE(measurevar = "Score",
+        groupvars = c("Stage", "variable"), na.rm = T) %>% 
+    ggplot(aes(Stage, Score, group = 1)) +
+    geom_errorbar(aes(ymin = Score - sd, ymax = Score + sd), 
+        position = pd, width = 0.25) +
+    geom_line(position = pd) +
+    geom_point(shape = 21, size = 5, fill = "white", position = pd) +
+    labs(y = NULL, x = NULL) +
+    facet_wrap(variable ~ ., scales = 'free')
