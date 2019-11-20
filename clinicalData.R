@@ -1,7 +1,7 @@
 
 # Raw data  ---------------------------------------------------------------
 
-inClinDir <- 'inData/clinical_data/20190828/'
+inClinDir <- 'inData/clinical_data/20191015/'
 
 # data_amai <- read_excel(paste0(inClinDir, 'AMA INSE 8x7.xlsx'), sheet = 2)
 # data_calendar <- read_excel(paste0(inClinDir, 'Calendar.xlsx'), 
@@ -295,22 +295,25 @@ grMedClinLong[, `:=`(
     )
 ]
 
+setkey(grMedClin, Study.ID)
+setkey(covars1, Study.ID)
+grMedClin <- covars1[grMedClin]
 ### VAS
 
-predVAS <- lm(Post_VAS ~ Group + Pre_VAS + Pre_B11Tot, data = grMedClin)
+predVAS <- lm(Post_VAS ~ Group + Pre_VAS + Pre_B11Tot + sex + age + education, data = grMedClin)
 
 ### CCQ General
 
-predCCQG <- lm(Post_CCQG ~ Group + Pre_CCQG + Pre_B11Tot, data = grMedClin)
+predCCQG <- lm(Post_CCQG ~ Group + Pre_CCQG + Pre_B11Tot + sex + age + education + coc_years + smoking, data = grMedClin)
 
 ### CCQ Now
 
-predCCQN <- lm(Post_CCQN ~ Group + Pre_CCQN + Pre_B11Tot, data = grMedClin)
+predCCQN <- lm(Post_CCQN ~ Group + Pre_CCQN + Pre_B11Tot + sex + age + education + coc_years + smoking, data = grMedClin)
 
 ### Barratt's
 
 predBIS <- lm(
-    Post_B11Tot ~ Group + Pre_B11Tot + Pre_CCQN + Pre_CCQG + Pre_VAS, 
+    Post_B11Tot ~ Group + Pre_B11Tot + Pre_CCQN + Pre_CCQG + Pre_VAS + sex + age + education + coc_years + smoking, 
     data = grMedClin
 )
 
@@ -373,51 +376,61 @@ grMedClinLongL1[, `:=`(
 )
     ]
 
+grMedsL1 <- grMedClinLongL1[Scale == "VAS" & Stage == "T0", c(1:5)]
+
 setkey(grMedClinLongL1, Study.ID)
 setkey(covars2, Study.ID)
 grMedClinLongL1 <- grMedClinLongL1[covars2]
 
 ## VAS
-l1V0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL1[Scale == 'VAS'])
-l1V1 <- lmer(Score ~ GroupVAS + (1|Study.ID), grMedClinLongL1[Scale == 'VAS'])
-l1V2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL1[Scale == 'VAS'])
+# l1V0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL1[Scale == 'VAS'])
+# l1V1 <- lmer(Score ~ GroupVAS + (1|Study.ID), grMedClinLongL1[Scale == 'VAS'])
+# l1V2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL1[Scale == 'VAS'])
 l1V3 <- lmer(Score ~ Stage + GroupVAS + age + sex + education + (1|Study.ID), 
     grMedClinLongL1[Scale == 'VAS'])
-anova(l1V0, l1V1, l1V2, l1V3)
-summary(glht(l1V3, linfct = mcp(Stage = "Tukey")))
-
-## CCQ Now
-l1N0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL1[Scale == 'CCQN'])
-l1N1 <- lmer(Score ~ GroupCCQN + (1|Study.ID), grMedClinLongL1[Scale == 'CCQN'])
-l1N2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL1[Scale == 'CCQN'])
-l1N3 <- lmer(Score ~ Stage + GroupCCQN + age + sex + education + (1|Study.ID), 
-    grMedClinLongL1[Scale == 'CCQN'])
-anova(l1N0, l1N1, l1N2, l1N3)
-summary(glht(l1N3, linfct = mcp(Stage = "Tukey")))
+l1V4 <- lmer(Score ~ Stage * GroupVAS + age + sex + education + (1|Study.ID), 
+    grMedClinLongL1[Scale == 'VAS'])
+anova(l1V3, l1V4)
+summary(glht(l1V4, linfct = mcp(Stage = "Tukey")))
 
 ## CCQ General
-l1G0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL1[Scale == 'CCQG'])
-l1G1 <- lmer(Score ~ GroupCCQN + (1|Study.ID), grMedClinLongL1[Scale == 'CCQG'])
-l1G2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL1[Scale == 'CCQG'])
+# l1N0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL1[Scale == 'CCQN'])
+# l1N1 <- lmer(Score ~ GroupCCQN + (1|Study.ID), grMedClinLongL1[Scale == 'CCQN'])
+# l1N2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL1[Scale == 'CCQN'])
 l1G3 <- lmer(Score ~ Stage + GroupCCQG + age + sex + education + (1|Study.ID), 
     grMedClinLongL1[Scale == 'CCQG'])
-anova(l1G0, l1G1, l1G2, l1G3)
+l1G4 <- lmer(Score ~ Stage * GroupCCQG + age + sex + education + (1|Study.ID), 
+    grMedClinLongL1[Scale == 'CCQG'])
+anova(l1G3, l1G4)
 summary(glht(l1G3, linfct = mcp(Stage = "Tukey")))
 
+## CCQ Now
+# l1N0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL1[Scale == 'CCQN'])
+# l1N1 <- lmer(Score ~ GroupCCQN + (1|Study.ID), grMedClinLongL1[Scale == 'CCQN'])
+# l1N2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL1[Scale == 'CCQN'])
+l1N3 <- lmer(Score ~ Stage + GroupCCQN + age + sex + education + (1|Study.ID), 
+    grMedClinLongL1[Scale == 'CCQN'])
+l1N4 <- lmer(Score ~ Stage * GroupCCQN + age + sex + education + (1|Study.ID), 
+    grMedClinLongL1[Scale == 'CCQN'])
+anova(l1N3, l1N4)
+summary(glht(l1N3, linfct = mcp(Stage = "Tukey")))
+
 ## Barrat's
-l1B0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL1[Scale == 'B11Tot'])
-l1B1 <- lmer(Score ~ GroupBIS + (1|Study.ID), grMedClinLongL1[Scale == 'B11Tot'])
-l1B2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL1[Scale == 'B11Tot'])
+# l1B0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL1[Scale == 'B11Tot'])
+# l1B1 <- lmer(Score ~ GroupBIS + (1|Study.ID), grMedClinLongL1[Scale == 'B11Tot'])
+# l1B2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL1[Scale == 'B11Tot'])
 l1B3 <- lmer(Score ~ Stage + GroupBIS + age + sex + education + (1|Study.ID), 
     grMedClinLongL1[Scale == 'B11Tot'])
-anova(l1B0, l1B1, l1B2, l1B3)
-summary(glht(l1B2, linfct = mcp(Stage = "Tukey")))
+l1B4 <- lmer(Score ~ Stage * GroupBIS + age + sex + education + (1|Study.ID), 
+    grMedClinLongL1[Scale == 'B11Tot'])
+anova(l1B3, l1B4)
+summary(glht(l1B3, linfct = mcp(Stage = "Tukey")))
 
-stargazer(l1V3, l1N3, l1G3, l1B3,
+stargazer(l1V4, l1G4, l1N4, l1B4,
     title = "Modelos de efectos mixtos de mediciones clínicas longitudinales (a tres meses) con grupo de puntaje basal y medidas demográficas como covariantes",
     dep.var.caption = "Mediciones clínicas ",
     dep.var.labels = c("VAS", "CCQ-N", "CCQ-G", "BIS-11"),
-    covariate.labels = c("Stage(T1)", "Stage(T2)", "Mediana(VAS)", "Mediana(CCQN)", "Mediana(CCQG)", "Mediana(BIS)", "Edad", "Sexo(F)", "Educación", "Constante"),
+    covariate.labels = c("Stage(T1)", "Stage(T2)", "Mediana(VAS)", "Mediana(CCQN)", "Mediana(CCQG)", "Mediana(BIS)", "Edad", "Sexo(F)", "Educación" ),
     no.space = T)
 
 # Longitudinal 2 ----------------------------------------------------------
@@ -462,49 +475,60 @@ grMedClinLongL2[, `:=`(
 )
     ]
 
+grMedsL2 <- grMedClinLongL2[Scale == "VAS" & Stage == "T0", c(1:5)]
+
 setkey(grMedClinLongL2, Study.ID)
 setkey(covars3, Study.ID)
 grMedClinLongL2 <- grMedClinLongL2[covars3]
+
 ## VAS
-l2V0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL2[Scale == 'VAS'])
-l2V1 <- lmer(Score ~ GroupVAS + (1|Study.ID), grMedClinLongL2[Scale == 'VAS'])
-l2V2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL2[Scale == 'VAS'])
+# l2V0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL2[Scale == 'VAS'])
+# l2V1 <- lmer(Score ~ GroupVAS + (1|Study.ID), grMedClinLongL2[Scale == 'VAS'])
+# l2V2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL2[Scale == 'VAS'])
 l2V3 <- lmer(Score ~ Stage + GroupVAS + age + sex + education + (1|Study.ID), 
     grMedClinLongL2[Scale == 'VAS'])
-anova(l2V0, l2V1, l2V2, l2V3)
+l2V4 <- lmer(Score ~ Stage * GroupVAS + age + sex + education + (1|Study.ID), 
+    grMedClinLongL2[Scale == 'VAS'])
+anova(l2V3, l2V4)
 summary(glht(l2V3, linfct = mcp(Stage = "Tukey")))
 
 ## CCQ Now
-l2N0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL2[Scale == 'CCQN'])
-l2N1 <- lmer(Score ~ GroupCCQN + (1|Study.ID), grMedClinLongL2[Scale == 'CCQN'])
-l2N2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL2[Scale == 'CCQN'])
+# l2N0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL2[Scale == 'CCQN'])
+# l2N1 <- lmer(Score ~ GroupCCQN + (1|Study.ID), grMedClinLongL2[Scale == 'CCQN'])
+# l2N2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL2[Scale == 'CCQN'])
 l2N3 <- lmer(Score ~ Stage + GroupCCQN + age + sex + education + (1|Study.ID), 
     grMedClinLongL2[Scale == 'CCQN'])
-anova(l2N0, l2N1, l2N2, l2N3)
+l2N4 <- lmer(Score ~ Stage * GroupCCQN + age + sex + education + (1|Study.ID), 
+    grMedClinLongL2[Scale == 'CCQN'])
+anova(l2N3, l2N4)
 summary(glht(l2N3, linfct = mcp(Stage = "Tukey")))
 
 ## CCQ General
-l2G0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL2[Scale == 'CCQG'])
-l2G1 <- lmer(Score ~ GroupCCQN + (1|Study.ID), grMedClinLongL2[Scale == 'CCQG'])
-l2G2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL2[Scale == 'CCQG'])
+# l2G0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL2[Scale == 'CCQG'])
+# l2G1 <- lmer(Score ~ GroupCCQN + (1|Study.ID), grMedClinLongL2[Scale == 'CCQG'])
+# l2G2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL2[Scale == 'CCQG'])
 l2G3 <- lmer(Score ~ Stage + GroupCCQG + age + sex + education + (1|Study.ID), 
     grMedClinLongL2[Scale == 'CCQG'])
-anova(l2G0, l2G1, l2G2, l2G3)
-summary(glht(l2G3, linfct = mcp(Stage = "Tukey")))
+l2G4 <- lmer(Score ~ Stage * GroupCCQG + age + sex + education + (1|Study.ID), 
+    grMedClinLongL2[Scale == 'CCQG'])
+anova(l2G3, l2G4)
+summary(glht(l2G4, linfct = mcp(GroupCCQG = "Tukey")))
 
 ## Barrat's
-l2B0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL2[Scale == 'B11Tot'])
-l2B1 <- lmer(Score ~ GroupBIS + (1|Study.ID), grMedClinLongL2[Scale == 'B11Tot'])
-l2B2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL2[Scale == 'B11Tot'])
+# l2B0 <- lmer(Score ~ (1|Study.ID), grMedClinLongL2[Scale == 'B11Tot'])
+# l2B1 <- lmer(Score ~ GroupBIS + (1|Study.ID), grMedClinLongL2[Scale == 'B11Tot'])
+# l2B2 <- lmer(Score ~ Stage + (1|Study.ID), grMedClinLongL2[Scale == 'B11Tot'])
 l2B3 <- lmer(Score ~ Stage + GroupBIS + age + sex + education + (1|Study.ID), 
     grMedClinLongL2[Scale == 'B11Tot'])
-anova(l2B0, l2B1, l2B2, l2B3)
-summary(glht(l2B2, linfct = mcp(Stage = "Tukey")))
+l2B4 <- lmer(Score ~ Stage * GroupBIS + age + sex + education + (1|Study.ID), 
+    grMedClinLongL2[Scale == 'B11Tot'])
+anova(l2B3, l2B4)
+summary(glht(l2B3, linfct = mcp(Stage = "Tukey")))
 
-stargazer(l2V3, l2N3, l2G3, l2B3,
+stargazer(l2V4, l2G4, l2N4, l2B4,
     title = "Modelos de efectos mixtos de mediciones clínicas longitudinales (a seis meses) con grupo de puntaje basal y medidas demográficas como covariantes",
     dep.var.caption = "Mediciones clínicas ",
     dep.var.labels = c("VAS", "CCQ-N", "CCQ-G", "BIS-11"),
-    covariate.labels = c("Fase(T1)", "Fase(T2)", "Fase(T3)", "Mediana(VAS)", "Mediana(CCQN)", "Mediana(CCQG)", "Mediana(BIS)", "Edad", "Sexo(F)", "Educación", "Constante"),
+    covariate.labels = c("Fase(T1)", "Fase(T2)", "Fase(T3)", "Mediana(VAS)", "Mediana(CCQG)", "Mediana(CCQN)", "Mediana(BIS)", "Edad", "Sexo(F)", "Educación"),
     no.space = T)
 
