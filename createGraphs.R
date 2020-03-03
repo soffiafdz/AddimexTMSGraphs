@@ -23,28 +23,28 @@ for (i in seq_along(sessions)) {
                     weighted = TRUE
                 )
 
-                V(g.tmp)$name <- as.character(power264$name)
-
-                g.tmp <- setBgAttr(
+                g.tmp <- set_brainGraph_attr(
                     g.tmp,
-                    atlas,
-                    modality = 'fmri',
-                    weighting = 'sld',
-                    threshold = thresholds[k],
-                    subject = covars[
-                        Session == sessions[i] & Group == groups[j], Study.ID[l]
-                    ],
-                    group = groups[j],
-                    session = sessions[i],
                     use.parallel = FALSE,
                     A = A.norm.sub[[k]][, , inds[[i]][[j]][l]]
                 )
 
+                V(g.tmp)$name <- as.character(power264$name)
+                g.tmp$weighting <- 'Pearson'
+                g.tmp$threshold <- thresholds[k]
+                g.tmp$session <- sessions[i]
+                g.tmp$group = groups[j]
+                g.tmp$name <- covars[
+                    Session == sessions[i] & Group == groups[j], Study.ID[l]
+                ]
+
                 write_rds(
                     g.tmp,
-                    savedir1,
-                    sprintf(
+                    paste0(
+                        savedir1,
+                        sprintf(
                         's%i_g%i_thr%02i_subj%03i%s', i, j, k, l, '.RDS'
+                        )
                     )
                 )
             }
@@ -72,14 +72,8 @@ for (i in seq_along(sessions)) {
         }
 
         gGroup[[i]][[j]] <- llply(seq_along(thresholds), function(x)
-            setBgAttr(
+            set_brainGraph_attr(
                 gGroup[[i]][[j]][[x]],
-                atlas,
-                modality = 'fmri',
-                weighting = 'sld',
-                threshold = thresholds[x],
-                group = groups[j],
-                session = sessions[i],
                 A = A.norm.mean[[x]][[i^2-i+j]],
                 use.parallel = FALSE
             ), .parallel = TRUE
@@ -91,7 +85,7 @@ for (i in seq_along(sessions)) {
     for (j in seq_along(groups)) {
         g[[i]][[j]] <- fnames[[i]][[j]] <- vector('list', length = length(thresholds))
         for (k in seq_along(thresholds)) {
-            fnames[[i]][[j]] <- list.files(
+            fnames[[i]][[j]][[k]] <- list.files(
                 savedir,
                 sprintf('*s%i_g%i_thr%02i.*', i, j, k, '.RDS'),
                 full.names = TRUE
