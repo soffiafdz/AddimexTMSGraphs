@@ -9,7 +9,7 @@ pacman::p_load(
   doParallel,
   readxl,
   plyr,
-  lme4, 
+  lme4,
   multcomp,
   stargazer,
   effsize,
@@ -29,8 +29,8 @@ today <- format(Sys.Date(), "%Y%m%d")
 savedir <- "outData/graphs/"
 savedir1 <- paste0(savedir, today, "_")
 
-groups1 <- c("CU", "HC")
-groups2 <- c("Sham", "Tx")
+groups <- c("Sham", "Tx")
+sessions <- c("T0", "T1")
 
 atlas <- "power264"
 modality <- "fmri"
@@ -44,35 +44,24 @@ covars[,`:=`(
 )]
 setnames(
   covars,
-  c(1:6), 
-  c("Age", "Educ", "Exclusion"))
+  c(1:6),
+  c("Study.ID", "Age", "Sex", "Group", "Educ", "Excl")
+)
 covars <- do.call("rbind", replicate(2, covars, simplify = F))
 covars[, Session := c(rep("T0", nrow(covars)/2), rep("T1", nrow(covars)/2))]
+setcolorder(covars, c("Study.ID", "Session", "Group", "Age", "Sex", "Educ", "Excl"))
 setkey(covars, Session, Group, Study.ID)
+covars <- covars[Excl == 0]
 
+inds <- lapply(seq_along(sessions), function(x)
+    lapply(seq_along(groups), function(y)
+        covars[, which(Group == groups[y] & Session == sessions[x])]))
 
-covars <- covars[Exclusion == 0]
+inds <- set_names(inds, sessions)
+for (i in seq_along(inds)) {inds[[i]] <- set_names(inds[[i]], groups)}
 
-# covarsP <- fread("inData/participantsConn.tsv", na.strings = c('n/a','NA'))
-# covarsP <- covarsP[group == 1 & exclusion == 0]
-# setnames(covars, 1, "Study.ID")
-# covarsP <- covarsP[, `:=`(
-#     sex = factor(sex, labels = c("M", "F")),
-#     education = educ_yr
-# )][,c(1:4,17,12:15)]
-# covarsP <- rbind(covarsP, covars, fill = T)
-# covarsP[, `:=`(
-#   Group = factor(c(rep("HC", 45), rep("CU", 51))),
-#   group = NULL,
-#   sex = as.factor(sex),
-#     exclusion = NULL
-# )]
-# setkey(covarsP, Group, Study.ID)
+indsFlat <- unlist(inds, recursive = F)
 
-# indsP <- lapply(seq_along(groups1), function(x)
-    # covarsP[, which(Group == groups1[x])])
-inds <- lapply(seq_along(groups2), function(x)
-    covars[, which(Group == groups2[x])])
 
 # Atlas -------------------------------------------------------------------
 
@@ -101,3 +90,15 @@ power264[network == "Ventral attention", networkLabel := "VAN"]
 # pVAN <- power264[networkLabel == "VAN"]
 
 
+# Load RDS ----------------------------------------------------------------
+
+## Matrices
+
+mats <- read_rds('outData/RDS/mats.RDS')
+
+## Graphs
+
+loadDate <- 20200302
+
+g <- read_rds(paste0(savedir, loadDate, '_g.RDS'))
+gGroup <- read_rds(paste0(savedir, loadDate, '_gGroup.RDS'))
