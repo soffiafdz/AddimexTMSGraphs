@@ -7,7 +7,7 @@ pd <- position_dodge(0.5)
 # Density & strength
 attrP[threshold %in% thresholds[1:14], c(1:3,17,22)][
     , threshold := factor(threshold)] %>% 
-    dplyr::rename(Densidad = density, Fuerza = strength) %>% 
+    dplyr::rename(Density = density, Strength = strength) %>% 
     melt( measure.vars = 4:5) %>% 
     as.data.frame() %>% 
     summarySE(measurevar = "value",
@@ -19,7 +19,7 @@ attrP[threshold %in% thresholds[1:14], c(1:3,17,22)][
     geom_point(shape = 21, size = 3, fill = "white", position = pd) +
     scale_colour_hue(name = NULL,
         breaks=c("CU", "HC"),
-        labels=c("Pacientes", "Controles"),
+        labels=c("Patients", "Controls"),
         l=10) +
     labs(y = NULL, x = expression(tau)) +
     facet_grid(variable ~ ., scales = 'free') + 
@@ -28,7 +28,7 @@ attrP[threshold %in% thresholds[1:14], c(1:3,17,22)][
 # Efficiencies
 attrP[threshold %in% thresholds[1:14], c(1:3,9,11)][
     , threshold := factor(threshold)] %>% 
-    dplyr::rename(E.Global = E.global, E.Local = E.local) %>% 
+    dplyr::rename(Global.Eff = E.global, Local.Eff = E.local) %>% 
     melt( measure.vars = 4:5) %>% 
     as.data.frame() %>% 
     summarySE(measurevar = "value",
@@ -40,7 +40,7 @@ attrP[threshold %in% thresholds[1:14], c(1:3,9,11)][
     geom_point(shape = 21, size = 3, fill = "white", position = pd) +
     scale_colour_hue(name = NULL,
         breaks=c("CU", "HC"),
-        labels=c("Pacientes", "Controles"),
+        labels=c("Patients", "Controls"),
         l=10) +
     labs(y = NULL, x = expression(tau)) +
     facet_grid(variable ~ ., scales = 'free') + 
@@ -48,9 +48,9 @@ attrP[threshold %in% thresholds[1:14], c(1:3,9,11)][
 
 # Sigmas
 pd <- position_dodge(0.4)   
-attrP[threshold %in% thresholds[1:8], c(1:3,4,6,8)][
+attrP[threshold %in% thresholds[1:14], c(1:3,4,6,8)][
     , threshold := factor(threshold)] %>% 
-    dplyr::rename(MundoP. = sigma, L.Camino = Lp, C.Agrup. = Cp) %>% 
+    dplyr::rename(SmallWorld = sigma, PathLength = Lp, ClusterCoeff = Cp) %>% 
     melt( measure.vars = 4:6) %>% 
     as.data.frame() %>% 
     summarySE(measurevar = "value",
@@ -62,7 +62,7 @@ attrP[threshold %in% thresholds[1:8], c(1:3,4,6,8)][
     geom_point(shape = 21, size = 3, fill = "white", position = pd) +
     scale_colour_hue(name = NULL,
         breaks=c("CU", "HC"),
-        labels=c("Pacientes", "Controles"),
+        labels=c("Patients", "Controls"),
         l=10) +
     labs(y = NULL, x = NULL) +
     facet_grid(variable ~ ., scales = 'free') + 
@@ -70,7 +70,7 @@ attrP[threshold %in% thresholds[1:8], c(1:3,4,6,8)][
 
 attrP[threshold %in% thresholds[9:14], c(1:3,4,6,8)][
     , threshold := factor(threshold)] %>% 
-    dplyr::rename(MundoP. = sigma, L.Camino = Lp, C.Agrup. = Cp) %>% 
+    dplyr::rename(SmallWorld = sigma, PathLength = Lp, ClusterCoeff = Cp) %>% 
     melt( measure.vars = 4:6) %>% 
     as.data.frame() %>% 
     summarySE(measurevar = "value",
@@ -82,7 +82,7 @@ attrP[threshold %in% thresholds[9:14], c(1:3,4,6,8)][
     geom_point(shape = 21, size = 3, fill = "white", position = pd) +
     scale_colour_hue(name = NULL,
         breaks=c("CU", "HC"),
-        labels=c("Pacientes", "Controles"),
+        labels=c("Patients", "Controls"),
         l=10) +
     labs(y = NULL, x = expression(tau)) +
     facet_grid(variable ~ ., scales = 'free') + 
@@ -122,12 +122,12 @@ grMedClinPlot[Scale == "VAS"] %>%
     geom_point(shape = 21, size = 5, fill = "white", position = pd) +
     scale_colour_hue(name = NULL,
         breaks=c("<", ">"),
-        labels=c("Puntaje bajo", "Puntaje alto"),
+        labels=c("Low score", "High score"),
         l=10) +
     labs(y = NULL, x = NULL) +
     scale_x_discrete(labels = c("Pre-", "Post-")) +
-    facet_grid(. ~ factor(Group, labels = c("EMTr Sham", "EMTr Real"))) +
-    theme(legend.position = "none")
+    facet_grid(. ~ factor(Group, labels = c("rTMS Sham", "rTMS Real"))) +
+    theme(legend.position = c(0.85,0.88))
 
 grMedClinPlot[Scale == "CCQG"] %>% 
     summarySE(measurevar = "Score", groupvars = c("GroupCCQG2", "GroupCCQG3", "Group", "Stage")) %>%
@@ -138,12 +138,12 @@ grMedClinPlot[Scale == "CCQG"] %>%
     geom_point(shape = 21, size = 5, fill = "white", position = pd) +
     scale_colour_hue(name = NULL,
         breaks=c("<", ">"),
-        labels=c("Puntaje bajo", "Puntaje alto"),
+        labels=c("Low score", "High score"),
         l=10) +
     labs(y = NULL, x = NULL) +
     scale_x_discrete(labels = c("Pre-", "Post-")) +
-    facet_grid(. ~ factor(Group, labels = c("EMTr Sham", "EMTr Real"))) +
-    theme(legend.position = c(0.85, 0.88))
+    facet_grid(. ~ factor(Group, labels = c("rTMS Sham", "rTMS Real"))) +
+    theme(legend.position = "none")
 
 grMedClinPlot[Scale == "CCQN"] %>% 
     summarySE(measurevar = "Score", groupvars = c("GroupCCQN2", "GroupCCQN3", "Group", "Stage")) %>%
@@ -154,11 +154,11 @@ grMedClinPlot[Scale == "CCQN"] %>%
     geom_point(shape = 21, size = 5, fill = "white", position = pd) +
     scale_colour_hue(name = NULL,
         breaks=c("<", ">"),
-        labels=c("Puntaje bajo", "Puntaje alto"),
+        labels=c("Low score", "High score"),
         l=10) +
     labs(y = NULL, x = "Fase") +
     scale_x_discrete(labels = c("Pre-", "Post-")) +
-    facet_grid(. ~ factor(Group, labels = c("EMTr Sham", "EMTr Real"))) +
+    facet_grid(. ~ factor(Group, labels = c("rTMS Sham", "rTMS Real"))) +
     theme(legend.position = "none")
 
 grMedClinPlot[Scale == "B11Tot"] %>% 
@@ -170,11 +170,11 @@ grMedClinPlot[Scale == "B11Tot"] %>%
     geom_point(shape = 21, size = 5, fill = "white", position = pd) +
     scale_colour_hue(name = "División por mediana",
         breaks=c("<", ">"),
-        labels=c("Puntaje bajo", "Puntaje alto"),
+        labels=c("Low score", "High score"),
         l=10) +
     labs(y = NULL, x = "Fase") +
     scale_x_discrete(labels = c("Pre-", "Post-")) +
-    facet_grid(. ~ factor(Group, labels = c("EMTr Sham", "EMTr Real"))) +
+    facet_grid(. ~ factor(Group, labels = c("rTMS Sham", "rTMS Real"))) +
     theme(legend.position = "none")
 
 #### Grafos ####
@@ -194,14 +194,14 @@ graphTplot <- melt(
 graphTplot[Stage == "T0", Delta := 0][, `:=`(
     Stage = factor(Stage, labels = c("Pre-", "Post-")),
     variable = factor(variable, labels = c(
-        "L.Camino", "C.Agrupamiento", "MundoP.",
-        "E.Global", "E.Local", "Densidad", "Fuerza"
+        "PathLength", "ClusterCoeff", "SmallWorld",
+        "Global.Eff", "Local.Eff", "Density", "Strength"
         ))
 )]
 
 
 graphTplot %>% 
-    filter(variable %in% c("Densidad", "Fuerza")) %>% 
+    filter(variable %in% c("Density", "Strength")) %>% 
     summarySE(measurevar = "Delta",
         groupvars = c("Group", "Stage", "variable"), na.rm = T) %>% 
     ggplot(aes(Stage, Delta, group = Group)) +
@@ -211,14 +211,14 @@ graphTplot %>%
     geom_point(shape = 21, size = 5, fill = "white", position = pd) +
     scale_colour_hue(name = NULL,
         breaks=c("Sham", "Tx"),
-        labels=c("EMTr Sham", "EMTr Real"),
+        labels=c("rTMS Sham", "rTMS Real"),
         l=10) +
     labs(y = NULL, x = NULL) +
     facet_wrap(variable ~ ., scales = 'free') +
     theme(legend.position = 'top')
 
 graphTplot %>% 
-    filter(variable %in% c("E.Global", "E.Local")) %>% 
+    filter(variable %in% c("Global.Eff", "Local.Eff")) %>% 
     summarySE(measurevar = "Delta",
         groupvars = c("Group", "Stage", "variable"), na.rm = T) %>% 
     ggplot(aes(Stage, Delta, group = Group)) +
@@ -228,14 +228,14 @@ graphTplot %>%
     geom_point(shape = 21, size = 5, fill = "white", position = pd) +
     scale_colour_hue(name = NULL,
         breaks=c("Sham", "Tx"),
-        labels=c("EMTr Sham", "EMTr Real"),
+        labels=c("rTMS Sham", "rTMS Real"),
         l=10) +
     labs(y = NULL, x = NULL) +
     facet_wrap(variable ~ ., scales = 'free') +
     theme(legend.position = 'top')
 
 graphTplot %>% 
-    filter(variable %in% c("L.Camino", "C.Agrupamiento", "MundoP.")) %>% 
+    filter(variable %in% c("PathLength", "ClusterCoeff", "SmallWorld")) %>% 
     summarySE(measurevar = "Delta",
         groupvars = c("Group", "Stage", "variable"), na.rm = T) %>% 
     ggplot(aes(Stage, Delta, group = Group)) +
@@ -245,7 +245,7 @@ graphTplot %>%
     geom_point(shape = 21, size = 5, fill = "white", position = pd) +
     scale_colour_hue(name = NULL,
         breaks=c("Sham", "Tx"),
-        labels=c("EMTr Sham", "EMTr Real"),
+        labels=c("rTMS Sham", "rTMS Real"),
         l=10) +
     labs(y = NULL, x = NULL) +
     facet_wrap(variable ~ ., scales = 'free') +
