@@ -196,11 +196,11 @@ vsMod6 <- lm(Cp ~ Group + sex + age + education, dt)
 vsMod7 <- lm(sigma ~ Group + sex + age + education, dt)
 
 stargazer(vsMod1, vsMod2, vsMod3, vsMod4, vsMod7, 
-    title = "Regresiones lineales multivariadas de la topología de red con
-    sexo, edad y educación como covariantes", 
-    dep.var.caption = 'Variables dependientes', 
-    dep.var.labels = c("Densidad", "Fuerza", "E.Global", "E.Local", "P.Mundo"),
-    covariate.labels = c("Grupo(HC)", "Sexo(F)", "Edad", "Educación"), 
+    type = 'html',
+    title = "Multivariate linear regressions with sex, age and education as covariates",
+    dep.var.caption = 'Dependent Variables', 
+    dep.var.labels = c("Density", "Strength", "Global Efficiency", "Local Efficiency", "Small worldness"),
+    covariate.labels = c("Group(HC)", "Sex(F)", "Age", "Education"), 
     no.space = T)
 
 
