@@ -5,6 +5,7 @@ library("here")
 library("data.table")
 library("stringr")
 library("purrr")
+library("readr")
 
 ## Sessions
 sessions <- c("T0", "T1", "T14", "T2", "T3")
@@ -48,10 +49,10 @@ covars_base[, `:=`(
 # automatically from the data for easy updates.
 covars <- rbind(
   covars_base,
-  covars_base[Study.ID %in% subs$t1],
-  covars_base[Study.ID %in% subs$t14],
-  covars_base[Study.ID %in% subs$t2],
-  covars_base[Study.ID %in% subs$t3]
+  covars_base[Study.ID %in% subs$T1],
+  covars_base[Study.ID %in% subs$T14],
+  covars_base[Study.ID %in% subs$T2],
+  covars_base[Study.ID %in% subs$T3]
 )
 
 covars[, Session := c(
@@ -68,7 +69,7 @@ setcolorder(
   covars,
   c("Study.ID", "Session", "Group", "Sex", "Age", "Educ", "Excl")
 )
-setkey(covars, Session, Study.ID)
+setkey(covars, Session, Group, Study.ID)
 
 ## INDS - Needed for BrainGraph analysis
 inds <- lapply(seq_along(sessions), function(x)
@@ -82,11 +83,13 @@ inds <- set_names(inds, sessions)
 inds <- map(inds, set_names, groups)
 
 # Remove empty list (T14, Real)
-inds[[3]][[2]] <- NULL
+# inds[[3]][[2]] <- NULL
 
 # Flatten
-inds <- unlist(inds, recursive = FALSE)
+# inds <- unlist(inds, recursive = FALSE)
 
 ## Save RDS objects
-saveRDS(covars, here("./data/processed/rds/covars.rds"))
-saveRDS(inds, here("./data/processed/rds/inds.rds"))
+write_rds(groups, here("./data/processed/rds/groups.rds"))
+write_rds(sessions, here("./data/processed/rds/sessions.rds"))
+write_rds(covars, here("./data/processed/rds/covars.rds"))
+write_rds(inds, here("./data/processed/rds/inds.rds"))

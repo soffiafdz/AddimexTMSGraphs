@@ -6,13 +6,14 @@ library("data.table")
 library("purrr")
 library("stringr")
 library("brainGraph")
+library("readr")
 
 ## Set here the parcellation to work with
 atlas <- "power264"
 
 ## Check existence of correlation matrices' directory.
 ## If inexistent, create them from timeseries data.
-if (!dir.exists(here("data", "raw", "correlation_matrices", atlas))) {
+if (!dir.exists(here("data", "processed", "correlation_matrices", atlas))) {
   ## Timeseries
   filter_ts <- function(session, parcellation = atlas) {
     list.files(
@@ -79,34 +80,39 @@ if (!dir.exists(here("data", "raw", "correlation_matrices", atlas))) {
 
 ## Load needed objects
 ## Confirm it's the same atlas before running!
-covars <- readRDS(here("./data/processed/rds/covars.rds"))
-inds <- readRDS(here("./data/processed/rds/inds.rds"))
+sessions <- read_rds(here("./data/processed/rds/sessions.rds"))
+covars <- read_rds(here("./data/processed/rds/covars.rds"))
+inds <- read_rds(here("./data/processed/rds/inds.rds"))
 
 ## Matrices - BrainGraph
 
 # Matrices files
-matfiles <- list.files(
-  list.dirs(
-    here("data", "processed", "correlation_matrices", atlas)
-  ),
-  "sub-[0-9]*.tsv",
-  full.names = TRUE
+matfiles <- unlist(
+  map(sessions, function(x)
+    map_chr(covars[x, Study.ID], function(y)
+      list.files(
+        here("data", "processed", "correlation_matrices", atlas, x),
+        y,
+        full.names = TRUE
+      )
+    )
+  )
 )
 
 # Threshold parameters
 thresholds <- rev(seq(0.4, 0.01, -0.05))
 sub_threshold <- 0.5
 
-# Finals mats
+# Final mats
 mats <- create_mats(
   matfiles,
   modality = "fmri",
   threshold.by = "consensus",
   mat.thresh = thresholds,
   sub.thresh = sub_threshold,
-  inds = inds
+  inds = unlist(inds, recursive = FALSE)
 )
 
 ## Save RDS
-saveRDS(mats, here("./data/processed/rds/mats.rds"))
-saveRDS(thresholds, here("./data/processed/rds/thresholds.rds"))
+write_rds(mats, here("./data/processed/rds/mats.rds"))
+write_rds(thresholds, here("./data/processed/rds/thresholds.rds"))
