@@ -108,5 +108,11 @@ for (s in seq_along(sessions)) {
   }
 }
 
+## Name graph object
+gph <- set_names(gph, sessions)
+gph <- map(gph, set_names, groups)
+gph <- map_depth(gph, 2, set_names, thresholds)
+
+## Save rds objects
 write_rds(gph, here("./data/processed/graphs/gph.rds"))
 write_rds(gph_group, here("./data/processed/graphs/gph_group.rds"))
