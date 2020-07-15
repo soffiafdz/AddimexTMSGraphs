@@ -66,10 +66,10 @@ rgraphs_all <- function (g.list, N = 100, savedir = ".", ...) {
       #   txtProgressBar(min = 0, max = length(g.list[[i]][[j]]), style = 3)
       for (k in seq_along(g.list[[i]][[j]])) {
         # rand <- sim.rand.graph.par(g.list[[i]][[j]][[k]], N, ...)
-        # saveRDS(rand, file = paste0(savedir, "/", sprintf("rand%i_thr%02i_subj%03i%s",
-        #   i, j, k, ".rds")))
         rand <- readRDS(paste0(
           savedir, "/", sprintf("rand%i_thr%02i_subj%03i%s", i, j, k, ".rds")))
+        saveRDS(rand, file = paste0(savedir, "/", sprintf("rand%i_thr%02i_subj%03i%s",
+          i, j, k, ".rds")))
         phi.norm[[i]][[j]][[k]] <-
           rich_club_norm(g.list[[i]][[j]][[k]], rand = rand)
         rm(list = "rand")
