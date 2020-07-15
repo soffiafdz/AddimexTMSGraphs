@@ -5,6 +5,7 @@ library("readr")
 library("purrr")
 library("furrr")
 library("brainGraph")
+library("data.table")
 library("here")
 
 ## Load rds graphs
@@ -68,8 +69,8 @@ rgraphs_all <- function (g.list, N = 100, savedir = ".", ...) {
         # rand <- sim.rand.graph.par(g.list[[i]][[j]][[k]], N, ...)
         rand <- readRDS(paste0(
           savedir, "/", sprintf("rand%i_thr%02i_subj%03i%s", i, j, k, ".rds")))
-        saveRDS(rand, file = paste0(savedir, "/", sprintf("rand%i_thr%02i_subj%03i%s",
-          i, j, k, ".rds")))
+        # saveRDS(rand, file = paste0(savedir, "/", sprintf("rand%i_thr%02i_subj%03i%s",
+        #   i, j, k, ".rds")))
         phi.norm[[i]][[j]][[k]] <-
           rich_club_norm(g.list[[i]][[j]][[k]], rand = rand)
         rm(list = "rand")
