@@ -103,21 +103,19 @@ rgraphs_all <- function (g.list, N = 100, savedir = ".", ...) {
       rm(list = "rand.all")
       gc()
     }
-    rand.dt <- rbindlist(lapply(rand.dt, rbindlist))
-    rand.dt[, `:=`(Group, as.factor(Group))]
-    rand.dt[, `:=`(Study.ID, as.factor(Study.ID))]
-    setcolorder(rand.dt, c("threshold", "Group", "Study.ID",
-      names(rand.dt)[3:6]))
-    setkey(rand.dt, threshold, Group, Study.ID)
-    small.dt <- rbindlist(lapply(small.dt, rbindlist))
-    kNumSubjs <- sapply(g.list, function(x) length(x[[1]]))
-    small.dt[, `:=`(Group, rep(groups, times = kNumSubjs * length(g.list[[1]])))]
-    small.dt[, `:=`(Group, as.factor(Group))]
-    small.dt[, `:=`(Study.ID, as.factor(Study.ID))]
-    setkey(small.dt, Group, threshold)
-    rich.dt <-
-      rbindlist(lapply(phi.norm, function(x) rbindlist(lapply(x , rbindlist))))
   }
+  rand.dt <- rbindlist(lapply(rand.dt, rbindlist))
+  rand.dt[, `:=`(Group, as.factor(Group))]
+  rand.dt[, `:=`(Study.ID, as.factor(Study.ID))]
+  setcolorder(rand.dt, c("threshold", "Group", "Study.ID", names(rand.dt)[3:6]))
+  setkey(rand.dt, threshold, Group, Study.ID)
+  small.dt <- rbindlist(lapply(small.dt, rbindlist))
+  kNumSubjs <- sapply(g.list, function(x) length(x[[1]]))
+  small.dt[, `:=`(Group, rep(groups, times = kNumSubjs * length(g.list[[1]])))]
+  small.dt[, `:=`(Group, as.factor(Group))]
+  small.dt[, `:=`(Study.ID, as.factor(Study.ID))]
+  setkey(small.dt, Group, threshold)
+  rich.dt <- rbindlist(lapply(phi.norm, function(x) rbindlist(lapply(x , rbindlist))))
   return(list(rich = rich.dt, small = small.dt, rand = rand.dt))
 }
 
