@@ -89,10 +89,12 @@ rgraphs_all <- function (g.list, N = 100, savedir = ".", ...) {
     rand.dt[[i]] <- small.dt[[i]] <-
       vector("list", length = length(g.list[[i]]))
     for (j in seq_along(g.list[[i]])) {
-      fnames <- list.files(savedir, sprintf("rand%i_thr%02i.*", i, j),
-        full.names = TRUE)
-      rand.all <- lapply(fnames, readRDS)
-      saveRDS(rand.all, file = paste0(
+      # fnames <- list.files(savedir, sprintf("rand%i_thr%02i.*", i, j),
+      #   full.names = TRUE)
+      # rand.all <- lapply(fnames, readRDS)
+      # saveRDS(rand.all, file = paste0(
+      #   savedir, "/ALL/", sprintf("rand%i_thr%02i%s", i, j, ".rds")))
+      rand.all <- readRDS(file = paste0(
         savedir, "/ALL/", sprintf("rand%i_thr%02i%s", i, j, ".rds")))
       small.dt[[i]][[j]] <- small.world(g.list[[i]][[j]], rand.all)
       small.dt[[i]][[j]]$threshold <- j
