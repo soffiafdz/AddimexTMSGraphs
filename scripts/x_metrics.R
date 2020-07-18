@@ -45,6 +45,11 @@ setkey(sworld, threshold, Session, Study.ID)
 ## Join
 gattr <- metrics[sworld]
 gattr[, c("atlas", "modality", "i.density", "i.Lp", "i.Cp", "i.Group") := NULL]
+gattr[, `:=`(
+  Study.ID = factor(Study.ID),
+  Group = factor(Group),
+  Session = factor(Session)
+)]
 
 ## Save rds object
 write_rds(gattr, here("./data/processed/rds/gph_attr.rds"))
