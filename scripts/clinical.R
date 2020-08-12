@@ -41,17 +41,17 @@ walk(dsets, setnames, c("rid", "stage"), c("Study.ID", "Session"))
 ## Clinical datasets cleaning
 # BIS-11
 dsets[[1]] <- dsets[[1]][, .(Study.ID, Session,
-  BIS_C = cog, BIS_M = mot, BIS_N = nonp, BIS = tot_score)]
+  BISc = cog, BISm = mot, BISn = nonp, BIS = tot_score)]
 setkey(dsets[[1]], Study.ID, Session)
 covars <- dsets[[1]][covars]
 
 # CCQ-G
-dsets[[2]] <- dsets[[2]][, .(Study.ID, Session, CCQG = ccq_g)]
+dsets[[2]] <- dsets[[2]][, .(Study.ID, Session, CCQg = ccq_g)]
 setkey(dsets[[2]], Study.ID, Session)
 covars <- dsets[[2]][covars]
 
 # CCQ-N
-dsets[[3]] <- dsets[[3]][, .(Study.ID, Session, CCQN = ccq_n)]
+dsets[[3]] <- dsets[[3]][, .(Study.ID, Session, CCQn = ccq_n)]
 setkey(dsets[[3]], Study.ID, Session)
 covars <- dsets[[3]][covars]
 
@@ -63,10 +63,10 @@ dsets[[4]] <- dsets[[4]][, .(Study.ID,
   Empl = factor(q6_employeeyr,
     levels = c(1:8),
     labels = c("Full-time", "Half-time", "Free-lance", "Scholarized","Not-scholarized", "Retired", "Housewife", "Unemployee")),
-  Sustance = factor(q6_sustance,
+  Substance = factor(q6_sustance,
     levels = c(1,2),
     labels = c("Crack-cocaine","Cocaine")),
-  TCons = q7_tconsume)]
+  Tcons = q7_tconsume)]
 setkey(dsets[[4]], Study.ID)
 covars <- dsets[[4]][covars]
 
@@ -95,13 +95,13 @@ covars <- dsets[[5]][covars]
 
 # Hamilton Anxiety
 dsets[[6]] <- dsets[[6]][, .(Study.ID, Session,
-  HARS = hars_tot, HARS_cat = hars_categories)]
+  HARS = hars_tot, HARScat = hars_categories)]
 setkey(dsets[[6]], Study.ID, Session)
 covars <- dsets[[6]][covars]
 
 # Hamilton Depression
 dsets[[7]] <- dsets[[7]][, .(Study.ID, Session,
-  HDRS = tot_score, HDRS_cat = score_categories)]
+  HDRS = tot_score, HDRScat = score_categories)]
 setkey(dsets[[7]], Study.ID, Session)
 covars <- dsets[[7]][covars]
 
@@ -109,8 +109,8 @@ covars <- dsets[[7]][covars]
 dsets[[8]][month == 1, Session := "T1"]
 dsets[[8]][month == 0, Session := "T0"]
 dsets[[8]] <- dsets[[8]][, .(Study.ID, Session,
-  Month = month,
   Date = dmy(date),
+  Month = month,
   Cons_Freq = frequency_last_month,
   Cons_Grams = grams_last_month)]
 setkey(dsets[[8]], Study.ID, Session)
@@ -142,6 +142,16 @@ covars <- dsets[[11]][covars]
 ## Delete duplicate date and return keys to normal
 covars[, Date := NULL]
 setnames(covars, "i.Date", "Date")
+
+setcolorder(covars, c("Study.ID", "Session", "Group", "Excl",
+  "Sex", "Age", "Educ", "Civ", "Empl",
+  "Substance", "Tobacco", "Tobacco_start", "Tobacco_years", "Cigs_day",
+  "Tx", "Tcons", "Date", "Month", "Use", "Relapse", "Cons_Freq", "Cons_Grams",
+  "Status", "UTamph", "UTbzd", "UTcoc", "UTmet", "UTmor", "UTthc",
+  "BIS", "BISc", "BISm", "BISn", "VAS", "CCQn", "CCQg",
+  "HDRS", "HDRScat", "HARS", "HARScat", "FD"))
+
+
 covars[Session == "T1-4", Session := "T14"]
 setkey(covars, Session, Group, Study.ID)
 
