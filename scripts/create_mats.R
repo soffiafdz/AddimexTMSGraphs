@@ -100,8 +100,8 @@ matfiles <- unlist(
 )
 
 # Threshold parameters
-thresholds <- rev(seq(0.4, 0.01, -0.05))
-sub_threshold <- 0.5
+thresholds <- rev(seq(0.4, 0.01, -0.02))
+sub_threshold <- 0.6
 
 # Final mats
 mats <- create_mats(
