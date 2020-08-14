@@ -17,5 +17,15 @@ setkey(gattr, Study.ID, Session, Group)
 
 gdata <- covars[gattr]
 
+## Fonts
+library("extrafont")
+
 ## Plots ##
 # Threshold visualization
+
+ggplot(gdata[Session %in% paste0("T", 0:1), .(Session, Group, threshold, sigma)],
+  aes(x = threshold, y = sigma, group = Session, color = Session)) +
+  geom_line() +
+  geom_point()
+
+
