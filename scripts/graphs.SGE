@@ -1,0 +1,12 @@
+#! /bin/bash
+#$ -S /bin/bash
+#$ -N graphs
+#$ -V
+#$ -l mem_free=21G
+#$ -pe openmp 13
+#$ -j y
+#$ -wd /home/sfernandezl/rtms
+
+module load r/3.5.3
+
+Rscript --verbose /home/sfernandezl/rtms/scripts/graphs.R
