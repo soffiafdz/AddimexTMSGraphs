@@ -5,6 +5,7 @@ library("data.table")
 library("readr")
 library("brainGraph")
 library("ggplot2")
+library("gghalves")
 library("here")
 
 ## Load data
