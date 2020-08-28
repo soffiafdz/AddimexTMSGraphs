@@ -1,3 +1,24 @@
+score_mean_1 <- mean(d$y[1:50])
+score_mean_2 <- mean(d$y[51:100])
+score_median1 <- median(d$y[1:50])
+score_median2 <- median(d$y[51:100])
+score_sd_1 <- sd(d$y[1:50])
+score_sd_2 <- sd(d$y[51:100])
+score_se_1 <- score_sd_1/sqrt(n) #-> adjust your n
+score_se_2 <- score_sd_2/sqrt(n) #-> adjust your n
+score_ci_1 <- CI(d$y[1:50], ci = 0.95)
+score_ci_2 <- CI(d$y[51:100], ci = 0.95)
+#Create data frame with 2 rows and 7 columns containing the descriptives
+group <- c("x", "z")
+N <- c(50, 50)
+score_mean <- c(score_mean_1, score_mean_2)
+score_median <- c(score_median1, score_median2)
+sd <- c(score_sd_1, score_sd_2)
+se <- c(score_se_1, score_se_2)
+ci <- c((score_ci_1[1] - score_ci_1[3]), (score_ci_2[1] - score_ci_2[3]))
+#Create the dataframe
+summary_df <- data.frame(group, N, score_mean, score_median, sd, se, ci)
+
 before = iris$Sepal.Length[1:50]
 after = iris$Sepal.Length[51:100]
 n <-length(before)
@@ -97,5 +118,3 @@ f8 <- ggplot(data = d, aes(y = y)) +
    ggtitle('Figure 8: 2 x 2 Repeated measures with box- and violin plots') +
    theme_classic()+
    coord_cartesian(ylim=c(y_lim_min, y_lim_max))
-
-ggsave('../tutorial_R/figs_repmes/figure8.png', width = w, height = h)
