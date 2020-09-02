@@ -1,11 +1,11 @@
 #!/usr/bin/env Rscript
 
 ## Packages
-library("here")
-library("data.table")
-library("readr")
-library("purrr")
-library("lubridate")
+library(here)
+library(data.table)
+library(readr)
+library(purrr)
+library(lubridate)
 
 ## Load data
 covars <- read_rds(here("./data/processed/rds/covars.rds"))
@@ -62,11 +62,15 @@ dsets[[4]] <- dsets[[4]][, .(Study.ID,
     labels = c("Single", "Married", "Divorced", "Separated", "Widowed")),
   Empl = factor(q6_employeeyr,
     levels = c(1:8),
-    labels = c("Full-time", "Half-time", "Free-lance", "Scholarized","Not-scholarized", "Retired", "Housewife", "Unemployee")),
+    labels = c("Full-time", "Half-time", "Free-lance", "Scholarized","Not-scholarized", "Retired", "Housewife", "Unemployed")),
+  Mincome = q6_month,
   Substance = factor(q6_sustance,
     levels = c(1,2),
     labels = c("Crack-cocaine","Cocaine")),
+  Ystart = q7_yrstart,
   Tcons = q7_tconsume)]
+# Drop unused levels
+dsets[[4]][, Empl := droplevels(Empl)]
 setkey(dsets[[4]], Study.ID)
 covars <- dsets[[4]][covars]
 
@@ -117,7 +121,8 @@ setkey(dsets[[8]], Study.ID, Session)
 covars <- dsets[[8]][covars]
 
 # Tobacco
-dsets[[9]] <- dsets[[9]][, .(Study.ID, Tobacco = consumption,
+dsets[[9]] <- dsets[[9]][, .(Study.ID,
+  Tobacco = factor(consumption, levels = 0:1, labels = c("No", "Yes")),
   Tobacco_start = age_begin,
   Tobacco_years = years_con,
   Cigs_day = cig_day)]
@@ -144,9 +149,9 @@ covars[, Date := NULL]
 setnames(covars, "i.Date", "Date")
 
 setcolorder(covars, c("Study.ID", "Session", "Group", "Excl",
-  "Sex", "Age", "Educ", "Civ", "Empl",
-  "Substance", "Tobacco", "Tobacco_start", "Tobacco_years", "Cigs_day",
-  "Tx", "Tcons", "Date", "Month", "Use", "Relapse", "Cons_Freq", "Cons_Grams",
+  "Sex", "Age", "Educ", "Civ", "Empl", "Mincome", "Substance",
+  "Tobacco", "Tobacco_start", "Tobacco_years", "Cigs_day", "Tx", "Ystart",
+  "Tcons", "Date", "Month", "Use", "Relapse", "Cons_Freq", "Cons_Grams",
   "Status", "UTamph", "UTbzd", "UTcoc", "UTmet", "UTmor", "UTthc",
   "BIS", "BISc", "BISm", "BISn", "VAS", "CCQn", "CCQg",
   "HDRS", "HDRScat", "HARS", "HARScat", "FD"))
