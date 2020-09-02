@@ -26,6 +26,9 @@ gdata     <- covars[gattr]
 ## Fonts
 ffont     <- "Sura"
 
+## Colours
+# #00429d,#75a5af,#ffffef,#f3737f,#93003a
+
 ### Plots ###
 ## Threshold visualization
 # Preproc
@@ -58,19 +61,22 @@ gdquarts  <- gdmean[gdmean[,.(quart1 = quantile(Val, 0.25),
                             by = .(Metric, Group)]]
 
 # Sparklines
-p         <- ggplot(gdmean, aes(x = threshold, y = Val)) +
+p         <- ggplot(gdmean, aes(x = threshold, y = Val, colour = Session)) +
   facet_grid(vars(Metric), vars(Group), scales = "free_y") +
   geom_ribbon(data = gdquarts,
-              aes(ymin = quart1, ymax = quart2),
+              aes(ymin = quart1, ymax = quart2, colour = NULL),
               fill = "grey93", alpha = 0.75) +
-  geom_line(aes(linetype = Session), size = 0.3) +
-  geom_point(data = gdlabs, shape = 21, size = 1.5, fill = "white") +
+  geom_line(size = 0.3) +
+  geom_point(data = gdlabs, shape = 21, size = 1.5,
+             fill = "white") +
   geom_label_repel(data = gdlabs, aes(label = Val),
                    family = ffont, size = 2, force = 1.3, label.padding = 0.1,
                    min.segment.length = 0, segment.size = .2,
                    segment.alpha = 0.7, alpha = 0.7) +
   scale_x_continuous(bquote(tau),breaks = seq(0, .4, .1)) +
   scale_y_continuous(expand = c(0.1, 0)) +
+  scale_colour_manual(values = c("#00429d","#93003a")) +
+  # scale_colour_viridis(discrete = TRUE, end = .8, begin = .5, option = "inferno") +
   theme(text = element_text(size = 12, family = ffont)) +
   theme_tufte(base_size = 12, base_family = ffont) +
   theme(axis.title.y = element_blank(),
@@ -81,60 +87,62 @@ p         <- ggplot(gdmean, aes(x = threshold, y = Val)) +
 ggsave(here("figures/sparklines_thresholds"), device = "pdf")
 
 ## Repeated Measures with integrated thresholds
-# Preprocessing
 # Integrals
 gdwide    <- gdata[Session %in% c("T0", "T1"), ..colms]
 setkey(gdwide, Group, Session)
 
-gdints    <- gdwide[, lapply(.SD, auc, x = threshold, type = 'spline'), by = .(Study.ID, Session, Group), .SDcols = metrics]
+gdints    <- gdwide[, lapply(.SD, auc, x = threshold, type = 'spline'),
+                    by = .(Study.ID, Session, Group), .SDcols = metrics]
 
+# Preprocessing
 gdplots   <- copy(gdints)
 gdplots[Session == "T0", x := 1][Session == "T1", x := 2][Group == "Sham", x := x + 2]
 gdplots[, x_j  := jitter(x, amount = .09)]
 
-repmesplot <- function(metric_str, data = gdplots){
+# Plotting Function
+repmesp1  <- function(metric_str, data = gdplots){
   p       <- ggplot(data, aes_string(y = metric_str)) +
     geom_point(data = data[Session == "T0"], aes(x = x_j),
-               shape = 21, size = 1, fill = "white", alpha = 0.9) +
-               # color = "dodgerblue",
+               shape = 21, size = 1, fill = "white", alpha = 0.9,
+               color = "#00429d") +
                # size = 1.5, alpha = .6) +
     geom_point(data = data[Session == "T1"], aes(x = x_j),
-               shape = 21, size = 1, fill = "white", alpha = 0.9) +
-               # color = "darkorange",
+               shape = 21, size = 1, fill = "white", alpha = 0.9,
+               color = "#93003a") +
                # size = 1.5, alpha = .6) +
     geom_line(aes(x = x_j, group = Study.ID), color = "lightgray", alpha = .45) +
     geom_half_boxplot(data = data[x == 1], aes(x = x),
                       position = position_nudge(x = -.35), side = "r",
                       outlier.shape = NA, center = TRUE, errorbar.draw = FALSE,
-                      width = .1,#fill = "dodgerblue", alpha = .6) +
-                      alpha = .6) +
+                      width = .1, fill = "#00429d", alpha = .6) +
+                      # alpha = .6) +
     geom_half_boxplot(data = data[x == 2], aes(x = x),
                       position = position_nudge(x = -1.2),
                       outlier.shape = NA, center = TRUE, errorbar.draw = FALSE,
-                      width = .1,#fill = "darkorange", alpha = .6) +
-                      alpha = .6) +
+                      width = .1, fill = "#93003a", alpha = .6) +
+                      # alpha = .6) +
     geom_half_boxplot(data = data[x == 3], aes(x = x),
                       position = position_nudge(x = 1.3), side = "r",
                       outlier.shape = NA, center = TRUE, errorbar.draw = FALSE,
-                      width = .1,#fill = "dodgerblue", alpha = .6) +
-                      alpha = .6) +
+                      width = .1, fill = "#00429d", alpha = .6) +
+                      # alpha = .6) +
     geom_half_boxplot(data = data[x == 4], aes(x = x),
                       position = position_nudge(x = .2), side = "r",
                       outlier.shape = NA, center = TRUE, errorbar.draw = FALSE,
-                      width = .1,#fill = "darkorange", alpha = .6) +
-                      alpha = .6) +
+                      width = .1, fill = "#93003a", alpha = .6) +
+                      # alpha = .6) +
     geom_half_violin(data = data[x == 1], aes(x = x),
-                     position = position_nudge(x = -.4),#fill = "dodgerblue", alpha = .6) +
-                      alpha = .6) +
+                     position = position_nudge(x = -.4), fill = "#00429d", alpha = .6) +
+                      # alpha = .6) +
     geom_half_violin(data = data[x == 2], aes(x = x),
-                     position = position_nudge(x = -1.4),#fill = "darkorange", alpha = .6) +
-                      alpha = .6) +
+                     position = position_nudge(x = -1.4), fill = "#93003a", alpha = .6) +
+                      # alpha = .6) +
     geom_half_violin(data = data[x == 3], aes(x = x), side = "r",
-                     position = position_nudge(x = 1.45),#fill = "dodgerblue", alpha = .6) +
-                      alpha = .6) +
+                     position = position_nudge(x = 1.45), fill = "#00429d", alpha = .6) +
+                      # alpha = .6) +
     geom_half_violin(data = data[x == 4], aes(x = x), side = "r",
-                     position = position_nudge(x = .45),#fill = "darkorange", alpha = .6) +
-                      alpha = .6) +
+                     position = position_nudge(x = .45), fill = "#93003a", alpha = .6) +
+                      # alpha = .6) +
     #Define additional settings
     scale_x_continuous(breaks=c(1,2,3,4), labels=c("Before", "After","Before", "After"),
                         limits=c(0, 5),
@@ -151,4 +159,78 @@ repmesplot <- function(metric_str, data = gdplots){
 }
 
 ## Run all metrics and save them
-# purrr::walk(metrics, repmesplot)
+purrr::walk(metrics, repmesp1)
+
+
+## Repeated Measures Clinical
+# Preproc
+clins     <- c("BIS", "BISc", "BISm", "BISn", "VAS", "CCQn", "CCQg")
+colms2    <- c(dems[-4], clins)
+
+gdpclin   <- covars[Session %in% c("T0", "T1"), ..colms2]
+
+gdpclin[Session == "T0", x := 1][Session == "T1", x := 2][Group == "Sham", x := x + 2]
+gdpclin[, x_j  := jitter(x, amount = .09)]
+
+# Plotting Function
+repmesp2  <- function(clin_str, data = gdpclin){
+  p       <- ggplot(data, aes_string(y = clin_str)) +
+    geom_point(data = data[Session == "T0"], aes(x = x_j),
+               shape = 21, size = 1, fill = "white", alpha = 0.9,
+               color = "#00429d") +
+               # size = 1.5, alpha = .6) +
+    geom_point(data = data[Session == "T1"], aes(x = x_j),
+               shape = 21, size = 1, fill = "white", alpha = 0.9,
+               color = "#93003a") +
+               # size = 1.5, alpha = .6) +
+    geom_line(aes(x = x_j, group = Study.ID), color = "lightgray", alpha = .45) +
+    geom_half_boxplot(data = data[x == 1], aes(x = x),
+                      position = position_nudge(x = -.35), side = "r",
+                      outlier.shape = NA, center = TRUE, errorbar.draw = FALSE,
+                      width = .1, fill = "#00429d", alpha = .6) +
+                      # alpha = .6) +
+    geom_half_boxplot(data = data[x == 2], aes(x = x),
+                      position = position_nudge(x = -1.2),
+                      outlier.shape = NA, center = TRUE, errorbar.draw = FALSE,
+                      width = .1, fill = "#93003a", alpha = .6) +
+                      # alpha = .6) +
+    geom_half_boxplot(data = data[x == 3], aes(x = x),
+                      position = position_nudge(x = 1.3), side = "r",
+                      outlier.shape = NA, center = TRUE, errorbar.draw = FALSE,
+                      width = .1, fill = "#00429d", alpha = .6) +
+                      # alpha = .6) +
+    geom_half_boxplot(data = data[x == 4], aes(x = x),
+                      position = position_nudge(x = .2), side = "r",
+                      outlier.shape = NA, center = TRUE, errorbar.draw = FALSE,
+                      width = .1, fill = "#93003a", alpha = .6) +
+                      # alpha = .6) +
+    geom_half_violin(data = data[x == 1], aes(x = x),
+                     position = position_nudge(x = -.4), fill = "#00429d", alpha = .6) +
+                      # alpha = .6) +
+    geom_half_violin(data = data[x == 2], aes(x = x),
+                     position = position_nudge(x = -1.4), fill = "#93003a", alpha = .6) +
+                      # alpha = .6) +
+    geom_half_violin(data = data[x == 3], aes(x = x), side = "r",
+                     position = position_nudge(x = 1.45), fill = "#00429d", alpha = .6) +
+                      # alpha = .6) +
+    geom_half_violin(data = data[x == 4], aes(x = x), side = "r",
+                     position = position_nudge(x = .45), fill = "#93003a", alpha = .6) +
+                      # alpha = .6) +
+    #Define additional settings
+    scale_x_continuous(breaks=c(1,2,3,4), labels=c("Before", "After","Before", "After"),
+                        limits=c(0, 5),
+                        sec.axis = dup_axis(breaks = c(1.5, 3.5),
+                                            labels = c("Real", "Sham"))) +
+    # theme(text = element_text(size = 10, family = ffont)) +
+    theme_tufte(base_size = 12, base_family = ffont) +
+    theme(axis.title.x = element_blank(),
+          # axis.text.y = element_blank(),
+          axis.ticks = element_blank())
+     # theme_classic()
+  ggsave(here("figures", paste0("repmes_", clin_str, ".pdf")))
+}
+
+repmesp2("VAS")
+repmesp2("BIS")
+
+
