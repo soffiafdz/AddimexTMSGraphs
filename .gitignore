@@ -4,5 +4,7 @@
 .RData
 .Ruserdata
 data/*
+figures/*
+reports/*
 *.html
 *.tex
