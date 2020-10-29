@@ -16,7 +16,7 @@ gph <- read_rds(here("./data/processed/graphs/gph.rds"))
 no_rand <- 3e2
 
 ## Set up multiprocessing
-future::plan(multicore, workers = 18)
+future::plan(multicore, workers = 15)
 
 ## Remove linging group (T14-Real)
 gph$T14$Real <- NULL

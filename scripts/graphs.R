@@ -1,7 +1,6 @@
 #!/usr/bin/Rscript
-
 ## Set-up Parallelization
-doMC::registerDoMC(21)
+doMC::registerDoMC(13)
 
 ## Packages
 library("foreach")
