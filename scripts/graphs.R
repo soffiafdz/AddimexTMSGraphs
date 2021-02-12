@@ -2,6 +2,7 @@
 ## Set-up Parallelization
 doMC::registerDoMC(13)
 
+# New lines
 ## Packages
 library("foreach")
 library("doParallel")
