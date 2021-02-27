@@ -15,7 +15,7 @@ if (!file.exists(rds_file)) {
   files <- paste0("Schaefer2018_", rep(c(100, 200, 400), each=2), "Parcels_",
                   rep(c(7, 17), times=3),
                   "Networks_order_FSLMNI152_2mm.Centroid_RAS.csv")
-  titles <- paste(rep(c(100,200,400), each=2), rep(c(7,17), times=3), sep="X")
+  titles <- paste0("schaefer", rep(c(100,200,400), each=2), "x", rep(c(7,17), times=3))
   schaefer <- set_names(map(here(indir, files), fread), titles)
 
   # Add columns for hemi & networks from full names
@@ -39,3 +39,5 @@ schaefer_list <- read_rds(rds_file)
 
 # Convert to bGraph atlases
 map(schaefer_list, brainGraph::as_atlas)
+walk2(names(schaefer_list), schaefer_list, assign)
+rm(schaefer_list)
