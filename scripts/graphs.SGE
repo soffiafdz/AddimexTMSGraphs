@@ -7,6 +7,6 @@
 #$ -j y
 #$ -wd /home/sfernandezl/rtms
 
-module load r/3.5.3
+module load r/4.
 
 Rscript --verbose /home/sfernandezl/rtms/scripts/graphs.R
