@@ -5,8 +5,8 @@ library("here")
 library("data.table")
 library("purrr")
 
-## Sessions
 sessions <- c("T0", "T1", "T2", "T3")
+groups <- c("Sham", "Real")
 
 # List of subs by session (Only needed after T1)
 # The strings are extracted from the available matrices in the data directory
@@ -29,10 +29,6 @@ names(subs) <- sessions
 # TO-DO: Add clinical data into this csv for easier work.
 # Maybe second script importing and cleaning xlsx spreadsheets.
 
-## Groups
-groups <- c("Sham", "Real")
-
-## Covars
 # Read tsv
 covars_base <- fread(here("./data/raw/participants.tsv"))
 
