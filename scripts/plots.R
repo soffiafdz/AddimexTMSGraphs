@@ -31,7 +31,7 @@ ffont     <- "Merriweather"
 
 # #00429d,#75a5af,#e1e1e1,#f3737f,#93003a
 
-"#00429d", "#35739a", "#3aa794", "#c8004c", "#93003a"
+# "#00429d", "#35739a", "#3aa794", "#c8004c", "#93003a"
 
 ### Plots ###
 ## Threshold visualization
