@@ -135,5 +135,6 @@ for (i in 1:2) {
 }
 
 ## Save RDS
-readr::write_rds(mats, here("./data/processed/rds/mats.rds"))
-readr::write_rds(thresholds, here("./data/processed/rds/thresholds.rds"))
+readr::write_rds(mats, here("data/processed/rds/mats.rds"),
+                 compress = "gz", compression = 9L)
+readr::write_rds(thresholds, here("data/processed/rds/thresholds.rds"))
