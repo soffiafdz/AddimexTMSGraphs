@@ -13,15 +13,38 @@ library("brainGraph")
 library("here")
 
 ## Load rds objects
-groups <- read_rds(here("./data/processed/rds/groups.rds"))
-sessions <- read_rds(here("./data/processed/rds/sessions.rds"))
-thresholds <- read_rds(here("./data/processed/rds/thresholds.rds"))
-power264 <- read_rds(here("./data/processed/rds/power264.rds"))
-covars <- read_rds(here("./data/processed/rds/covars.rds"))
-inds <- read_rds(here("./data/processed/rds/inds.rds"))
-mats <- read_rds(here("./data/processed/rds/mats.rds"))
+#power264 <- read_rds(here("data/processed/rds/power264.rds"))
+covars      <- read_rds(here("data/processed/rds/covars.rds"))
+inds        <- read_rds(here("data/processed/rds/inds.rds"))
+thresholds  <- read_rds(here("data/processed/rds/thresholds.rds"))
+mats        <- read_rds(here("data/processed/rds/mats.rds"))
+
+groups      <- c("Sham", "Real")
+sessions    <- c("T0", "T1", "T2", "T3")
+
+g_wrapper   <- function(input) {
+  A_sub  <- input$A.norm.sub
+  A_mean <- input$A.norm.mean
+  atlas  <- names(input)
+
+}
+
 
 ## Main
+for (i in seq_along(mats)) {
+  for (j in seq_along(mats[[i]])) {
+    for (k in seq_along(mats[[j]])) {
+      A_sub  <- mats[[i]][[j]][[k]]$A.norm.sub
+      A_mean <- mats[[i]][[j]][[k]]$A.norm.mean
+      atlas  <- names(mats[[i]][[j]][k])
+
+
+
+    }
+  }
+}
+
+
 A_sub <- mats$A.norm.sub
 A_mean <- mats$A.norm.mean
 atlas <- "power264"
@@ -114,5 +137,5 @@ gph <- map(gph, set_names, groups)
 gph <- map_depth(gph, 2, set_names, thresholds)
 
 ## Save rds objects
-write_rds(gph, here("./data/processed/graphs/gph.rds"))
-write_rds(gph_group, here("./data/processed/graphs/gph_group.rds"))
+write_rds(gph, here("data/processed/rds/gph.rds"))
+write_rds(gph_group, here("data/processed/rds/gph_group.rds"))
