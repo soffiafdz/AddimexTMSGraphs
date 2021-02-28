@@ -7,7 +7,7 @@ library("data.table")
 library("purrr")
 library("stringr")
 
-rds_file <- here("data/processed/rds/schaefer_atlases.RDS")
+rds_file <- here("data/processed/rds/schaefer_atlases.rds")
 
 if (!file.exists(rds_file)) {
   # Create base data.tables
@@ -15,7 +15,8 @@ if (!file.exists(rds_file)) {
   files <- paste0("Schaefer2018_", rep(c(100, 200, 400), each=2), "Parcels_",
                   rep(c(7, 17), times=3),
                   "Networks_order_FSLMNI152_2mm.Centroid_RAS.csv")
-  titles <- paste0("schaefer", rep(c(100,200,400), each=2), "x", rep(c(7,17), times=3))
+  titles <- paste0("schaefer", rep(c(100,200,400), each=2),
+                   "x", rep(c(7,17), times=3))
   schaefer <- set_names(map(here(indir, files), fread), titles)
 
   # Add columns for hemi & networks from full names
