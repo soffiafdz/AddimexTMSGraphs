@@ -4,45 +4,33 @@
 library("here")
 library("data.table")
 library("purrr")
-library("stringr")
 library("brainGraph")
-library("readr")
 
-## Set here the parcellation to work with
-atlas <- "power264"
+# Parsing function for timeseries files
+filter_ts <- function(session, gsignal, parcellation) {
+  list.files(path = here("data/raw/timeseries", gsignal, parcellation),
+             pattern = paste(session, parcellation, "ts.1D", sep = "_"),
+             full.names = TRUE)
+}
 
-## Check existence of correlation matrices' directory.
-## If inexistent, create them from timeseries data.
-if (!dir.exists(here("data", "processed", "correlation_matrices", atlas))) {
-  ## Timeseries
-  filter_ts <- function(session, parcellation = atlas) {
-    list.files(
-      path = here("data", "raw", "timeseries", parcellation),
-      pattern = paste(session, parcellation, "ts.1D", sep = "_"),
-      full.names = T
-    )
-  }
-
-  ts_dirs <- list(
-    T0 = filter_ts("*ses-t0"),
-    T1 = filter_ts("*ses-t1"),
-    T14 = filter_ts("*ses-t14"),
-    T2 = filter_ts("*ses-t2"),
-    T3 = filter_ts("*ses-t3")
-  )
-
+# Reading timeseries function
+create_ts <- function(dir_list) {
   # Extract subs' numbers
-  ts_subs <- map_depth(ts_dirs, 2, str_extract, pattern = "(sub|ctr)-[0-9]{3}")
+  ts_subs <- map_depth(dir_list, 2, stringr::str_extract,
+                       pattern = "(sub|ctr)-[0-9]{3}")
 
-  # Read files
-  tseries <- map_depth(ts_dirs, 2, fread)
+  # Read files and apply names
+  timeseries <- map_depth(dir_list, 2, fread)
+  timeseries <- map2(timeseries, ts_subs, set_names)
+  return(timeseries)
+}
 
-  # Apply names
-  tseries <- map2(tseries, ts_subs, set_names)
+# Create matrices from timeseries function
+ts2mats <- function(timeseries) {
+  corr_mats <- suppressWarnings(map_depth(timeseries, 2, cor,
+                                          method = "pearson"))
 
-  ## Correlations
-  corr_mats <- suppressWarnings(map_depth(tseries, 2, cor, method = "pearson"))
-  corr_dts <- map_depth(corr_mats, 2, data.table)
+  corrs <- map_depth(corr_mats, 2, data.table)
 
   # Change NA -> NaN *Really necessary?
   # corr_mats <- modify_depth(corr_mats, 2, ~ ifelse(is.na(.), NaN, .))
@@ -51,8 +39,7 @@ if (!dir.exists(here("data", "processed", "correlation_matrices", atlas))) {
       set(DT, i = which(is.na(DT[[n]])), j = n, value = replacement)
     }
   }
-
-  invisible(map_depth(corr_dts, 2, change_na, replacement = NaN))
+  invisible(map_depth(corrs, 2, change_na, replacement = NaN))
 
   # Convert all negative correlations to 0
   neg_to_0 <- function(DT) {
@@ -60,59 +47,94 @@ if (!dir.exists(here("data", "processed", "correlation_matrices", atlas))) {
       set(DT, i = which(DT[[n]] < 0), j = n, value = 0)
     }
   }
+  invisible(map_depth(corrs, 2, neg_to_0))
+  return(corrs)
+}
 
-  invisible(map_depth(corr_dts, 2, neg_to_0))
+mats2files <- function(mats, outdir) {
+  for (i in seq_along(mats)) {
+    corr_dir <- here(outdir, names(mats)[[i]])
+    # If directory does not exist; create it
+    if (!dir.exists(here(corr_dir))) {
+      dir.create(corr_dir, showWarnings = FALSE, recursive = TRUE)
+    }
 
-  # Write correlation matrices into folder.
-  for (i in seq_along(corr_dts)) {
-    corr_dir <- here(
-      "data", "processed", "correlation_matrices", atlas, names(corr_dts)[[i]]
-    )
-    dir.create(corr_dir, showWarnings = FALSE, recursive = TRUE)
-    dirs_list <- paste(corr_dir, names(corr_mats[[i]]), sep = "/")
-    walk2(corr_dts[[i]], dirs_list,
-      ~ fwrite(
-        .x, file = paste0(.y, ".tsv"), sep = "\t", na = NaN, col.names = FALSE
-      )
-    )
+    dirs_list <- paste(corr_dir, names(mats[[i]]), sep = "/")
+    walk2(mats[[i]], dirs_list, ~ fwrite(.x, file = paste0(.y, ".tsv"),
+                                         sep = "\t", na = NaN,
+                                         col.names = FALSE))
   }
 }
 
-## Load needed objects
-## Confirm it's the same atlas before running!
-sessions <- read_rds(here("./data/processed/rds/sessions.rds"))
-covars <- read_rds(here("./data/processed/rds/covars.rds"))
-inds <- read_rds(here("./data/processed/rds/inds.rds"))
+## Set here the parcellation to work with
+source(here("scripts/schaefer_atlas.R"))
+parcels <- c("power264", "gordon333", paste0("schaefer", c(1,2,4), "00x7"))
+gsignal <- c("gs", "ngs")
 
-## Matrices - BrainGraph
+## Check existence of correlation matrices' directory.
+## If inexistent, create them from timeseries data.
+for (parcel in parcels) {
+  for (gs in gsignal) {
+    outdir <- here("data/processed/correlation_matrices", gs, parcel)
+    if (!dir.exists(outdir)) {
+      ts_dirs <- list(
+        T0 = filter_ts("*ses-t0", gs, parcel),
+        T1 = filter_ts("*ses-t1", gs, parcel),
+        T2 = filter_ts("*ses-t2", gs, parcel),
+        T3 = filter_ts("*ses-t3", gs, parcel)
+      )
+
+      timeseries <- create_ts(ts_dirs)
+      correlation_mats <- ts2mats(timeseries)
+
+      # Write matrices to data directory to be read by brainGraph function;
+      # Global signal output will be separated into different directories
+      mats2files(correlation_mats, outdir)
+    }
+  }
+}
+
+covars_file <- here("data/processed/rds/covars.rds")
+if (!file.exists(covars_file)) {
+  source(here("scripts/covars.R"))
+} else {
+  covars <- readr::read_rds(covars_file)
+  inds <- readr::read_rds(here("data/processed/rds/inds.rds"))
+  sessions <- c("T0", "T1", "T2", "T3")
+}
 
 # Matrices files
-matfiles <- unlist(
-  map(sessions, function(x)
-    map_chr(covars[x, Study.ID], function(y)
-      list.files(
-        here("data", "processed", "correlation_matrices", atlas, x),
-        y,
-        full.names = TRUE
-      )
-    )
-  )
-)
+matfiles <- thresholds <- mats <- vector("list", length = 2)
+for (i in seq_along(gsignal)) {
+  matfiles[[i]] <- vector("list", length = length(parcels))
+  for (j in seq_along(parcels)) {
+    matfiles[[i]][[j]] <- unlist(
+      map(sessions, function(x)
+        map_chr(covars[x, Study.ID], function(y)
+          list.files(here("data/processed/correlation_matrices", gsignal[i],
+                          parcels[j], x), y, full.names = TRUE))))
+  }
+}
 
-# Threshold parameters
-thresholds <- rev(seq(0.4, 0.01, -0.02))
-sub_threshold <- 0.6
+matfiles <- set_names(matfiles, gsignal)
+matfiles <- map(matfiles, set_names, parcels)
+
+# Threshold parameters; 1: thresholds; 2: densities
+thresh_by <- c("raw", "density")
+thresholds[[1]] <- rev(seq(0.4, 0.00, -0.02))
+thresholds[[2]] <- seq(1, 0, -.05)
+#sub_threshold <- 0.6
 
 # Final mats
-mats <- create_mats(
-  matfiles,
-  modality = "fmri",
-  threshold.by = "consensus",
-  mat.thresh = thresholds,
-  sub.thresh = sub_threshold,
-  inds = unlist(inds, recursive = FALSE)
-)
+for (i in 1:2) {
+  mats[[i]] <- map_depth(matfiles, 2, create_mats,
+                         modality = "fmri",
+                         threshold.by = thresh_by[[i]],
+                         mat.thresh = thresholds[[i]],
+                         inds = unlist(inds, recursive = FALSE))
+}
 
 ## Save RDS
-write_rds(mats, here("./data/processed/rds/mats.rds"))
-write_rds(thresholds, here("./data/processed/rds/thresholds.rds"))
+readr::write_rds(mats, here("./data/processed/rds/mats.rds"))
+readr::write_rds(thresholds, here("./data/processed/rds/thresholds.rds"))
+readr::write_rds(densities, here("./data/processed/rds/densities.rds"))

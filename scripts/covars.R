@@ -3,21 +3,20 @@
 ## Packages
 library("here")
 library("data.table")
-library("stringr")
 library("purrr")
-library("readr")
 
 ## Sessions
-sessions <- c("T0", "T1", "T14", "T2", "T3")
+sessions <- c("T0", "T1", "T2", "T3")
 
 # List of subs by session (Only needed after T1)
 # The strings are extracted from the available matrices in the data directory
-# Important to change the parcellation if changed later.
+# Will use first directory that matches session (all should be the same...)
 subs_by_sess <- function(session) {
-  subs <- list.files(
-    here("data", "processed", "correlation_matrices", "power264", session)
-  )
-  return(str_sub(subs, end = 7))
+  initial_dir <- grep(session,
+                      list.dirs(here("data/processed/correlation_matrices")),
+                      value = TRUE)[1]
+  subs <- list.files(initial_dir)
+  return(stringr::str_sub(subs, end = 7))
 }
 
 subs <- map(sessions, subs_by_sess)
@@ -39,42 +38,41 @@ covars_base <- fread(here("./data/raw/participants.tsv"))
 
 # Label categorical data
 covars_base[, `:=`(
-  Group = factor(Group, labels = groups),
-  Sex = factor(Sex, labels = c("M", "F"))
+  group = factor(group, labels = groups),
+  sex = factor(sex, labels = c("M", "F"))
   )
 ]
 
 # Create multiple rows for different sessions
 # Here is important for the script to calculate the number of rows
 # automatically from the data for easy updates.
+setnames(covars_base, "participant_id", "Study.ID")
 covars <- rbind(
   covars_base,
   covars_base[Study.ID %in% subs$T1],
-  covars_base[Study.ID %in% subs$T14],
   covars_base[Study.ID %in% subs$T2],
   covars_base[Study.ID %in% subs$T3]
 )
 
-covars[, Session := c(
+covars[, session := c(
   rep(sessions[[1]], length(subs[[1]])),
   rep(sessions[[2]], length(subs[[2]])),
   rep(sessions[[3]], length(subs[[3]])),
-  rep(sessions[[4]], length(subs[[4]])),
-  rep(sessions[[5]], length(subs[[5]]))
+  rep(sessions[[4]], length(subs[[4]]))
   )
 ]
 
 # Reorder and set key
 setcolorder(
   covars,
-  c("Study.ID", "Session", "Group", "Sex", "Age", "Educ", "Excl")
+  c("Study.ID", "session", "group", "sex", "age", "educ", "exclusion")
 )
-setkey(covars, Session, Group, Study.ID)
+setkey(covars, session, group, Study.ID)
 
 ## INDS - Needed for BrainGraph analysis
 inds <- lapply(seq_along(sessions), function(x)
   lapply(seq_along(groups), function(y)
-    covars[, which(Group == groups[y] & Session == sessions[x])]
+    covars[, which(group == groups[y] & session == sessions[x])]
   )
 )
 
@@ -89,7 +87,8 @@ inds <- map(inds, set_names, groups)
 # inds <- unlist(inds, recursive = FALSE)
 
 ## Save RDS objects
-write_rds(groups, here("./data/processed/rds/groups.rds"))
-write_rds(sessions, here("./data/processed/rds/sessions.rds"))
-write_rds(covars, here("./data/processed/rds/covars.rds"))
-write_rds(inds, here("./data/processed/rds/inds.rds"))
+# Are these needed???
+#readr::write_rds(groups, here("./data/processed/rds/groups.rds"))
+#readr::write_rds(sessions, here("./data/processed/rds/sessions.rds"))
+readr::write_rds(covars, here("./data/processed/rds/covars.rds"))
+readr::write_rds(inds, here("./data/processed/rds/inds.rds"))
