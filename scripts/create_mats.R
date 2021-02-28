@@ -122,7 +122,7 @@ matfiles <- map(matfiles, set_names, parcels)
 # Threshold parameters; 1: thresholds; 2: densities
 thresh_by <- c("raw", "density")
 thresholds[[1]] <- rev(seq(0.4, 0.00, -0.02))
-thresholds[[2]] <- seq(1, 0, -.05)
+thresholds[[2]] <- seq(0.95, 0.05, -.05)
 #sub_threshold <- 0.6
 
 # Final mats
@@ -137,4 +137,3 @@ for (i in 1:2) {
 ## Save RDS
 readr::write_rds(mats, here("./data/processed/rds/mats.rds"))
 readr::write_rds(thresholds, here("./data/processed/rds/thresholds.rds"))
-readr::write_rds(densities, here("./data/processed/rds/densities.rds"))
