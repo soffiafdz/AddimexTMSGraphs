@@ -1,6 +1,6 @@
 #!/usr/bin/Rscript
 ## Set-up Parallelization
-doMC::registerDoMC(13)
+doMC::registerDoMC(8)
 
 #library("foreach")
 #library("doParallel")
@@ -30,6 +30,7 @@ g_sub   <- function(input, thresholds) {
     g[[i]]  <- make_brainGraphList(A_sub[[i]], atlas, modality = "fmri",
                                   threshold = thresholds[[i]],
                                   weighted = TRUE,
+                                  .progress = FALSE,
                                   gnames = covars$Study.ID,
                                   groups = covars$group)
   }
@@ -45,6 +46,7 @@ g_group   <- function(input, thresholds) {
     gg[[i]] <- make_brainGraphList(A_mean[[i]], atlas, modality = "fmri",
                                    threshold = thresholds[[i]],
                                    weighted = TRUE,
+                                   .progress = FALSE,
                                    gnames = paste(covars[, session],
                                                   covars[, group],
                                                   sep = "_"))
@@ -57,8 +59,7 @@ names(mats) <- c("raw", "dens")
 
 ## Main
 g  <- map2(mats, thresholds, ~ map_depth(.x, 2, g_sub, thresholds = .y))
-gg <- map2(mats, thresholds, ~ map_depth(.x, 2, g_group, thresholds = .y))
-
-## Save rds objects (compressed)
 readr::write_rds(g, here("data/processed/rds/g.rds"), "gz", compression = 9L)
+
+gg <- map2(mats, thresholds, ~ map_depth(.x, 2, g_group, thresholds = .y))
 readr::write_rds(gg, here("data/processed/rds/gg.rds"), "gz", compression = 9L)

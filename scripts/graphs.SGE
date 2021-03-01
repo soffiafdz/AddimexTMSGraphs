@@ -2,11 +2,11 @@
 #$ -S /bin/bash
 #$ -N graphs
 #$ -V
-#$ -l mem_free=21G
-#$ -pe openmp 13
+#$ -l mem_free=20G
+#$ -pe openmp 8
 #$ -j y
 #$ -wd /home/sfernandezl/rtms
 
-module load r/4.
+module load r/4.0.2
 
 Rscript --verbose /home/sfernandezl/rtms/scripts/graphs.R

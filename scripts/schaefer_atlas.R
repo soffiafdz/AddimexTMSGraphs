@@ -11,20 +11,20 @@ rds_file <- here("data/processed/rds/schaefer_atlases.rds")
 
 if (!file.exists(rds_file)) {
   # Create base data.tables
-  indir <- "data/raw/atlas/schaefer_coords"
-  files <- paste0("Schaefer2018_", rep(c(100, 200, 400), each=2), "Parcels_",
-                  rep(c(7, 17), times=3),
+  indir    <- "data/raw/atlas/schaefer_coords"
+  files    <- paste0("Schaefer2018_", rep(c(100, 200, 400), each=2),
+                     "Parcels_", rep(c(7, 17), times=3),
                   "Networks_order_FSLMNI152_2mm.Centroid_RAS.csv")
-  titles <- paste0("schaefer", rep(c(100,200,400), each=2),
+  titles   <- paste0("schaefer", rep(c(100,200,400), each=2),
                    "x", rep(c(7,17), times=3))
   schaefer <- set_names(map(here(indir, files), fread), titles)
 
   # Add columns for hemi & networks from full names
   for (i in seq_along(schaefer)) {
     full_nms <- schaefer[[i]][[2]]
-    sep_nms <- str_split_fixed(full_nms, "_", 4)
-    hemi <- str_sub(sep_nms[,2], 1, 1)
-    network <- sep_nms[,3]
+    sep_nms  <- str_split_fixed(full_nms, "_", 4)
+    hemi     <- str_sub(sep_nms[,2], 1, 1)
+    network  <- sep_nms[,3]
     schaefer[[i]][, ':='(hemi=hemi, network=network, lobe="NA")]
     setnames(schaefer[[i]],
              c("ROI Label", "ROI Name", "R", "A", "S"),
@@ -39,6 +39,6 @@ if (!file.exists(rds_file)) {
 schaefer_list <- read_rds(rds_file)
 
 # Convert to bGraph atlases
-map(schaefer_list, brainGraph::as_atlas)
+suppressWarnings(map(schaefer_list, brainGraph::as_atlas))
 walk2(names(schaefer_list), schaefer_list, assign)
 rm(schaefer_list)
