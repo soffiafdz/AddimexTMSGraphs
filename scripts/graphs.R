@@ -5,95 +5,158 @@ doMC::registerDoMC(8)
 #library("foreach")
 #library("doParallel")
 #library("plyr")
-library("purrr")
-library("brainGraph")
+suppressMessages(library("brainGraph"))
+library("readr")
 library("here")
 
+## BrainGraph options
+options(bg.subject_id = "participant_id",
+        bg.group = "group",
+        bg.session = "session",
+        bg.progress = FALSE,
+        bg.ncpus = 8)
+
 ## Load rds objects and schaefer parcellations
-covars      <- readr::read_rds(here("data/processed/rds/covars.rds"))
-#inds        <- readr::read_rds(here("data/processed/rds/inds.rds"))
-thresholds  <- readr::read_rds(here("data/processed/rds/thresholds.rds"))
-mats        <- readr::read_rds(here("data/processed/rds/mats.rds"))
+rds_dir     <- here("data/processed/rds")
+covars      <- read_rds(here(rds_dir, "covars.rds"))
+#inds        <- read_rds(here("data/processed/rds/inds.rds"))
+thresholds  <- read_rds(here(rds_dir, "thresholds.rds"))
+
+message(sprintf("%s - Loading matrices", Sys.time()))
+mats        <- read_rds(here(rds_dir, "mats.rds"))
+names(mats) <- c("raw", "density")
 
 #grps        <- c("Sham", "Real")
 #sessions    <- c("T0", "T1", "T2", "T3")
 
+message(sprintf("%s - Loading Schaefer atlases", Sys.time()))
 source(here("scripts/schaefer_atlas.R"))
 
-g <- gg <- vector("list", length(mats))
+tmp_dir <- file.path(rds_dir, "g_tmp")
+if (!dir.exists(tmp_dir)) dir.create(tmp_dir, recursive = TRUE)
+
 # Raw vs density
 for (i in seq_along(mats)) {
-  g[[i]] <- gg[[i]] <- vector("list", length(mats[[i]]))
-  # GSignal vs No GSignal
+  message(sprintf("%s - Threshold method: %s", Sys.time(), names(mats[i])))
+
   for (j in seq_along(mats[[i]])) {
-    g[[i]][[j]] <- gg[[i]][[j]] <- vector("list", length(mats[[i]][[j]]))
+    message(sprintf("%s - Global Signal: %s",
+                    Sys.time(), names(mats[[i]][j])))
+
     # 5 diff parcellations
     for (k in seq_along(mats[[i]][[j]])) {
-      g[[i]][[j]][[k]] <- gg[[i]][[j]][[k]] <-
-        vector("list", length(thresholds[[i]]))
       atlas   <- names(mats[[i]][[j]][k])
       A_sub   <- mats[[i]][[j]][[k]]$A.norm.sub
       A_mean  <- mats[[i]][[j]][[k]]$A.norm.mean
+      message(sprintf("%s - Parcellation: %s",
+                      Sys.time(), names(mats[[i]][[j]][k])))
 
       ## Threshold/density
       for (t in seq_along(thresholds[[i]])) {
-        g[[i]][[j]][[k]][[t]] <-
-          make_brainGraphList(A_sub[[t]], atlas, modality = "fmri",
-                              threshold = thresholds[[i]][t], weighted = TRUE,
-                              .progress = FALSE, gnames = covars$Study.ID,
-                              groups = covars$group)
+        message(sprintf("%s - Treshold: %02i/%i",
+                        Sys.time(), t, length(thresholds[[i]])))
 
-        gg[[i]][[j]][[k]][[t]] <-
-          make_brainGraphList(A_mean[[t]], atlas, modality = "fmri",
-                              threshold = thresholds[[i]][t], weighted = TRUE,
-                              .progress = FALSE,
-                              gnames = paste(covars[, session],
-                                             covars[, group], sep = "_"))
+        ## Sub-level
+        g_file <- here(tmp_dir, sprintf("%s_s%i%i%02i.rds", atlas, i, j, t))
+        if (!file.exists(g_file)) {
+          message(sprintf("%s - Creating subject-level graph", Sys.time()))
+          #g[[i]][[j]][[k]][[t]] <-
+          g_tmp <- make_brainGraphList(A_sub[[t]], atlas, modality = "fmri",
+                                       threshold = thresholds[[i]][t],
+                                       weighted = TRUE, level = "subject",
+                                       weighting = "pearson",
+                                       gnames = covars$participant_id,
+                                       grpNames = covars$group)
+
+          message(sprintf("%s - Compressing and writing graph", Sys.time()))
+          write_rds(g_tmp, g_file, "gz", compression = 9L)
+          message(sprintf("%s - Graph saved", Sys.time()))
+          rm(g_tmp)
+        } else {
+          message(sprintf("%s - Subject graph already exists", Sys.time()))
+        }
+
+        ## Group-level
+        g_file <- here(tmp_dir, sprintf("%s_g%i%i%02i.rds", atlas, i, j, t))
+        if (!file.exists(g_file)) {
+          message(sprintf("%s - Creating group-level graph", Sys.time()))
+        #gg[[i]][[j]][[k]][[t]] <-
+          g_tmp <- make_brainGraphList(A_mean[[t]], atlas, modality = "fmri",
+                              threshold = thresholds[[i]][t],
+                              weighted = TRUE, level = "group",
+                              weighting = "pearson",
+                              gnames = unique(paste(covars[, group],
+                                                    covars[, session],
+                                                    sep = "_")))
+
+          message(sprintf("%s - Compressing and writing graph", Sys.time()))
+          write_rds(g_tmp, g_file, "gz", compression = 9L)
+          message(sprintf("%s - Graph saved", Sys.time()))
+          rm(g_tmp)
+        } else {
+          message(sprintf("%s - Group graph already exists", Sys.time()))
+        }
       }
     }
   }
 }
 
-### Functions for purrr iteration
-#g_sub   <- function(input, thresholds) {
-  #A_sub  <- input$A.norm.sub
-  #atlas  <- names(input)
+for (i in seq_along(mats)) {
+  for (j in seq_along(mats[[i]])) {
+    for (k in seq_along(mats[[i]][[j]])) {
+      g <- gg <- vector("list", lt)
+      lt    <- length(thresholds[[i]])
+      atlas <- names(mats[[i]][[j]][k])
+      sname <- sprintf("%s_%s_%s.rds", ifelse(i == 1, "raw", "dens"),
+                       ifelse(j == 1, "gs", "ngs"), atlas)
+      if (!file.exists(here(tmp_dir, sname))) {
+        fns <- length(list.files(tmp_dir), sprintf("%s_s%i%i", atlas, i, j))
+        if (fns == lt) {
+          message(sprintf("%s - Reading subject graphs for %s",
+                          Sys.time(), atlas))
+          for (t in seq_along(thresholds[[i]])) {
+            g_file <- here(tmp_dir, sprintf("%s_s%i%i%02i.rds",
+                                            atlas, i, j, t))
+            g[[t]] <- read_rds(g_file)
+          }
+        } else {
+          message(sprintf("%s - There weren't enough subj-graphs for: %s",
+                          Sys.time(), atlas))
+        }
+      } else {
+        message(sprintf("%s - %s already exists", Sys.time(), sname))
+      }
 
-  #g <- vector("list", length(thresholds))
-  #for (i in seq_along(thresholds)) {
-    #g[[i]]  <- make_brainGraphList(A_sub[[i]], atlas, modality = "fmri",
-                                  #threshold = thresholds[[i]],
-                                  #weighted = TRUE,
-                                  #.progress = FALSE,
-                                  #gnames = covars$Study.ID,
-                                  #groups = covars$group)
-  #}
-  #return(g)
-#}
+      gname <- sprintf("%s_%s_%s_group.rds", ifelse(i == 1, "raw", "dens"),
+                       ifelse(j == 1, "gs", "ngs"), atlas)
+      if (!file.exists(here(tmp_dir, gname))) {
+        fng <- length(list.files(tmp_dir), sprintf("%s_g%i%i", atlas, i, j))
+        if (fng == lt) {
+          message(sprintf("%s - Reading group graphs for %s",
+                          Sys.time(), atlas))
+          for (t in seq_along(thresholds[[i]])) {
+            g_file <- here(tmp_dir, sprintf("%s_g%i%i%02i.rds",
+                                            atlas, i, j, t))
+            gg[[t]] <- read_rds(g_file)
+          }
+        } else {
+          message(sprintf("%s - There weren't enough group-graphs for: %s",
+                          Sys.time(), atlas))
+        }
+      } else {
+        message(sprintf("%s - %s already exists", Sys.time(), gname))
+      }
 
-#g_group   <- function(input, thresholds) {
-  #A_mean <- input$A.norm.mean
-  #atlas  <- names(input)
-
-  #gg <- vector("list", length(thresholds))
-  #for (i in seq_along(thresholds)) {
-    #gg[[i]] <- make_brainGraphList(A_mean[[i]], atlas, modality = "fmri",
-                                   #threshold = thresholds[[i]],
-                                   #weighted = TRUE,
-                                   #.progress = FALSE,
-                                   #gnames = paste(covars[, session],
-                                                  #covars[, group],
-                                                  #sep = "_"))
-  #}
-  #return(gg)
-#}
-
-## Set names to matrices for output
-#names(mats) <- c("raw", "dens")
-
-## Main
-#g  <- map2(mats, thresholds, ~ map_depth(.x, 2, g_sub, thresholds = .y))
-readr::write_rds(g, here("data/processed/rds/g.rds"), "gz", compression = 9L)
-
-#gg <- map2(mats, thresholds, ~ map_depth(.x, 2, g_group, thresholds = .y))
-readr::write_rds(gg, here("data/processed/rds/gg.rds"), "gz", compression = 9L)
+      if (!is.null(g[18])){
+        message(sprintf("%s - Saving: %s", Sys.time(), sname))
+        write_rds(g, here(tmp_dir, sname), "gz", compression = 9L)
+        rm(g)
+      }
+      if (!is.null(gg[18])){
+        message(sprintf("%s - Saving: %s", Sys.time(), gname))
+        write_rds(gg, here(tmp_dir, gname), "gz", compression = 9L)
+        rm(gg)
+      }
+    }
+  }
+}
