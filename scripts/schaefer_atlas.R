@@ -40,5 +40,7 @@ schaefer_list <- read_rds(rds_file)
 
 # Convert to bGraph atlases
 suppressWarnings(map(schaefer_list, brainGraph::as_atlas))
-walk2(names(schaefer_list), schaefer_list, assign)
+for (i in seq_along(schaefer_list)) {
+  assign(names(schaefer_list[i]), schaefer_list[[i]])
+}
 rm(schaefer_list)
