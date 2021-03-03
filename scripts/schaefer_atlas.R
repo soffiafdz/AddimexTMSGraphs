@@ -25,7 +25,15 @@ if (!file.exists(rds_file)) {
     sep_nms  <- str_split_fixed(full_nms, "_", 4)
     hemi     <- str_sub(sep_nms[,2], 1, 1)
     network  <- sep_nms[,3]
-    schaefer[[i]][, ':='(hemi=hemi, network=network, lobe="NA")]
+    schaefer[[i]][, ':='(hemi=hemi, network=as.factor(network))]
+    schaefer[[i]][grepl("Vis", network),  lobe := "Occipital"]
+    schaefer[[i]][grepl("Limb", network), lobe := "Limbic"]
+    schaefer[[i]][grepl("Temp", network), lobe := "Temporal"]
+    schaefer[[i]][grepl("Sal", network),  lobe := "Central"]
+    schaefer[[i]][grepl("Som", network),  lobe := "Parietal"]
+    schaefer[[i]][grepl("Dors", network), lobe := "Parietal"]
+    schaefer[[i]][grepl("Cont", network), lobe := "Frontal"]
+    schaefer[[i]][grepl("Def", network),  lobe := "Frontal"]
     setnames(schaefer[[i]],
              c("ROI Label", "ROI Name", "R", "A", "S"),
              c("index", "name", "x.mni", "y.mni", "z.mni"))
