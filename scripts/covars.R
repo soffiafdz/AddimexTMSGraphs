@@ -42,12 +42,11 @@ covars_base[, `:=`(
 # Create multiple rows for different sessions
 # Here is important for the script to calculate the number of rows
 # automatically from the data for easy updates.
-setnames(covars_base, "participant_id", "Study.ID")
 covars <- rbind(
   covars_base,
-  covars_base[Study.ID %in% subs$T1],
-  covars_base[Study.ID %in% subs$T2],
-  covars_base[Study.ID %in% subs$T3]
+  covars_base[participant_id %in% subs$T1],
+  covars_base[participant_id %in% subs$T2],
+  covars_base[participant_id %in% subs$T3]
 )
 
 covars[, session := c(
@@ -61,9 +60,9 @@ covars[, session := c(
 # Reorder and set key
 setcolorder(
   covars,
-  c("Study.ID", "session", "group", "sex", "age", "educ", "exclusion")
+  c("participant_id", "session", "group", "sex", "age", "educ", "exclusion")
 )
-setkey(covars, session, group, Study.ID)
+setkey(covars, session, group, participant_id)
 
 ## INDS - Needed for BrainGraph analysis
 inds <- lapply(seq_along(sessions), function(x)
