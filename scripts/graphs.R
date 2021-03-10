@@ -104,13 +104,13 @@ for (i in seq_along(mats)) {
 for (i in seq_along(mats)) {
   for (j in seq_along(mats[[i]])) {
     for (k in seq_along(mats[[i]][[j]])) {
-      g <- gg <- vector("list", lt)
       lt    <- length(thresholds[[i]])
+      g     <- gg <- vector("list", lt)
       atlas <- names(mats[[i]][[j]][k])
       sname <- sprintf("%s_%s_%s.rds", ifelse(i == 1, "raw", "dens"),
                        ifelse(j == 1, "gs", "ngs"), atlas)
       if (!file.exists(here(tmp_dir, sname))) {
-        fns <- length(list.files(tmp_dir), sprintf("%s_s%i%i", atlas, i, j))
+        fns <- length(list.files(tmp_dir, sprintf("%s_s%i%i", atlas, i, j)))
         if (fns == lt) {
           message(sprintf("%s - Reading subject graphs for %s",
                           Sys.time(), atlas))
@@ -119,6 +119,9 @@ for (i in seq_along(mats)) {
                                             atlas, i, j, t))
             g[[t]] <- read_rds(g_file)
           }
+          message(sprintf("%s - Saving: %s", Sys.time(), sname))
+          write_rds(g, here(tmp_dir, sname), "gz", compression = 9L)
+          rm(g)
         } else {
           message(sprintf("%s - There weren't enough subj-graphs for: %s",
                           Sys.time(), atlas))
@@ -130,7 +133,7 @@ for (i in seq_along(mats)) {
       gname <- sprintf("%s_%s_%s_group.rds", ifelse(i == 1, "raw", "dens"),
                        ifelse(j == 1, "gs", "ngs"), atlas)
       if (!file.exists(here(tmp_dir, gname))) {
-        fng <- length(list.files(tmp_dir), sprintf("%s_g%i%i", atlas, i, j))
+        fng <- length(list.files(tmp_dir, sprintf("%s_g%i%i", atlas, i, j)))
         if (fng == lt) {
           message(sprintf("%s - Reading group graphs for %s",
                           Sys.time(), atlas))
@@ -139,23 +142,15 @@ for (i in seq_along(mats)) {
                                             atlas, i, j, t))
             gg[[t]] <- read_rds(g_file)
           }
+          message(sprintf("%s - Saving: %s", Sys.time(), gname))
+          write_rds(gg, here(tmp_dir, gname), "gz", compression = 9L)
+          rm(gg)
         } else {
           message(sprintf("%s - There weren't enough group-graphs for: %s",
                           Sys.time(), atlas))
         }
       } else {
         message(sprintf("%s - %s already exists", Sys.time(), gname))
-      }
-
-      if (!is.null(g[18])){
-        message(sprintf("%s - Saving: %s", Sys.time(), sname))
-        write_rds(g, here(tmp_dir, sname), "gz", compression = 9L)
-        rm(g)
-      }
-      if (!is.null(gg[18])){
-        message(sprintf("%s - Saving: %s", Sys.time(), gname))
-        write_rds(gg, here(tmp_dir, gname), "gz", compression = 9L)
-        rm(gg)
       }
     }
   }
