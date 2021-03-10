@@ -27,8 +27,8 @@ create_ts <- function(dir_list) {
 
 # Create matrices from timeseries function
 ts2mats <- function(timeseries) {
-  corr_mats <- suppressWarnings(map_depth(timeseries, 2, cor,
-                                          method = "pearson"))
+  corr_mats <- suppressWarnings(map_depth(timeseries, 2,
+                                          cor, method = "pearson"))
 
   corrs <- map_depth(corr_mats, 2, data.table)
 
@@ -96,28 +96,14 @@ for (parcel in parcels) {
 
 covars_file <- here("data/processed/rds/covars.rds")
 if (!file.exists(covars_file)) {
+  message(sprintf("%s - Running covars.R", Sys.time()))
   source(here("scripts/covars.R"))
 } else {
+  message(sprintf("%s - Loading covars & inds rds", Sys.time()))
   covars <- readr::read_rds(covars_file)
   inds <- readr::read_rds(here("data/processed/rds/inds.rds"))
   sessions <- c("T0", "T1", "T2", "T3")
 }
-
-# Matrices files
-matfiles <- thresholds <- mats <- vector("list", length = 2)
-for (i in seq_along(gsignal)) {
-  matfiles[[i]] <- vector("list", length = length(parcels))
-  for (j in seq_along(parcels)) {
-    matfiles[[i]][[j]] <- unlist(
-      map(sessions, function(x)
-        map_chr(covars[x, Study.ID], function(y)
-          list.files(here("data/processed/correlation_matrices", gsignal[i],
-                          parcels[j], x), y, full.names = TRUE))))
-  }
-}
-
-matfiles <- set_names(matfiles, gsignal)
-matfiles <- map(matfiles, set_names, parcels)
 
 # Threshold parameters; 1: thresholds; 2: densities
 thresh_by <- c("raw", "density")
@@ -125,16 +111,42 @@ thresholds[[1]] <- rev(seq(0.4, 0.00, -0.02))
 thresholds[[2]] <- seq(0.95, 0.05, -.05)
 #sub_threshold <- 0.6
 
-# Final mats
-for (i in 1:2) {
-  mats[[i]] <- map_depth(matfiles, 2, create_mats,
-                         modality = "fmri",
-                         threshold.by = thresh_by[[i]],
-                         mat.thresh = thresholds[[i]],
-                         inds = unlist(inds, recursive = FALSE))
-}
+##FileExist test
+if (file.exists()) {
+  message(sprintf("%s - Loading existing matrices", Sys.time()))
+  mats <- readr::read_rds(here("data/processed/rds/mats.rds"))
+} else {
+  # Matrices files
+  message(sprintf("%s - Reading correlation_matrices filenames", Sys.time()))
+  matfiles <- thresholds <- mats <- vector("list", length = 2)
+  for (i in seq_along(gsignal)) {
+    matfiles[[i]] <- vector("list", length = length(parcels))
+    for (j in seq_along(parcels)) {
+      matfiles[[i]][[j]] <- unlist(
+        map(sessions, function(x)
+          map_chr(covars[x, Study.ID], function(y)
+            list.files(here("data/processed/correlation_matrices", gsignal[i],
+                            parcels[j], x), y, full.names = TRUE))))
+    }
+  }
 
-## Save RDS
-readr::write_rds(mats, here("data/processed/rds/mats.rds"),
-                 compress = "gz", compression = 9L)
-readr::write_rds(thresholds, here("data/processed/rds/thresholds.rds"))
+  matfiles <- set_names(matfiles, gsignal)
+  matfiles <- map(matfiles, set_names, parcels)
+
+  # Final mats
+  message(sprintf("%s - Creating matrices", Sys.time()))
+  for (i in 1:2) { # Raw vs density
+    mats[[i]] <- map_depth(matfiles, 2, create_mats,
+                           modality = "fmri",
+                           threshold.by = thresh_by[[i]],
+                           mat.thresh = thresholds[[i]],
+                           inds = unlist(inds, recursive = FALSE))
+  }
+
+  ## Save RDS
+  message(sprintf("%s - Writing matrices as rds", Sys.time()))
+  readr::write_rds(mats, here("data/processed/rds/mats.rds"),
+                   compress = "gz", compression = 9L)
+  message(sprintf("%s - Writing thresholds as rds", Sys.time()))
+  readr::write_rds(thresholds, here("data/processed/rds/thresholds.rds"))
+}
