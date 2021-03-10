@@ -8,14 +8,14 @@ library(purrr)
 library(lubridate)
 
 ## Load data
-covars <- read_rds(here("./data/processed/rds/covars.rds"))
-covars[Study.ID == "sub-015", Session := c("T0", "T1", "T3")]
-covars[Session == "T14", Session := "T1-4"]
-setkey(covars, Study.ID, Session)
+covars <- read_rds(here("data/processed/rds/covars.rds"))
+covars[participant_id == "sub-015", session := c("T0", "T1", "T3")]
+#covars[session == "T14", session := "T1-4"]
+setkey(covars, participant_id, session)
 
 
 ## Load datasets
-clin_dir <- "./data/raw/clinical"
+csv_dir <- "data/raw/csv"
 dsets_names <- c(
   "BIS-11.csv",
   "CCQ-G.csv",
@@ -26,141 +26,139 @@ dsets_names <- c(
   "HDRS.csv",
   "TMS_calendar_permonth.csv",
   "Tobacco.csv",
-  "VAS.csv")
-dsets <- map(dsets_names, ~fread(here(clin_dir, .x)))
-
-# Add framewise displacement
-dsets[[length(dsets) + 1]] <- fread(here("./data/raw/fd.csv"))
+  "VAS.csv",
+  "fd.csv")
+dsets <- map(dsets_names, ~fread(here(csv_dir, .x)))
 
 ## RID column -> sub-000
 walk(dsets, ~set(., j = "rid", value = sprintf("sub-%03d", .$rid)))
 
 # Rename RID and Stage
-walk(dsets, setnames, c("rid", "stage"), c("Study.ID", "Session"))
+walk(dsets, setnames, c("rid", "stage"), c("participant_id", "session"))
 
 ## Clinical datasets cleaning
 # BIS-11
-dsets[[1]] <- dsets[[1]][, .(Study.ID, Session,
-  BISc = cog, BISm = mot, BISn = nonp, BIS = tot_score)]
-setkey(dsets[[1]], Study.ID, Session)
+dsets[[1]] <- dsets[[1]][, .(participant_id, session,
+  bis_c = cog, bis_m = mot, bis_n = nonp, bis = tot_score)]
+setkey(dsets[[1]], participant_id, session)
 covars <- dsets[[1]][covars]
 
 # CCQ-G
-dsets[[2]] <- dsets[[2]][, .(Study.ID, Session, CCQg = ccq_g)]
-setkey(dsets[[2]], Study.ID, Session)
+dsets[[2]] <- dsets[[2]][, .(participant_id, session, ccq_g)]
+setkey(dsets[[2]], participant_id, session)
 covars <- dsets[[2]][covars]
 
 # CCQ-N
-dsets[[3]] <- dsets[[3]][, .(Study.ID, Session, CCQn = ccq_n)]
-setkey(dsets[[3]], Study.ID, Session)
+dsets[[3]] <- dsets[[3]][, .(participant_id, session, ccq_n)]
+setkey(dsets[[3]], participant_id, session)
 covars <- dsets[[3]][covars]
 
 # Demographics... Not sure about keeping
-dsets[[4]] <- dsets[[4]][, .(Study.ID,
-  Civ = factor(q5_civ,
+dsets[[4]] <- dsets[[4]][, .(participant_id,
+  civ = factor(q5_civ,
     levels = c(1:5),
     labels = c("Single", "Married", "Divorced", "Separated", "Widowed")),
-  Empl = factor(q6_employeeyr,
+  employment = factor(q6_employeeyr,
     levels = c(1:8),
-    labels = c("Full-time", "Half-time", "Free-lance", "Scholarized","Not-scholarized", "Retired", "Housewife", "Unemployed")),
-  Mincome = q6_month,
-  Substance = factor(q6_sustance,
+    labels = c("Full-time", "Half-time", "Free-lance", "Scholarized",
+               "Not-scholarized", "Retired", "Housewife", "Unemployed")),
+  m_income = q6_month,
+  substance = factor(q6_sustance,
     levels = c(1,2),
     labels = c("Crack-cocaine","Cocaine")),
-  Ystart = q7_yrstart,
-  Tcons = q7_tconsume)]
+  y_start = q7_yrstart,
+  t_cons = q7_tconsume)]
 # Drop unused levels
-dsets[[4]][, Empl := droplevels(Empl)]
-setkey(dsets[[4]], Study.ID)
+dsets[[4]][, employment := droplevels(employment)]
+setkey(dsets[[4]], participant_id)
 covars <- dsets[[4]][covars]
 
 # Inventory ...Not sure about keeping
-dsets[[5]] <- dsets[[5]][, .(Study.ID, Session,
-  Date = dmy(date),
-  Tx = factor(as.integer(othq3_b), levels = c(0:2),
+dsets[[5]] <- dsets[[5]][, .(participant_id, session,
+  date = dmy(date),
+  tx = factor(as.integer(othq3_b), levels = c(0:2),
     labels = c("None", "Psych&Pharm", "Pharm")),
-  UTamph = factor(ut_amp, levels = c(1:2), labels = c("+", "-")),
-  UTbzd = factor(ut_bzd, levels = c(1:2), labels = c("+", "-")),
-  UTcoc = factor(ut_coc, levels = c(1:2), labels = c("+", "-")),
-  UTmet = factor(ut_met, levels = c(1:2), labels = c("+", "-")),
-  UTmor = factor(ut_mor, levels = c(1:2), labels = c("+", "-")),
-  UTthc = factor(ut_thc, levels = c(1:2), labels = c("+", "-")),
-  Use = factor(auto1, levels = c(0:2), labels = c("1Visit", "Yes", "No")),
-  Relapse = factor(auto4, levels = c(0:4),
+  ut_amp = factor(ut_amp, levels = c(1:2), labels = c("+", "-")),
+  ut_bzd = factor(ut_bzd, levels = c(1:2), labels = c("+", "-")),
+  ut_coc = factor(ut_coc, levels = c(1:2), labels = c("+", "-")),
+  ut_met = factor(ut_met, levels = c(1:2), labels = c("+", "-")),
+  ut_mor = factor(ut_mor, levels = c(1:2), labels = c("+", "-")),
+  ut_thc = factor(ut_thc, levels = c(1:2), labels = c("+", "-")),
+  use = factor(auto1, levels = c(0:2), labels = c("1Visit", "Yes", "No")),
+  relapse = factor(auto4, levels = c(0:4),
     labels = c("No-use", "Reincidence", "Relapse", "Decrease", "Equal")),
-  Status = factor(auto5, levels = c(0:7),
+  status = factor(auto5, levels = c(0:7),
     labels = c("1Visit", "Better", "Moderately-better", "Slightly-better",
       "No-changes", "Slightly-worse", "Moderately-worse", "Worse")))]
 # Fixing mistake
-dsets[[5]][Study.ID == "sub-054" & Session == "T3", Session := "T2"]
-setkey(dsets[[5]], Study.ID, Session)
-setkey(covars, Study.ID, Session)
+dsets[[5]][participant_id == "sub-054" & session == "T3", session := "T2"]
+setkey(dsets[[5]], participant_id, session)
+setkey(covars, participant_id, session)
 covars <- dsets[[5]][covars]
 
 # Hamilton Anxiety
-dsets[[6]] <- dsets[[6]][, .(Study.ID, Session,
-  HARS = hars_tot, HARScat = hars_categories)]
-setkey(dsets[[6]], Study.ID, Session)
+dsets[[6]] <- dsets[[6]][, .(participant_id, session,
+  hars = hars_tot, hars_cat = hars_categories)]
+setkey(dsets[[6]], participant_id, session)
 covars <- dsets[[6]][covars]
 
 # Hamilton Depression
-dsets[[7]] <- dsets[[7]][, .(Study.ID, Session,
-  HDRS = tot_score, HDRScat = score_categories)]
-setkey(dsets[[7]], Study.ID, Session)
+dsets[[7]] <- dsets[[7]][, .(participant_id, session,
+  hdrs = tot_score, hdrs_cat = score_categories)]
+setkey(dsets[[7]], participant_id, session)
 covars <- dsets[[7]][covars]
 
 # Calendar "Per_month"
-dsets[[8]][month == 1, Session := "T1"]
-dsets[[8]][month == 0, Session := "T0"]
-dsets[[8]] <- dsets[[8]][, .(Study.ID, Session,
-  Date = dmy(date),
-  Month = month,
-  Cons_Freq = frequency_last_month,
-  Cons_Grams = grams_last_month)]
-setkey(dsets[[8]], Study.ID, Session)
+dsets[[8]][month == 1, session := "T1"]
+dsets[[8]][month == 0, session := "T0"]
+dsets[[8]] <- dsets[[8]][, .(participant_id, session,
+  date = dmy(date),
+  month = month,
+  cons_freq = frequency_last_month,
+  cons_grams = grams_last_month)]
+setkey(dsets[[8]], participant_id, session)
 covars <- dsets[[8]][covars]
 
 # Tobacco
-dsets[[9]] <- dsets[[9]][, .(Study.ID,
-  Tobacco = factor(consumption, levels = 0:1, labels = c("No", "Yes")),
-  Tobacco_start = age_begin,
-  Tobacco_years = years_con,
-  Cigs_day = cig_day)]
-setkey(dsets[[9]], Study.ID)
+dsets[[9]] <- dsets[[9]][, .(participant_id,
+  tobacco = factor(consumption, levels = 0:1, labels = c("No", "Yes")),
+  tobacco_start = age_begin,
+  tobacco_years = years_con,
+  cigs_day = cig_day)]
+setkey(dsets[[9]], participant_id)
 covars <- dsets[[9]][covars]
 
 # VAS
-dsets[[10]] <- dsets[[10]][, .(Study.ID, Session, VAS = vas)]
-setkey(dsets[[10]], Study.ID, Session)
-setkey(covars, Study.ID, Session)
+dsets[[10]] <- dsets[[10]][, .(participant_id, session, vas)]
+setkey(dsets[[10]], participant_id, session)
+setkey(covars, participant_id, session)
 covars <- dsets[[10]][covars]
 
 # Framewise-displacement
 # Return sub-015 back to normal
-covars[Study.ID == "sub-015" & Session == "T3", Session := "T2"]
-dsets[[11]] <- dsets[[11]][, .(Study.ID, Session, FD = mean_fd)]
-setkey(covars, Study.ID, Session)
-setkey(dsets[[11]], Study.ID, Session)
+covars[participant_id == "sub-015" & session == "T3", session := "T2"]
+dsets[[11]] <- dsets[[11]][, .(participant_id, session, fd = mean_fd)]
+setkey(covars, participant_id, session)
+setkey(dsets[[11]], participant_id, session)
 covars <- dsets[[11]][covars]
 
 
 ## Delete duplicate date and return keys to normal
 covars[, Date := NULL]
-setnames(covars, "i.Date", "Date")
+setnames(covars, "i.date", "date")
 
-setcolorder(covars, c("Study.ID", "Session", "Group", "Excl",
-  "Sex", "Age", "Educ", "Civ", "Empl", "Mincome", "Substance",
-  "Tobacco", "Tobacco_start", "Tobacco_years", "Cigs_day", "Tx", "Ystart",
-  "Tcons", "Date", "Month", "Use", "Relapse", "Cons_Freq", "Cons_Grams",
-  "Status", "UTamph", "UTbzd", "UTcoc", "UTmet", "UTmor", "UTthc",
-  "BIS", "BISc", "BISm", "BISn", "VAS", "CCQn", "CCQg",
-  "HDRS", "HDRScat", "HARS", "HARScat", "FD"))
+setcolorder(covars, c("participant_id", "session", "group", "excl",
+  "sex", "age", "educ", "civ", "employment", "m_income", "substance",
+  "tobacco", "tobacco_start", "tobacco_years", "cigs_day", "tx", "y_start",
+  "t_cons", "date", "month", "use", "relapse", "cons_freq", "cons_grams",
+  "status", "ut_amp", "ut_bzd", "ut_coc", "ut_met", "ut_mor", "ut_thc",
+  "bis", "bis_c", "bis_m", "bis_n", "vas", "ccq_n", "ccq_g",
+  "hdrs", "hdrs_cat", "hars", "hars_cat", "fd"))
 
 
-covars[Session == "T1-4", Session := "T14"]
-setkey(covars, Session, Group, Study.ID)
+#covars[session == "T1-4", session := "T14"]
+setkey(covars, session, group, participant_id)
 
 ## Save RDS
-write_rds(dsets, here("./data/processed/rds/clinical_datasets.rds"))
-write_rds(covars, here("./data/processed/rds/clinical+covars.rds"))
-
+write_rds(dsets, here("data/processed/rds/clean_csvs.rds"))
+write_rds(covars, here("data/processed/rds/clin+covars.rds"))
