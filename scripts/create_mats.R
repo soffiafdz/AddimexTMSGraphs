@@ -2,9 +2,9 @@
 
 ## Packages
 library("here")
-library("data.table")
-library("purrr")
-library("brainGraph")
+suppressMessages(library("data.table"))
+suppressMessages(library("purrr"))
+suppressMessages(library("brainGraph"))
 
 # Parsing function for timeseries files
 filter_ts <- function(session, gsignal, parcellation) {
@@ -105,14 +105,8 @@ if (!file.exists(covars_file)) {
   sessions <- c("T0", "T1", "T2", "T3")
 }
 
-# Threshold parameters; 1: thresholds; 2: densities
-thresh_by <- c("raw", "density")
-thresholds[[1]] <- rev(seq(0.4, 0.00, -0.02))
-thresholds[[2]] <- seq(0.95, 0.05, -.05)
-#sub_threshold <- 0.6
-
-##FileExist test
-if (file.exists()) {
+## FileExist test
+if (file.exists(here("data/processed/rds/mats.rds"))) {
   message(sprintf("%s - Loading existing matrices", Sys.time()))
   mats <- readr::read_rds(here("data/processed/rds/mats.rds"))
 } else {
@@ -124,7 +118,7 @@ if (file.exists()) {
     for (j in seq_along(parcels)) {
       matfiles[[i]][[j]] <- unlist(
         map(sessions, function(x)
-          map_chr(covars[x, Study.ID], function(y)
+          map_chr(covars[x, participant_id], function(y)
             list.files(here("data/processed/correlation_matrices", gsignal[i],
                             parcels[j], x), y, full.names = TRUE))))
     }
@@ -132,6 +126,12 @@ if (file.exists()) {
 
   matfiles <- set_names(matfiles, gsignal)
   matfiles <- map(matfiles, set_names, parcels)
+
+  # Threshold parameters; 1: thresholds; 2: densities
+  thresh_by <- c("raw", "density")
+  thresholds[[1]] <- rev(seq(0.4, 0.00, -0.02))
+  thresholds[[2]] <- seq(0.95, 0.05, -.05)
+  #sub_threshold <- 0.6
 
   # Final mats
   message(sprintf("%s - Creating matrices", Sys.time()))
