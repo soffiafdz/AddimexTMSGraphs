@@ -124,15 +124,18 @@ for (i in seq_along(mats_bal)) {
   }
 }
 
+out_dir <- here(rds_dir, "graphs")
+if (!dir.exists(out_dir)  dir.create(out_dir)
+
 for (i in seq_along(mats_bal)) {
+  lt <- length(thresholds[[i]])
   for (j in seq_along(mats_bal[[i]])) {
     for (k in seq_along(mats_bal[[i]][[j]])) {
-      lt    <- length(thresholds[[i]])
       gg    <- vector("list", lt)
       atlas <- names(mats_bal[[i]][[j]][k])
       gname <- sprintf("%s_%s_%s_group_bal.rds", ifelse(i == 1, "raw", "dens"),
                        ifelse(j == 1, "gs", "ngs"), atlas)
-      if (!file.exists(here(tmp_dir, gname))) {
+      if (!file.exists(here(out_dir, gname))) {
         fng <- length(list.files(tmp_dir, sprintf("%s_g%i%i", atlas, i, j)))
         if (fng == lt) {
           message(sprintf("%s - Reading group graphs for %s",
@@ -143,7 +146,7 @@ for (i in seq_along(mats_bal)) {
             gg[[t]] <- read_rds(g_file)
           }
           message(sprintf("%s - Saving: %s", Sys.time(), gname))
-          write_rds(gg, here(tmp_dir, gname), "gz", compression = 9L)
+          write_rds(gg, here(out_dir, gname), "gz", compression = 9L)
           rm(gg)
         } else {
           message(sprintf("%s - There weren't enough group-graphs for: %s",
