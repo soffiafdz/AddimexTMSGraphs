@@ -34,12 +34,13 @@ matfiles <- map(matfiles, set_names, parcels)
 # Mats
 thresh_by  <- c("raw", "density")
 thresholds <- readr::read_rds(here("data/processed/rds/thresholds.rds"))
+groups     <- c("Sham", "Real")
 inds_bal   <- lapply(seq_along(sessions[1:2]), function(x)
   lapply(seq_along(groups), function(y)
     covars[exclusion == 0,
            which(group == groups[y] & session == sessions[x])]))
 
-inds_bal <- set_names(inds, sessions)
+inds_bal <- set_names(inds_bal, sessions[1:2])
 inds_bal <- map(inds_bal, set_names, groups)
 
 mats_dir <- here("data/processed/rds/mats_bal.rds")

@@ -1,0 +1,12 @@
+#! /bin/bash
+#$ -S /bin/bash
+#$ -N ggroup
+#$ -V
+#$ -l mem_free=20G
+#$ -pe openmp 8
+#$ -j y
+#$ -wd /home/sfernandezl/rtms
+
+module load r/4.0.2
+
+Rscript --verbose /home/sfernandezl/rtms/scripts/balanced_groups.R
