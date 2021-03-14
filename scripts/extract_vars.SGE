@@ -1,0 +1,12 @@
+#! /bin/bash
+#$ -S /bin/bash
+#$ -N x_vars
+#$ -V
+#$ -l mem_free=16G
+#$ -pe openmp 6
+#$ -j y
+#$ -wd /home/sfernandezl/rtms
+
+module load r/4.0.2
+
+Rscript --verbose /home/sfernandezl/rtms/scripts/extract_vars.R
