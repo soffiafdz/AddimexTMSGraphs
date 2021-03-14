@@ -1,12 +1,12 @@
 #! /bin/bash
 #$ -S /bin/bash
-#$ -N random_graphs
+#$ -N rgraphs
 #$ -V
 #$ -l mem_free=21G
-#$ -pe openmp 15
+#$ -pe openmp 20
 #$ -j y
 #$ -wd /home/sfernandezl/rtms
 
-module load r/3.5.3
+module load r/4.0.2
 
 Rscript --verbose /home/sfernandezl/rtms/scripts/random_graphs.R
