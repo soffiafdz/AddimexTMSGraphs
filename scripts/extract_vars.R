@@ -15,7 +15,7 @@ options(bg.subject_id = "participant_id",
 ## Covars; indir; and filtering parameters
 covars  <- readr::read_rds(here('data/processed/rds/covars.rds'))
 g_dir   <- here("data/processed/rds/graphs")
-t_met   <- c("raw", "density")
+t_met   <- c("raw", "dens")
 gs      <- c("gs", "ngs")
 parcel  <- c("power264", "gordon333", paste0("schaefer", c(1,2,4), "00x7"))
 
@@ -45,6 +45,7 @@ for (i in t_met) {
                      global_signal = j)]
 
       message(sprintf("%s - Appending to list", Sys.time()))
+
       dt.G <- append(dt.G, list(sub.dt.G))
 
       message(sprintf("%s - Extracting vertex attributes", Sys.time()))
@@ -62,6 +63,9 @@ for (i in t_met) {
     }
   }
 }
+
+dt.G <- rbindlist(dt.G)
+dt.V <- rbindlist(dt.V)
 
 ## Save rds objects
 readr::write_rds(dt.G, here("data/processed/rds/g_vars_G.rds"))
