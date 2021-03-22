@@ -2,11 +2,13 @@
 #$ -S /bin/bash
 #$ -N rgraphs
 #$ -V
-#$ -l mem_free=21G
-#$ -pe openmp 20
+#$ -l mem_free=25G
+#$ -pe openmp 35
+#$ -M soffiafdz@gmail.com
+#$ -m baes
 #$ -j y
 #$ -wd /home/sfernandezl/rtms
 
 module load r/4.0.2
-
+export TMPDIR=/mnt/MD1200B/egarza/sfernandezl/tmp
 Rscript --verbose /home/sfernandezl/rtms/scripts/random_graphs.R
