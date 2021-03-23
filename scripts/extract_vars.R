@@ -49,7 +49,7 @@ for (i in t_met) {
       dt.G <- append(dt.G, list(sub.dt.G))
 
       message(sprintf("%s - Extracting vertex attributes", Sys.time()))
-      sub.dt.V <- rbindlist(lapply(g, graph_attr_dt))
+      sub.dt.V <- rbindlist(lapply(g, vertex_attr_dt))
 
       message(sprintf("%s - Setting up extra attributes", Sys.time()))
       sub.dt.V[, session := stringr::str_extract(group, "T[:digit:]")][
