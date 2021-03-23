@@ -24,7 +24,7 @@ for (i in t_met) {
   for (j in gs) {
     for (k in parcel) {
       gname <- sprintf("%s_%s_%s.rds", i, j, k)
-      message(sprintf("%s - Reading %s rds", Sys.time(), gname))
+      message(sprintf("%s - Reading %s", Sys.time(), gname))
       g <- readr::read_rds(here(g_dir, gname))
 
       message(sprintf("%s - Changing group attribute", Sys.time()))
@@ -65,7 +65,7 @@ for (i in t_met) {
 }
 
 dt.G <- rbindlist(dt.G)
-dt.V <- rbindlist(dt.V)
+dt.V <- rbindlist(dt.V, fill = TRUE)
 
 ## Save rds objects
 readr::write_rds(dt.G, here("data/processed/rds/g_vars_G.rds"))
