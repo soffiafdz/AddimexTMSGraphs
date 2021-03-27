@@ -1,27 +1,28 @@
 ---
-title: "Functional Connectivity Networks' Topology Changes after rTMS in Cocaine Addiction"
+title: "Functional Connectivity Networks' Topology Changes after rTMS in Cocaine Addiction 2.0"
+subtitle: "Electric Boogaloo"
 author: "Sofia Fernandez"
 date: '`r format(Sys.time(), "%d %B, %Y")`'
 output:
   bookdown::pdf_document2:
     fig_caption: yes
     keep_md: yes
-    includes:
-      in_header: header.tex
 ---
 
 ```{r, setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.width = 8, collapse = TRUE)
 
-renv::activate("~/Repos/rtms")
 library(data.table)
 library(readr)
 library(here)
 library(arsenal)
+library(afex)
+library(lme4)
+library(stargazer)
 library(ggplot2)
-library(ggrepel)
-library(ggthemes)
 library(gghalves)
+library(ggthemes)
+library(ggrepel)
 library(extrafont)
 library(latex2exp)
 
@@ -43,51 +44,50 @@ After the last day of treatment the group assignment was revealed.
 To those of the sham arm we offered to retake 20 more sessions of real rTMS
 under the same parameters as the active group.
 
-The **open-label** or maintenance phase started after 20 sessions of real rTMS.
-In this phase all participants regardless of group assignment received two
-rTMS sessions weekly until the end of study with evaluations after three and
-six months.
-
 We acquired both clinical and MRI data at Baseline (T0), two weeks (T1), three
-(T2) and six (T3) months.
+(T2) and six (T3) months. For this **longitudinal phase** only the participants
+who started with active stimulation were included in the analysis.
 
 Here I explore the brain functional connectivity of the participants in the
 form of global networks constructed from the BOLD signal of their MRI data.
 Different metrics of topology are calculated and compared at the different
 time-points to see how they are affected by the treatment in the closed-label,
-and how they evolve over time in the open-label.
+and how they evolve over time in the Longitudinal phase.
 
-# Data
+# Demographics and Clinical data
 
 ```{r rds-data}
-covars <- readr::read_rds(here::here("data/processed/rds/clinical+covars.rds"))
-setkey(covars, Study.ID, Session, Group)
-gattr <- read_rds(here("./data/processed/rds/gph_attr.rds"))
-setkey(gattr, Study.ID, Session, Group)
+covars <- read_rds(here("data/processed/rds/clin+covars.rds"))
+setkey(covars, participant_id, session, group)
+att.G <- read_rds(here("data/processed/rds/g_vars_G.rds"))
+setkey(att.G, participant_id, session, group)
+# This is running. For now is identical to full graph metrics
+att.V <- read_rds(here("data/processed/rds/g_vars_V.rds"))
+setkey(att.V, participant_id, session, group)
 ```
 
 ```{r derivated-data}
-gdata     <- covars[gattr]
-
-gdlong <- copy(gdata)
-gdlong[Group == "Sham" & Session == "T0", Session := "T-1"]
-gdlong[Group == "Sham" & Session == "T1", Session := "T0"]
-gdlong[Group == "Sham" & Session == "T14", Session := "T1"]
-gdlong[, Session := factor(Session, levels = paste0("T", c(-1, 0, 1, 2, 3)))]
+gdata     <- covars[att.G]
 
 metrics   <- c("density", "strength", "mod.wt", "num.hubs.wt", "E.global.wt",
-               "E.local.wt", "E.local", "E.global", "Cp.norm", "Lp.norm", "sigma")
-dems      <- c("Study.ID", "Session", "Group", "threshold")
-colms     <- c(dems, metrics)
-clins     <- c("BIS", "BISc", "BISm", "BISn", "VAS", "CCQn", "CCQg")
-colms2    <- c(dems[-4], clins)
-colms3    <- c(dems, metrics, clins, "FD", "Age", "Sex")
-colms4    <- c(dems[1:2], clins)
-colms5    <- c(dems[-3], metrics)
-colms6    <- c(dems[-3], metrics, clins, "FD", "Age", "Sex")
+               "E.local.wt", "E.local", "E.global")
+## No SW atts yet
+dems      <- c("participant_id", "session", "group")
+clins     <- c("bis", "bis_c", "bis_m", "bis_n", "vas", "ccq_n", "ccq_g")
 
-gdmod    <- gdata[Session %in% c("T0", "T1"), ..colms3]
-gdmod2   <- gdlong[, ..colms6]
+## Will use this or subset manually?
+nets      <- c("threshold", "thresh.method", "global_signal", "atlas")
+
+## WTF was I doing with this?? Subsetting?? Is super messy/confusing
+##colms     <- c(dems, metrics)
+##colms2    <- c(dems[-4], clins)
+##colms3    <- c(dems, metrics, clins, "FD", "Age", "Sex")
+##colms4    <- c(dems[1:2], clins)
+##colms5    <- c(dems[-3], metrics)
+##colms6    <- c(dems[-3], metrics, clins, "FD", "Age", "Sex")
+#### Check when used to put in there... Better for later
+##gdmod    <- gdata[Session %in% c("T0", "T1"), ..colms3]
+##gdmod2   <- gdlong[, ..colms6]
 ```
 
 ## Demographics
@@ -98,28 +98,28 @@ were randomly assigned to a group and went through baseline data acquisition.
 Table \@ref(tab:demog-table) contains a summary of the demographics of these 50 participants initially enrolled.
 
 ```{r demog-table, results="asis"}
-# Change some levels
-levels(covars$Sex)      <- c("Male", "Female")
-levels(covars$Tx)[2:3]  <- c("Psych & Pharm", "Pharm")
+### Change some levels... Really needed?
+# levels(covars$sex)      <- c("Male", "Female")
+# levels(covars$tx)[2:3]  <- c("Psych & Pharm", "Pharm")
 
 # Change some labels
 labels(covars) <- c(
-  Age       = "Age (years)",
-  Educ      = "Education (years)",
-  Civ       = "Civil status",
-  Empl      = "Employment (last 3 y)",
-  Substance = "Main substance",
-  Tobacco   = "Smoking",
-  Cigs_day  = "Cigarettes/day",
-  Tx        = "Treatment",
-  Ystart    = "Onset age of cocaine use",
-  Tcons     = "Years of cocaine use"
+  age         = "Age (years)",
+  educ        = "Education (years)",
+  civ         = "Civil status",
+  employment  = "Employment (last 3 y)",
+  substance   = "Main substance",
+  tobacco     = "Smoking",
+  cigs_day    = "Cigarettes/day",
+  tx          = "Treatment",
+  y_start     = "Onset age of cocaine use",
+  t_cons      = "Years of cocaine use"
 )
 
 # Table
-t1 <- tableby(Group ~ Sex + Age + Educ + Civ + Empl + Tobacco + Tobacco_years +
-  Cigs_day + Substance + Tx + Ystart + Tcons,
-  data = covars[Session == "T0"],
+t1 <- tableby(group ~ sex + age + educ + civ + employment + tobacco +
+              tobacco_years + cigs_day + substance + tx + y_start + t_cons,
+  data = covars[session == "T0"],
   test = FALSE)
 
 summary(t1, title = "(\\#tab:demog-table) Demographic data at baseline", digits = 1)
@@ -151,51 +151,7 @@ pre-processing steps; residual artefacts can still remain in cases of elevated
 motion, especially when dealing with patient populations. Because of this,
 frame-wise displacement is treated as a covariate in the models.
 
-## Summary
-
-```{r repmesplot1}
-repmesp1  <- function(clin_str, data = gdpclin){
-  ggplot(data, aes_string(y = clin_str)) +
-    geom_point(data = data[Session == "T0"], aes(x = x_j),
-               shape = 21, size = 1, fill = "white", alpha = 0.9,
-               color = "#00429d") +
-    geom_point(data = data[Session == "T1"], aes(x = x_j),
-               shape = 21, size = 1, fill = "white", alpha = 0.9,
-               color = "#93003a") +
-    geom_line(aes(x = x_j, group = Study.ID), color = "lightgray", alpha = .45) +
-    geom_half_boxplot(data = data[x == 1], aes(x = x),
-                      position = position_nudge(x = -.35), side = "r",
-                      outlier.shape = NA, center = TRUE, errorbar.draw = FALSE,
-                      width = .1, fill = "#00429d", alpha = .6) +
-    geom_half_boxplot(data = data[x == 2], aes(x = x),
-                      position = position_nudge(x = -1.2),
-                      outlier.shape = NA, center = TRUE, errorbar.draw = FALSE,
-                      width = .1, fill = "#93003a", alpha = .6) +
-    geom_half_boxplot(data = data[x == 3], aes(x = x),
-                      position = position_nudge(x = 1.3), side = "r",
-                      outlier.shape = NA, center = TRUE, errorbar.draw = FALSE,
-                      width = .1, fill = "#00429d", alpha = .6) +
-    geom_half_boxplot(data = data[x == 4], aes(x = x),
-                      position = position_nudge(x = .2), side = "r",
-                      outlier.shape = NA, center = TRUE, errorbar.draw = FALSE,
-                      width = .1, fill = "#93003a", alpha = .6) +
-    geom_half_violin(data = data[x == 1], aes(x = x),
-                     position = position_nudge(x = -.4), fill = "#00429d", alpha = .6) +
-    geom_half_violin(data = data[x == 2], aes(x = x),
-                     position = position_nudge(x = -1.4), fill = "#93003a", alpha = .6) +
-    geom_half_violin(data = data[x == 3], aes(x = x), side = "r",
-                     position = position_nudge(x = 1.45), fill = "#00429d", alpha = .6) +
-    geom_half_violin(data = data[x == 4], aes(x = x), side = "r",
-                     position = position_nudge(x = .45), fill = "#93003a", alpha = .6) +
-    scale_x_continuous(breaks=c(1,2,3,4), labels=c("Before", "After","Before", "After"),
-                        limits=c(0, 5),
-                        sec.axis = dup_axis(breaks = c(1.5, 3.5),
-                                            labels = c("Real", "Sham"))) +
-    theme_tufte(base_size = 12, base_family = ffont) +
-    theme(axis.title.x = element_blank(),
-          axis.ticks = element_blank())
-}
-```
+## Clinical Data
 
 ### Acute phase
 
@@ -208,23 +164,23 @@ stage are represented in figure \@ref(fig:acute-clin).
 ```{r summary-acute, results = "asis"}
 # Labels
 labels(covars)   <- c(
-  BIS         = "BIS-11",
-  BISc        = "BIS-11 Cognitive",
-  BISm        = "BIS-11 Motor",
-  BISn        = "BIS-11 Non-planning",
-  VAS         = "Visual Analog Scale",
-  CCQn        = "CCQ-Now",
-  CCQg        = "CCQ-General",
-  Cons_Freq   = "Consumption (freq)",
-  Cons_Grams  = "Consumption (g)",
-  FD          = "In-scanner movement (mm)"
+  bis          = "BIS-11",
+  bis_c        = "BIS-11 Cognitive",
+  bis_m        = "BIS-11 Motor",
+  bis_n        = "BIS-11 Non-planning",
+  vas          = "Visual Analog Scale",
+  ccq_n        = "CCQ-Now",
+  ccq_g        = "CCQ-General",
+  cons_freq    = "Consumption (freq)",
+  cons_grams   = "Consumption (g)",
+  fd           = "In-scanner movement (mm)"
 )
 
 # Table
-t2 <- tableby(Session ~ Sex + Age + Cons_Freq + Cons_Grams + Relapse + Status +
-  BIS + VAS + FD,
-  data = covars[Session %in% c("T0", "T1")],
-  strata = Group,
+t2 <- tableby(session ~ sex + age + cons_freq + cons_grams + relapse + status +
+  bis + vas + fd,
+  data = covars[session %in% c("T0", "T1")],
+  strata = group,
   total = FALSE,
   test = FALSE)
 
@@ -232,16 +188,48 @@ summary(t2, title = "(\\#tab:summary-acute) Clinical summary of acute phase", di
 ```
 
 ```{r acute-clin, fig.cap = "Clinical scores by experimental group in the acute phase. A) Craving scores by VAS & B) Impulsivity by BIS-11."}
-gdpclin   <- covars[Session %in% c("T0", "T1"), ..colms2]
-gdpclin[Session == "T0", x := 1][Session == "T1", x := 2][Group == "Sham", x := x + 2]
-gdpclin[, x_j  := jitter(x, amount = .09)]
+# colms2: dems [-thresh] + clins
+columns   <- c(dems, clins)
+## WTF is gdp??? CHANGE TO A BETTER NAME... later
+gdpclin   <- covars[session %in% c("T0", "T1"), ..columns]
 
-p1 <- repmesp1("VAS")
-p2 <-  repmesp1("BIS")
+source(here("scripts/raincloudplots.R"))
+colrs <- c("#00429d", "#93003a")
 
-cowplot::plot_grid(p1, p2, labels = "AUTO", nrow = 2)
+vas2x2 <- gdpclin[, .(y_axis = vas, id = participant_id, s = session, group)]
+vas2x2[s == "T0", x_axis := 1 ][ s == "T1", x_axis := 2][
+  group == "Real", x_axis := x_axis + 0.01][  ## Change to 2 for double x axis
+  , jit := jitter(x_axis, amount = .1)]
+
+p1 <- rc_repmes_2x2(vas2x2, fills = colrs, colors = colrs,
+                    groups = c("Sham", "Real")) +
+  scale_x_continuous(breaks = c(1,2), labels = c("Pre", "Post"),
+                     limits = c(0.4,2.6)) +
+  guides(col = FALSE) +
+  labs(y = "VAS Total") +
+  theme_tufte(base_size = 24) +
+  theme(text = element_text(size = 24, family = ffont),
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+
+bis2x2 <- gdpclin[, .(y_axis = bis, id = participant_id, s = session, group)]
+bis2x2[s == "T0", x_axis := 1 ][ s == "T1", x_axis := 2][
+  group == "Real", x_axis := x_axis + 0.01][  ## Change to 2 for double x axis
+  , jit := jitter(x_axis, amount = .1)]
+
+p2 <- rc_repmes_2x2(bis2x2, fills = colrs, colors = colrs,
+                    groups = c("Sham", "Real")) +
+  scale_x_continuous(breaks = c(1,2), labels = c("Pre", "Post"),
+                     limits = c(0.4,2.6)) +
+  guides(col = FALSE) +
+  labs(y = "BIS Total") +
+  theme_tufte(base_size = 24) +
+  theme(text = element_text(size = 24, family = ffont),
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+
+cowplot::plot_grid(p1, p2, labels = "AUTO", label_size = 32, nrow = 2)
 ```
-
 
 ### Maintenance phase
 
@@ -260,1029 +248,454 @@ table \@ref(tab:summary-maintenance) and the clinical changes for craving and
 impulsivity are represented in figure \@ref(fig:long-clin).
 
 ```{r summary-maintenance, results = "asis"}
-labels(gdlong)   <- c(
-  BIS         = "BIS-11",
-  BISc        = "BIS-11 Cognitive",
-  BISm        = "BIS-11 Motor",
-  BISn        = "BIS-11 Non-planning",
-  VAS         = "Visual Analog Scale",
-  CCQn        = "CCQ-Now",
-  CCQg        = "CCQ-General",
-  Cons_Freq   = "Consumption (freq)",
-  Cons_Grams  = "Consumption (g)",
-  FD          = "In-scanner movement (mm)"
-)
-
-t3 <- tableby(Session ~ Sex + Age + Cons_Freq + Cons_Grams + Relapse +
-  Status + BIS + VAS + FD,
-  data = gdlong[threshold == 0.2],
+t3 <- tableby(session ~ sex + age + cons_freq + cons_grams + relapse + status +
+  bis + vas + fd,
+  data = covars[group == "Real"],
   total = FALSE,
   test = FALSE)
 
 summary(t3, title = "(\\#tab:summary-maintenance) Clinical summary of maintenance phase", digits = 1)
 ```
 
-```{r repmeslplot1}
-repmeslp1  <- function(clin_str, data = gdpclin2){
-  ggplot(data, aes_string(y = clin_str)) +
-    geom_point(data = data[Session == "T-1"], aes(x = x_j),
-               shape = 21, size = 1, fill = "#00429d", alpha = 0.9,
-               color = "#00429d") +
-    geom_point(data = data[Session == "T0"], aes(x = x_j),
-               shape = 21, size = 1, fill = "#35739a", alpha = 0.9,
-               color = "#35739a") +
-    geom_point(data = data[Session == "T1"], aes(x = x_j),
-               shape = 21, size = 1, fill = "#3aa794", alpha = 0.9,
-               color = "#3aa794") +
-    geom_point(data = data[Session == "T2"], aes(x = x_j),
-               shape = 21, size = 1, fill = "#c8004c", alpha = 0.9,
-               color = "#c8004c") +
-    geom_point(data = data[Session == "T3"], aes(x = x_j),
-               shape = 21, size = 1, fill = "#93003a", alpha = 0.9,
-               color = "#93003a") +
-    geom_line(aes(x = x_j, group = Study.ID), color = "lightgray", alpha = .4) +
-    geom_violin(data = data[Session == "T-1"], aes(x = x),
-                position = position_nudge(x = 0), fill = "#00429d",
-                color = "white", alpha = .1, trim = FALSE) +
-    geom_violin(data = data[Session == "T0"], aes(x = x),
-                position = position_nudge(x = 0), fill = "#35739a",
-                color = "white", alpha = .1, trim = FALSE) +
-    geom_violin(data = data[Session == "T1"], aes(x = x),
-                position = position_nudge(x = 0), fill = "#3aa794",
-                color = "white", alpha = .1, trim = FALSE) +
-    geom_violin(data = data[Session == "T2"], aes(x = x),
-                position = position_nudge(x = 0), fill = "#c8004c",
-                color = "white", alpha = .1, trim = FALSE) +
-    geom_violin(data = data[Session == "T3"], aes(x = x),
-                position = position_nudge(x = 0), fill = "#93003a",
-                color = "white", alpha = .1, trim = FALSE) +
-    scale_x_continuous(breaks=c(1,2,3,4,5),
-                       labels=c("Before sham", "Before active",
-                                "2 weeks", "3 months", "6 months"),
-                        limits=c(0.5, 5.5)) +
-    theme_tufte(base_size = 12, base_family = ffont) +
-    theme(axis.title.x = element_blank(),
-          axis.ticks = element_blank())
-}
-```
-
 ```{r long-clin, fig.cap = "Clinical scores across all stages: A) Craving scores by VAS & B) Impulsivity by BIS-11."}
-gdpclin2  <- gdlong[threshold == 0.2, ..colms4]
 
-gdpclin2[
-  Session == "T-1", x := 1][
-  Session == "T0", x := 2][
-  Session == "T1", x := 3][
-  Session == "T2", x := 4][
-  Session == "T3", x := 5]
-gdpclin2[, x_j  := jitter(x, amount = .09)]
+columns <- c(dems[-3], clins)
+gdclinl <- covars[group == "Real", ..columns]
 
-p1 <- repmeslp1("VAS")
-p2 <-  repmeslp1("BIS")
+colrsl <- c("#00429d", "#35739a", "#c8004c", "#93003a")
 
-cowplot::plot_grid(p1, p2, labels = "AUTO", nrow = 2)
+vasl <- gdclinl[, .(y_axis = vas, id = participant_id, s = session)]
+vasl[s == "T0", x_axis := 1 ][ s == "T1", x_axis := 2][s == "T2", x_axis :=3][
+  s == "T3", x_axis := 4][, jit := jitter(x_axis, amount = .09)]
+
+p3 <- rc_repmes(vasl, times = 4, fills = colrsl, colors = colrsl) +
+  scale_x_continuous(breaks = c(1:4), labels = unique(covarsl[,session]),
+                     limits = c(0.9,4.8)) +
+  labs(y = "VAS Total") +
+  theme_tufte(base_size = 24) +
+  theme(text = element_text(size = 24, family = ffont),
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+
+bisl <- gdclinl[, .(y_axis = bis, id = participant_id, s = session)]
+bisl[s == "T0", x_axis := 1 ][ s == "T1", x_axis := 2][s == "T2", x_axis :=3][
+  s == "T3", x_axis := 4][, jit := jitter(x_axis, amount = .09)]
+
+p4 <- rc_repmes(bisl, times = 4, fills = colrsl, colors = colrsl) +
+  scale_x_continuous(breaks = c(1:4), labels = unique(covarsl[,session]),
+                     limits = c(0.9,4.8)) +
+  labs(y = "BIS Total") +
+  theme_tufte(base_size = 24) +
+  theme(text = element_text(size = 24, family = ffont),
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+
+cowplot::plot_grid(p3, p4, labels = "AUTO", label_size = 32, nrow = 2)
 ```
-
-# Graphs
-
-A detailed description of the process of extracting the BOLD signal timeseries,
-calculating the adjacency matrices, constructing the graphs and generating
-random graphs for the calculation of smallworldness is outside the scope of
-this report.
-
-The procedure will be summarized and only the main parameters will be reported.
-
-## Graph creation
-
-### Atlas
-
-The graphs were constructed using the Power-264 atlas.
-
-### Adjacency matrices
-
-The BOLD signal of the local mean of each node of the atlas were extracted by
-the processing software XCP. These timeseries were then cross-correlated using
-Pearson correlation. All negative r values set to 0.
-
-### Thresholding
-
-Graphs were created with the brainGraph library with consensus-based
-thresholding; i.e. only the connections above a threshold $\tau$ for a certain
-percentage of the subjects *in each group*.
-
-For every participant 20 graphs were created with a value of $\tau \in {0.02, 0.04, 0.06 ... 0.4}$.
-
-The subject percentage was $60\%$.
-
-### Random graphs
-
-The generation of random graphs is an essential step in the calculation of
-smallworldness. The process consists in comparing the path length $L$ and
-clustering coefficient $C$ of the graph with an $N$ number of random graphs.
-
-The equation for $\sigma$, or smallworldness, is:
-$$ \sigma=\frac{C/C_{rand}}{L/L_{rand}} $$
-
-For this analysis, 300 random graphs were generated for each participant and
-threshold.
-
-## Topology metrics
-
-The topology of the functional connectivity networks here is explored by the
-following graph theory metrics:
-- Density
-- Modularity, taking into account edge weights
-- Average vertex strength
-- Mean local efficiency across vertices
-- Average of the vertices' weighted local efficiency
-- Global efficiency
-- Weighted global efficiency
-- Clustering coefficient
-- Characteristic path length
-- Smallworldness
 
 # Acute phase
 
 ```{r sparklines-acute, fig.cap = "Sparklines of the topology metrics across thresholds. Labels: Max and Min; Grey shadow: IQR.", fig.height = 9}
-# Reshape to Long
-gdl <- data.table::melt(gdata[Session %in% c("T0", "T1"), ..colms],
-                              id.vars = dems, measure.vars = metrics,
-                              variable.name = "Metric", value.name = "Val")
+##Subset specific atlas/thresholding/gs
+#Power/raw/gs
+setnames(gdata, c("threshold", "thresh.method", "global_signal", "atlas"),
+         c("t", "t.m", "gs", "a"))
+gdata  <- gdata[a == "power264" & t.m == "raw" & gs == "gs",
+                -c("a", "t.m", "gs")]
 
-# Extract means, mins, max and quartiles
-gdmean    <- gdl[, .(Val = mean(Val)),
-                    by = .(threshold, Metric, Session, Group)]
-setkey(gdmean, Metric, Group, Session)
-gdmin     <- gdmean[, .SD[which.min(Val)], keyby = .(Metric, Group, Session)]
-gdmax     <- gdmean[, .SD[which.max(Val)], keyby = .(Metric, Group, Session)]
-gdmin[, Val := round(Val, 2)]
-gdmax[, Val := round(Val, 2)]
-gdlabs    <- unique(gdmin, by = c("Metric", "Val", "Group"))
+columns <- c(dems, "t", metrics)
+gdl <- data.table::melt(gdata[session %in% c("T0", "T1"), ..columns],
+                              id.vars = c(dems, 't'), measure.vars = metrics,
+                              variable.name = "metric", value.name = "val")
+
+#Extract means, mins, max and quartiles
+gdmean <- gdl[, .(val = mean(val)), by = .(group, session, t, metric)]
+gdmin <- gdmean[, .SD[which.min(val)], keyby = .(group, session, metric)]
+gdmax <- gdmean[, .SD[which.max(val)], keyby = .(group, session, metric)]
+gdmin[, val.r := round(val, 2)]
+gdmax[, val.r := round(val, 2)]
+gdlabs <- unique(gdmin, by = c("group", "val", "metric"))
 gdlabs[, l := "Min"]
-gdlabs2   <- unique(gdmax, by = c("Metric", "Val", "Group"))
+gdlabs2 <- unique(gdmax, by = c("group", "val", "metric"))
 gdlabs2[, l := "Max"]
-gdlabs    <- rbindlist(list(gdlabs, gdlabs2))
-gdquarts  <- gdmean[gdmean[,.(quart1 = quantile(Val, 0.25),
-                              quart2 = quantile(Val, 0.75)),
-                            by = .(Metric, Group)]]
+gdlabs <- rbindlist(list(gdlabs, gdlabs2))
+gdquarts <- gdmean[,.(quart1 = quantile(val, 0.25), quart2 = quantile(val, 0.75)), by = .(group, metric)]
+setkey(gdmean, group, metric)
+gdquarts <- gdmean[gdquarts]
 
-# Sparklines
-ggplot(gdmean, aes(x = threshold, y = Val, colour = Session)) +
-  facet_grid(vars(Metric), vars(Group), scales = "free_y") +
+#Sparklines
+##Repeat with different atlas/parcelations and gs/ngs
+ggplot(gdmean, aes(x = t, y = val, colour = session)) +
+  facet_grid(vars(metric), vars(group), scales = "free_y") +
   geom_ribbon(data = gdquarts,
               aes(ymin = quart1, ymax = quart2, colour = NULL),
               fill = "grey93", alpha = 0.75) +
-  geom_line(size = 0.3) +
-  geom_point(data = gdlabs, shape = 21, size = 1.5,
-             fill = "white") +
-  geom_label_repel(data = gdlabs, aes(label = Val),
-                   family = ffont, size = 2, force = 1.3, label.padding = 0.1,
+  geom_line(size = 0.5) +
+  geom_point(data = gdlabs, shape = 21, size = 2, fill = "white") +
+  geom_label_repel(data = gdlabs, aes(label = val.r), family = ffont,
+                   size = 3, force = 1.3, label.padding = 0.1,
                    min.segment.length = 0, segment.size = .2,
                    segment.alpha = 0.7, alpha = 0.7) +
   scale_x_continuous(bquote(tau),breaks = seq(0, .4, .1)) +
   scale_y_continuous(expand = c(0.1, 0)) +
   scale_colour_manual(values = c("#00429d","#93003a")) +
-  theme(text = element_text(size = 12, family = ffont)) +
-  theme_tufte(base_size = 12, base_family = ffont) +
+  ggtitle("Power264; Raw; wGS") +
+  theme(text = element_text(size = 24, family = ffont)) +
+  theme_tufte(base_size = 24, base_family = ffont) +
   theme(axis.title.y = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks = element_blank(),
         strip.text.y = element_text(angle = 0))
 ```
 
-In figure \@ref(fig:sparklines-acute) we can easily compare the difference in the metrics across groups and sessions along the sequence of thresholds.
-The pattern of change varies across groups in several of the metrics;
-i.e. while the values increase in those participants who underwent sham
-stimulation, the ones who received real treatment showed a decrease.
+```{r integrals}
+columns <- c(dems, 't', metrics)
+gdw  <- gdata[session %in% c("T0", "T1"), ..columns]
 
-There is a sharp increase in the curve of the weighted local efficiency of the
-Real group. This might warrant a further exploration of the data for each
-metric.
+gdints <- gdw[, lapply(.SD, MESS::auc, x = t, type = 'spline'),
+              by = .(participant_id, session, group), .SDcols = metrics]
+```
 
 ## Density
 
-```{r integrals}
-gdwide    <- gdata[Session %in% c("T0", "T1"), ..colms]
-setkey(gdwide, Group, Session)
-
-gdints    <- gdwide[, lapply(.SD, MESS::auc, x = threshold, type = 'spline'),
-                    by = .(Study.ID, Session, Group), .SDcols = metrics]
-```
-
-```{r repmesplot2}
-repmesp2  <- function(metric_str, data = gdplots){
-  ggplot(data, aes_string(y = metric_str)) +
-    geom_point(data = data[Session == "T0"], aes(x = x_j),
-               shape = 21, size = 1, fill = "white", alpha = 0.9,
-               color = "#00429d") +
-    geom_point(data = data[Session == "T1"], aes(x = x_j),
-               shape = 21, size = 1, fill = "white", alpha = 0.9,
-               color = "#93003a") +
-    geom_line(aes(x = x_j, group = Study.ID), color = "lightgray", alpha = .45) +
-    geom_half_boxplot(data = data[x == 1], aes(x = x),
-                      position = position_nudge(x = -.35), side = "r",
-                      outlier.shape = NA, center = TRUE, errorbar.draw = FALSE,
-                      width = .1, fill = "#00429d", alpha = .6) +
-    geom_half_boxplot(data = data[x == 2], aes(x = x),
-                      position = position_nudge(x = -1.2),
-                      outlier.shape = NA, center = TRUE, errorbar.draw = FALSE,
-                      width = .1, fill = "#93003a", alpha = .6) +
-    geom_half_boxplot(data = data[x == 3], aes(x = x),
-                      position = position_nudge(x = 1.3), side = "r",
-                      outlier.shape = NA, center = TRUE, errorbar.draw = FALSE,
-                      width = .1, fill = "#00429d", alpha = .6) +
-    geom_half_boxplot(data = data[x == 4], aes(x = x),
-                      position = position_nudge(x = .2), side = "r",
-                      outlier.shape = NA, center = TRUE, errorbar.draw = FALSE,
-                      width = .1, fill = "#93003a", alpha = .6) +
-    geom_half_violin(data = data[x == 1], aes(x = x),
-                     position = position_nudge(x = -.4), fill = "#00429d", alpha = .6) +
-    geom_half_violin(data = data[x == 2], aes(x = x),
-                     position = position_nudge(x = -1.4), fill = "#93003a", alpha = .6) +
-    geom_half_violin(data = data[x == 3], aes(x = x), side = "r",
-                     position = position_nudge(x = 1.45), fill = "#00429d", alpha = .6) +
-    geom_half_violin(data = data[x == 4], aes(x = x), side = "r",
-                     position = position_nudge(x = .45), fill = "#93003a", alpha = .6) +
-    scale_x_continuous(breaks=c(1,2,3,4), labels=c("Before", "After","Before", "After"),
-                        limits=c(0, 5),
-                        sec.axis = dup_axis(breaks = c(1.5, 3.5),
-                                            labels = c("Real", "Sham"))) +
-    ylab(TeX(paste0("$\\int_{0.02}^{0.4} ", metric_str, "(\\tau) d_{\\tau}"))) +
-    theme_tufte(base_size = 12, base_family = ffont) +
-    theme(axis.title.x = element_blank(),
-          axis.ticks = element_blank())
-}
-```
-
-In order to easily explore the data, I calculated an integrated measure for
-every metric with the area under the curve of the thresholds.
-
 ```{r repmes-density, fig.cap = "Integrated metric of density by group."}
-gdplots   <- copy(gdints)
-gdplots[Session == "T0", x := 1][Session == "T1", x := 2][Group == "Sham", x := x + 2]
-gdplots[, x_j  := jitter(x, amount = .09)]
+dens2x2 <- gdints[, .(y_axis = density, id = participant_id, s = session, group)]
+dens2x2[
+  s == "T0", x_axis := 1 ][
+  s == "T1", x_axis := 2][
+  group == "Real", x_axis := x_axis + 0.01][  ## Change to 2 for double x axis
+  , jit := jitter(x_axis, amount = .1)]
 
-repmesp2("density")
+rc_repmes_2x2(dens2x2, fills = colrs, colors = colrs,
+              groups = c("Sham", "Real")) +
+  scale_x_continuous(breaks = c(1,2), labels = c("Pre", "Post"),
+                     limits = c(0.4, 2.6)) +
+  guides(col = FALSE) +
+  ylab(TeX("$\\int_{0.02}^{0.4} density (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 24) +
+  theme(axis.title.x = element_blank(),
+  axis.ticks = element_blank())
 ```
-
-Figure \@ref(fig:repmes-density) shows the changes by experimental group in
-this integrated measure for the density of the graph. We see different patterns
-of changes depending of what treatment was received; an incremental in the
-active group in contrast with a decrease in the sham-arm.
 
 ### Likelihood Ratio Test of Fixed effects
 
 ```{r lrt-density}
-afex::mixed(density ~ Session*Group + FD + VAS + BIS + Age + Sex +
-                   (1 + Session|Study.ID) + (1|threshold),
-                 data = gdmod, method = 'LRT')
+columns <- c(dems, "age", "sex", clins, "fd", 't', metrics)
+dt.mod <- gdata[session %in% c("T0", "T1"), ..columns]
+mixed(density ~ session*group + fd + vas + bis + age + sex +
+                   (1 + session|participant_id) + (1|t),
+                 data = dt.mod, method = 'LRT')
 ```
-
-I implemented a Likelihood Ratio Test (LRT) comparing to test the significance
-of the covariates in models of increasing complexity: Null model,
-+ Interaction of Group and Session; + Head-motion; + Craving; + Impulsivity;
-+ Age; + Sex. The random effects included in the models were the varying slope of every participant
-by session, and the several thresholds used for the construction of the graphs.
-
-The LRT shows a significant interaction of experimental group and stage,
-with head-motion as the only significant covariate. Neither demographics
-(age and sex) nor the clinical scores significantly impacted the model.
-
-For this reason, they were omitted in the construction of the model.
 
 ### Mixed effect model
 
-Table \@ref(tab:lmer-density) shows the coefficients of the final model for
-density predicted by Session, Group, head-motion (Framewise displacement) and
-the interaction of Group and Session.
-
-The predicted varying slopes of the model for every subject can be compared with
-the observed slopes for every threshold in figure \@ref(fig:density-plots).
-
 ```{r lmer-density, results = "asis"}
-mod <- lme4::lmer(density ~ Session * Group + FD +
-                    (1+Session|Study.ID) + (1|threshold),
-                  data = gdmod)
+mod <- lme4::lmer(density ~ session*group + fd + sex +
+                  (1+session|participant_id) + (1|t), data = dt.mod)
 
-stargazer::stargazer(mod, header = FALSE, title = "(\\#tab:lmer-density) Mixed Effects Model for Density.")
-```
-
-```{r density-plots, fig.cap = "A) Individual slopes across thresholds; B) Model's predicted slopes.", fig.height = 9}
-gdm  <- copy(gdmod)
-gdm[, pred_dist := fitted(mod)]
-
-p1 <- ggplot(gdm, aes(Session, density, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1, stroke = .3, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab(TeX("Density by $\\tau$")) +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  facet_wrap(vars(threshold), scales = "free_y") +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        legend.position = "none")
-
-p2 <- ggplot(gdm[threshold == 0.4],
-             aes(Session, pred_dist, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1.5, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab("Predicted slopes: Density") +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank())
-
-cowplot::plot_grid(p1, p2, labels = "AUTO", nrow = 2)
+##Merge tables of mixed models???
+stargazer(mod, header = FALSE,
+          title = "(\\#tab:lmer-density) Mixed Effects Model for Density.")
 ```
 
 ## Strength
 
 ```{r repmes-strength, fig.cap = "Integrated metric of strength by group."}
-repmesp2("strength")
-```
+strength2x2 <- gdints[,
+  .(y_axis = strength, id = participant_id, s = session, group)]
 
-Similarly to density, __strength__ measures the cost of the network, i.e. the
-amount of connections that comprise the graph. This metric takes into account
-the weight of each connection. Looking into the integrated measures of strength
-in figure \@ref(fig:repmes-strength) we can qualitatively see how there are more
-participants in the sham-arm who show a decrease in strength, while the majority
-of those pertaining to the active-arm stayed consistent after the two weeks, with
-a couple of them showing huge increments.
+strength2x2[
+  s == "T0", x_axis := 1 ][
+  s == "T1", x_axis := 2][
+  group == "Real", x_axis := x_axis + 0.01][  ## Change to 2 for double x axis
+  , jit := jitter(x_axis, amount = .1)]
+
+rc_repmes_2x2(strength2x2, fills = colrs, colors = colrs,
+              groups = c("Sham", "Real")) +
+  scale_x_continuous(breaks = c(1,2), labels = c("Pre", "Post"),
+                     limits = c(0.4, 2.6)) +
+  guides(col = FALSE) +
+  ylab(TeX("$\\int_{0.02}^{0.4} strength (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 24) +
+  theme(axis.title.x = element_blank(),
+  axis.ticks = element_blank())
+```
 
 ### Likelihood Ratio Test
 
-Just as with density, I test for the same covariates of Group, Session, their
-interaction; head-motion, clinical variables and demographics.
-
 ```{r lrt-strength}
-afex::mixed(strength ~ Session*Group + FD + VAS + BIS + Age + Sex +
-                   (1 + Session|Study.ID) + (1|threshold),
-                 data = gdmod, method = 'LRT')
+columns <- c(dems, "age", "sex", clins, "fd", 't', metrics)
+dt.mod <- gdata[session %in% c("T0", "T1"), ..columns]
+mixed(strength ~ session*group + fd + vas + bis + age + sex +
+                   (1 + session|participant_id) + (1|t),
+                 data = dt.mod, method = 'LRT')
 ```
-
-Head-motion again turns out to be a significant covariate. This time sex, too,
-seems to improve the model performance. Again, the interaction between Session
-and Group is significant.
 
 ### Mixed effect model
 
-All coefficients in the model are significantly different to 0 (Table
-\@ref(tab:lmer-strength)); those of the sham armed had a decreased in their
-network's strength after the two weeks in comparison to the real treatment.
-There were efffects of both sex and movement: women had less strength and the
-metric was higher in those participants that moved more inside the scanner.
-
-Figure \@ref(fig:strength-plots) shows the changes of the metric at the
-different thresholding and the varying slopes by subject outputted by the final
-model.
-
 ```{r lmer-strength, results = "asis"}
-mod <- lme4::lmer(strength ~ Session * Group + FD + Sex +
-                    (1+Session|Study.ID) + (1|threshold),
-                  data = gdmod)
+mod <- lme4::lmer(strength ~ session*group + fd + sex +
+                  (1+session|participant_id) + (1|t), data = dt.mod)
 
-stargazer::stargazer(mod, header = FALSE,
-                     title = "(\\#tab:lmer-strength) Mixed Effects Model for Strength.")
-```
-
-```{r strength-plots, fig.cap = "A) Individual slopes across thresholds; B) Model's predicted slopes.", fig.height = 9}
-gdm  <- copy(gdmod)
-gdm[, pred_dist := fitted(mod)]
-
-p1 <- ggplot(gdm, aes(Session, strength, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1, stroke = .3, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab(TeX("Strength by $\\tau$")) +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  facet_wrap(vars(threshold), scales = "free_y") +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        legend.position = "none")
-
-p2 <- ggplot(gdm[threshold == 0.4],
-             aes(Session, pred_dist, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1.5, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab("Predicted slopes: Strength") +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank())
-
-cowplot::plot_grid(p1, p2, labels = "AUTO", nrow = 2)
+stargazer(mod, header = FALSE,
+          title = "(\\#tab:lmer-strength) Mixed Effects Model for Strength.")
 ```
 
 ## Modularity
 
-Modularity is a measure of community structure; it quantifies the strength of
-division of a network into modules. Essentially, networks with high modularity
-have dense connections between the nodes that pertain to the same module and
-sparse connections between nodes of different modules.
-
 ```{r repmes-mod, fig.cap = "Integrated metric of modularity by group."}
-repmesp2("mod.wt")
-```
+mod2x2 <- gdints[,
+  .(y_axis = mod.wt, id = participant_id, s = session, group)]
 
-Plotting the data a different pattern of change between the groups is observable
-(fig \@ref(fig:repmes-mod)).
-While the participants who received active treatment started in average with
-higher values of this metric, they showed mostly a decrease in their modularity
-after the two weeks. In comparison, the majority of the subjects of the sham arm
-had increased modularity after the experiment.
+mod2x2[
+  s == "T0", x_axis := 1 ][
+  s == "T1", x_axis := 2][
+  group == "Real", x_axis := x_axis + 0.01][  ## Change to 2 for double x axis
+  , jit := jitter(x_axis, amount = .1)]
+
+rc_repmes_2x2(mod2x2, fills = colrs, colors = colrs,
+              groups = c("Sham", "Real")) +
+  scale_x_continuous(breaks = c(1,2), labels = c("Pre", "Post"),
+                     limits = c(0.4, 2.6)) +
+  guides(col = FALSE) +
+  ylab(TeX("$\\int_{0.02}^{0.4} mod.wt (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 24) +
+  theme(axis.title.x = element_blank(),
+  axis.ticks = element_blank())
+```
 
 ### Likelihood Ratio Test
 
 ```{r lrt-mod}
-afex::mixed(mod.wt ~ Session*Group + FD + VAS + BIS + Age + Sex +
-                   (1 + Session|Study.ID) + (1|threshold),
-                 data = gdmod, method = 'LRT')
+columns <- c(dems, "age", "sex", clins, "fd", 't', metrics)
+dt.mod <- gdata[session %in% c("T0", "T1"), ..columns]
+mixed(mod.wt ~ session*group + fd + vas + bis + age + sex +
+                   (1 + session|participant_id) + (1|t),
+                 data = dt.mod, method = 'LRT')
 ```
-
-Neither of the clinical values nor age significantly improved the performance
-of the model. According to these results, the final model looking for the
-interaction between Group and Treatment included both head-motion and sex as
-covariates.
 
 ### Mixed effect model
 
-In table \@ref(tab:lmer-mod) are represented the coefficients of the final mixed
-effects model for modularity predicted by Session, Group, Head-motion, Sex and
-the main interaction of Group and Session.
-
-The model gives evidence of what was perceived when we plot the data;
-the sham armed initiated with lower values and had mainly an increase after the experiment in comparison to the active arm, as can be seen in the positive value of the interaction coefficient.
-This time the female participants had higher values of modularity and motion
-decreased this metric.
-
-The changes of modularity by Group at the different thresholding and the predicted
-varying slopes of each subject by the model are shown in figure (\@ref(fig:mod-plots).
-
 ```{r lmer-mod, results = "asis"}
-mod <- lme4::lmer(mod.wt ~ Session * Group + FD + Sex +
-                    (1+Session|Study.ID) + (1|threshold),
-                  data = gdmod)
+mod <- lme4::lmer(mod.wt ~ session*group + fd + sex +
+                  (1+session|participant_id) + (1|t), data = dt.mod)
 
-stargazer::stargazer(mod, header = FALSE, title = "(\\#tab:lmer-mod) Mixed Effects Model for Modularity.")
+stargazer(mod, header = false,
+          title = "(\\#tab:lmer-mod) mixed effects model for modularity.")
 ```
 
-```{r mod-plots, fig.cap = "A) Individual slopes across thresholds; B) Model's predicted slopes", fig.height = 9}
-gdm  <- copy(gdmod)
-gdm[, pred_dist := fitted(mod)]
-
-p1 <- ggplot(gdm, aes(Session, mod.wt, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1, stroke = .3, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab(TeX("Modularity by $\\tau$")) +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  facet_wrap(vars(threshold), scales = "free_y") +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        legend.position = "none")
-
-p2 <- ggplot(gdm[threshold == 0.4],
-             aes(Session, pred_dist, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1.5, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab("Predicted slopes: Modularity") +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank())
-
-cowplot::plot_grid(p1, p2, labels = "AUTO", nrow = 2)
-```
 
 ## Number of hubs
 
-A hub is a node with higher number of edges in comparison with the rest of the network.
-They are characteristic of scale-free networks and can be found in many real-world
-networks, like the brain.
-
-Plotting the number of hubs, we can't really discern any different pattern of change
-between the groups (fig \@ref(fig:repmes-nhubs)).
-
 ```{r repmes-nhubs, fig.cap = "Integrated metric of the number of hubs by group."}
-repmesp2("num.hubs.wt")
+nhubs2x2 <- gdints[,
+  .(y_axis = num.hubs.wt, id = participant_id, s = session, group)]
+
+nhubs2x2[
+  s == "T0", x_axis := 1 ][
+  s == "T1", x_axis := 2][
+  group == "Real", x_axis := x_axis + 0.01][  ## Change to 2 for double x axis
+  , jit := jitter(x_axis, amount = .1)]
+
+rc_repmes_2x2(nhubs2x2, fills = colrs, colors = colrs,
+              groups = c("Sham", "Real")) +
+  scale_x_continuous(breaks = c(1,2), labels = c("Pre", "Post"),
+                     limits = c(0.4, 2.6)) +
+  guides(col = FALSE) +
+  ylab(TeX("$\\int_{0.02}^{0.4} n.hubs.wt (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 24) +
+  theme(axis.title.x = element_blank(),
+  axis.ticks = element_blank())
 ```
 
 ### Likelihood Ratio Test
 
-Exploring the different possible models with a LRT, neither of the covariates nor
-the main interaction significantly improve the model performance. We thus can
-arrive to the conclusion of preserving the null-hypothesis and further explorations
-are void.
-
 ```{r lrt-nhubs}
-afex::mixed(num.hubs.wt ~ Session*Group + FD + VAS + BIS + Age + Sex +
-                   (1 + Session|Study.ID) + (1|threshold),
-                 data = gdmod, method = 'LRT')
+columns <- c(dems, "age", "sex", clins, "fd", 't', metrics)
+dt.mod <- gdata[session %in% c("T0", "T1"), ..columns]
+mixed(num.hubs.wt ~ session*group + fd + vas + bis + age + sex +
+                   (1 + session|participant_id) + (1|t),
+                 data = dt.mod, method = 'LRT')
 ```
 
-```{r lmer-nhubs, eval = FALSE}
-mod <- lme4::lmer(num.hubs.wt ~ Session * Group + FD +
-                    (1+Session|Study.ID) + (1|threshold),
-                  data = gdmod)
-stargazer::stargazer(mod, header = FALSE, title = "(\\#tab:lmer-nhubs) Mixed Effects Model for Number of hubs.")
-```
+### Mixed effect model
 
-```{r nhubs-plots, eval = FALSE, fig.cap = "A) Individual slopes across thresholds; B) Model's predicted slopes", fig.height = 9}
-gdm  <- copy(gdmod)
-gdm[, pred_dist := fitted(mod)]
+```{r lmer-nhubs, results = 'asis'}
+mod <- lme4::lmer(num.hubs.wt ~ session*group + fd + sex +
+                  (1+session|participant_id) + (1|t), data = dt.mod)
 
-p1 <- ggplot(gdm, aes(Session, num.hubs.wt, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1, stroke = .3, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab(TeX("Number of hubs by $\\tau$")) +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  facet_wrap(vars(threshold), scales = "free_y") +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        legend.position = "none")
-
-p2 <- ggplot(gdm[threshold == 0.4],
-             aes(Session, pred_dist, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1.5, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab("Predicted slopes: Number of hubs") +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank())
-
-cowplot::plot_grid(p1, p2, labels = "AUTO", nrow = 2)
+stargazer(mod, header = false,
+          title = "(\\#tab:lmer-nhubs) mixed effects model for number of hubs.")
 ```
 
 ## Global efficiency
 
-Efficiency, in network science, is a measure of how well does the network exchange information.
-On a global scale, this metric quantifies the exchange of information across the whole network.
-
 ```{r repmes-eglob, fig.cap = "Integrated metric of global efficiency by group."}
-repmesp2("E.global")
-```
+eglob2x2 <- gdints[,
+  .(y_axis = E.global, id = participant_id, s = session, group)]
 
-With figure \@ref(fig:repmes-eglob) a difference in the initial values across the groups is obvious.
-All of the participants of the active arm start with lower levels than the other group,
-and while the sham arm stayed mostly consistent after the two weeks, all of those
-who received real treatment ended with an increase in the values of this metric.
+eglob2x2[
+  s == "T0", x_axis := 1 ][
+  s == "T1", x_axis := 2][
+  group == "Real", x_axis := x_axis + 0.01][  ## Change to 2 for double x axis
+  , jit := jitter(x_axis, amount = .1)]
+
+rc_repmes_2x2(eglob2x2, fills = colrs, colors = colrs,
+              groups = c("Sham", "Real")) +
+  scale_x_continuous(breaks = c(1,2), labels = c("Pre", "Post"),
+                     limits = c(0.4, 2.6)) +
+  guides(col = FALSE) +
+  ylab(TeX("$\\int_{0.02}^{0.4} E.global (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 24) +
+  theme(axis.title.x = element_blank(),
+  axis.ticks = element_blank())
+```
 
 ### Likelihood Ratio Test
 
-While the model looking for the interaction between Group and Session was significantly different to the null model, none of the covariates improved the performance of the model.
-
 ```{r lrt-eglob}
-afex::mixed(E.global ~ Session*Group + FD + VAS + BIS + Age + Sex +
-                   (1 + Session|Study.ID) + (1|threshold),
-                 data = gdmod, method = 'LRT')
+columns <- c(dems, "age", "sex", clins, "fd", 't', metrics)
+dt.mod <- gdata[session %in% c("T0", "T1"), ..columns]
+mixed(E.global ~ session*group + fd + vas + bis + age + sex +
+                   (1 + session|participant_id) + (1|t),
+                 data = dt.mod, method = 'LRT')
 ```
 
 ### Mixed effect model
 
-The final coefficients are represented in the table \@ref(tab:lmer-eglob).
-
-The different changes between groups across the thresholding and the final predicted varying slopes of the model can be compared in figure \@ref(fig:eglob-plots).
-
 ```{r lmer-eglob, results = "asis"}
-mod <- lme4::lmer(E.global ~ Session * Group + FD +
-                    (1+Session|Study.ID) + (1|threshold),
-                  data = gdmod)
-stargazer::stargazer(mod, header = FALSE, title = "(\\#tab:lmer-eglob) Mixed Effects Model for Global Efficiency.")
-```
+mod <- lme4::lmer(E.global ~ session*group + fd + sex +
+                  (1+session|participant_id) + (1|t), data = dt.mod)
 
-```{r eglob-plots, fig.cap = "A) Individual slopes across thresholds; B) Model's predicted slopes", fig.height = 9}
-gdm  <- copy(gdmod)
-gdm[, pred_dist := fitted(mod)]
-
-p1 <- ggplot(gdm, aes(Session, E.global, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1, stroke = .3, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab(TeX("Global efficiency by $\\tau$")) +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  facet_wrap(vars(threshold), scales = "free_y") +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        legend.position = "none")
-
-p2 <- ggplot(gdm[threshold == 0.4],
-             aes(Session, pred_dist, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1.5, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab("Predicted slopes: Global efficiency") +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank())
-
-cowplot::plot_grid(p1, p2, labels = "AUTO", nrow = 2)
+stargazer(mod, header = false,
+          title = "(\\#tab:lmer-ge) mixed effects model for Global Efficiency.")
 ```
 
 ## Global efficiency (weighted)
 
-As a weighted variant of the previous metric, this measures the same network attribute with the difference that it takes into account the varying values of the connection of each node.
-
-This time, the initial difference of values between the two groups is gone (\@ref(fig:repmes-eglobw); and while the different pattern of change is not as obvious as before, we can see a slight increase in most of the active arm compared with notorious decreases in those who
-received simulated stimulation.
-
 ```{r repmes-eglobw, fig.cap = "Integrated metric of global efficiency by group (weighted)."}
-repmesp2("E.global.wt")
+eglobw2x2 <- gdints[,
+  .(y_axis = E.global.wt, id = participant_id, s = session, group)]
+
+eglobw2x2[
+  s == "T0", x_axis := 1 ][
+  s == "T1", x_axis := 2][
+  group == "Real", x_axis := x_axis + 0.01][  ## Change to 2 for double x axis
+  , jit := jitter(x_axis, amount = .1)]
+
+rc_repmes_2x2(eglobw2x2, fills = colrs, colors = colrs,
+              groups = c("Sham", "Real")) +
+  scale_x_continuous(breaks = c(1,2), labels = c("Pre", "Post"),
+                     limits = c(0.4, 2.6)) +
+  guides(col = FALSE) +
+  ylab(TeX("$\\int_{0.02}^{0.4} E.global.wt (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 24) +
+  theme(axis.title.x = element_blank(),
+  axis.ticks = element_blank())
 ```
 
-### LikelIhood Ratio Test
-
-There are also differences in the construction of the model; the main interaction stays as well, but this time motion and sex are significant covariates for the final model.
+### Likelihood Ratio Test
 
 ```{r lrt-eglobw}
-afex::mixed(E.global.wt ~ Session*Group + FD + VAS + BIS + Age + Sex +
-                   (1 + Session|Study.ID) + (1|threshold),
-                 data = gdmod, method = 'LRT')
+columns <- c(dems, "age", "sex", clins, "fd", 't', metrics)
+dt.mod <- gdata[session %in% c("T0", "T1"), ..columns]
+mixed(E.global.wt ~ session*group + fd + vas + bis + age + sex +
+                   (1 + session|participant_id) + (1|t),
+                 data = dt.mod, method = 'LRT')
 ```
 
 ### Mixed effect model
 
-The final coefficients are represented in the table \@ref(tab:lmer-eglobw) and the different changes between groups across the thresholding and the final predicted varying slopes of the model can be compared in figure \@ref(fig:eglobw-plots).
-
-This time motion is a huge covariate, increasing significantly the predicted value of the global efficiency. As with other metrics, female participants showed a decreased metric in comparison with the male participants.
-
 ```{r lmer-eglobw, results = "asis"}
-mod <- lme4::lmer(E.global.wt ~ Session * Group + FD + Sex +
-                    (1+Session|Study.ID) + (1|threshold),
-                  data = gdmod)
-stargazer::stargazer(mod, header = FALSE, title = "(\\#tab:lmer-eglobw) Mixed Effects Model for Global Efficiency (weighted).")
-```
+mod <- lme4::lmer(E.global.wt ~ session*group + fd + sex +
+                  (1+session|participant_id) + (1|t), data = dt.mod)
 
-```{r eglobw-plots, fig.cap = "A) Individual slopes across thresholds; B) Model's predicted slopes", fig.height = 9}
-gdm  <- copy(gdmod)
-gdm[, pred_dist := fitted(mod)]
-
-p1 <- ggplot(gdm, aes(Session, E.global.wt, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1, stroke = .3, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab(TeX("Weighted global efficiency by $\\tau$")) +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  facet_wrap(vars(threshold), scales = "free_y") +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        legend.position = "none")
-
-p2 <- ggplot(gdm[threshold == 0.4],
-             aes(Session, pred_dist, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1.5, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab("Predicted slopes: Weighted global efficiency") +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank())
-
-cowplot::plot_grid(p1, p2, labels = "AUTO", nrow = 2)
+stargazer(mod, header = false,
+          title = "(\\#tab:lmer-gew) mixed effects model for Global Efficiency (weighted).")
 ```
 
 ## Local efficiency
 
-While local efficiency also looks into the exchange of information, this metric quantifies the network's resistance to failure on a small scale.
-
 ```{r repmes-eloc, fig.cap = "Integrated metric of local efficiency by group."}
-repmesp2("E.local")
-```
+eloc2x2 <- gdints[,
+  .(y_axis = E.local, id = participant_id, s = session, group)]
 
-Figure \@ref(fig:repmes-eloc) shows the same baseline difference between groups that we observed in global efficiency. While both groups incremented values of this metric after the two weeks of stimulation, the magnitude of this change was higher for those who received real stimulation.
+eloc2x2[
+  s == "T0", x_axis := 1 ][
+  s == "T1", x_axis := 2][
+  group == "Real", x_axis := x_axis + 0.01][  ## Change to 2 for double x axis
+  , jit := jitter(x_axis, amount = .1)]
+
+rc_repmes_2x2(eloc2x2, fills = colrs, colors = colrs,
+              groups = c("Sham", "Real")) +
+  scale_x_continuous(breaks = c(1,2), labels = c("Pre", "Post"),
+                     limits = c(0.4, 2.6)) +
+  guides(col = FALSE) +
+  ylab(TeX("$\\int_{0.02}^{0.4} E.local (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 24) +
+  theme(axis.title.x = element_blank(),
+  axis.ticks = element_blank())
+```
 
 ### Likelihood Ratio Test
 
-The model looking for the interaction between Group and Session differ significantly from the null model in the LRT, but none of the covariates significantly contributed to the final model.
-
 ```{r lrt-eloc}
-afex::mixed(E.local ~ Session*Group + FD + VAS + BIS + Age + Sex +
-                   (1 + Session|Study.ID) + (1|threshold),
-                 data = gdmod, method = 'LRT')
+columns <- c(dems, "age", "sex", clins, "fd", 't', metrics)
+dt.mod <- gdata[session %in% c("T0", "T1"), ..columns]
+mixed(E.local ~ session*group + fd + vas + bis + age + sex +
+                   (1 + session|participant_id) + (1|t),
+                 data = dt.mod, method = 'LRT')
 ```
 
 ### Mixed effect model
 
-The final coefficients are represented in the table \@ref(tab:lmer-eloc).
-
-The different changes between groups across the thresholding and the final predicted varying slopes of the model can be compared in figure \@ref(fig:eloc-plots).
-
 ```{r lmer-eloc, results = "asis"}
-mod <- lme4::lmer(E.local ~ Session * Group +
-                    (1+Session|Study.ID) + (1|threshold),
-                  data = gdmod)
-stargazer::stargazer(mod, header = FALSE, title = "(\\#tab:lmer-eloc) Mixed Effects Model for Local Efficiency.")
-```
+mod <- lme4::lmer(E.local ~ session*group + fd + sex +
+                  (1+session|participant_id) + (1|t), data = dt.mod)
 
-```{r eloc-plots, fig.cap = "A) Individual slopes across thresholds; B) Model's predicted slopes", fig.height = 9}
-gdm  <- copy(gdmod)
-gdm[, pred_dist := fitted(mod)]
-
-p1 <- ggplot(gdm, aes(Session, E.local, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1, stroke = .3, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab(TeX("Local efficiency by $\\tau$")) +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  facet_wrap(vars(threshold), scales = "free_y") +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        legend.position = "none")
-
-p2 <- ggplot(gdm[threshold == 0.4],
-             aes(Session, pred_dist, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1.5, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab("Predicted slopes: Local efficiency") +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank())
-
-cowplot::plot_grid(p1, p2, labels = "AUTO", nrow = 2)
+stargazer(mod, header = false,
+          title = "(\\#tab:lmer-eloc) mixed effects model for Local Efficiency.")
 ```
 
 ## Local efficiency (weighted)
 
-In the same way as with global efficiency, this variant of local efficiency takes into account the varying values of the strength of connection of each edge.
-
 ```{r repmes-elocw, fig.cap = "Integrated metric of local efficicency (weighted) by group."}
-repmesp2("E.local.wt")
+elocw2x2 <- gdints[,
+  .(y_axis = E.local.wt, id = participant_id, s = session, group)]
+
+elocw2x2[
+  s == "T0", x_axis := 1 ][
+  s == "T1", x_axis := 2][
+  group == "Real", x_axis := x_axis + 0.01][  ## Change to 2 for double x axis
+  , jit := jitter(x_axis, amount = .1)]
+
+rc_repmes_2x2(elocw2x2, fills = colrs, colors = colrs,
+              groups = c("Sham", "Real")) +
+  scale_x_continuous(breaks = c(1,2), labels = c("Pre", "Post"),
+                     limits = c(0.4, 2.6)) +
+  guides(col = FALSE) +
+  ylab(TeX("$\\int_{0.02}^{0.4} E.local.wt (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 24) +
+  theme(axis.title.x = element_blank(),
+  axis.ticks = element_blank())
 ```
 
-Exploring figure \@ref(fig:repmes-elocw) we see there is an extreme outlier in the T1 of the active arm. The initial difference between the groups disappears and the pattern of change is not as obvious.
-
 ### Likelihood Ratio Test
-
-Comparing the different models with the null-model showed no evidence against the null-hypothesis.
 
 ```{r lrt-elocw}
-afex::mixed(E.local.wt ~ Session*Group + FD + VAS + BIS + Age + Sex +
-                   (1 + Session|Study.ID) + (1|threshold),
-                 data = gdmod, method = 'LRT')
+columns <- c(dems, "age", "sex", clins, "fd", 't', metrics)
+dt.mod <- gdata[session %in% c("T0", "T1"), ..columns]
+mixed(E.local.wt ~ session*group + fd + vas + bis + age + sex +
+                   (1 + session|participant_id) + (1|t),
+                 data = dt.mod, method = 'LRT')
 ```
 
-```{r lmer-elocw, eval=F}
-mod_afex
+```{r lmer-elocw, results= "asis"}
+mod <- lme4::lmer(E.local.wt ~ session*group + fd + sex +
+                  (1+session|participant_id) + (1|t), data = dt.mod)
 
-summary(mod <- lme4::lmer(E.local.wt ~ Session * Group + FD +
-                    (1+Session|Study.ID) + (1|threshold),
-                  data = gdmod))
-```
-
-```{r elocw-plots, eval=F, fig.cap = "A) Individual slopes across thresholds; B) Model's predicted slopes", fig.height = 9}
-gdm  <- copy(gdmod)
-gdm[, pred_dist := fitted(mod)]
-
-p1 <- ggplot(gdm, aes(Session, E.local.wt, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1, stroke = .3, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab(TeX("Weighted local efficiency by $\\tau$")) +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  facet_wrap(vars(threshold), scales = "free_y") +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        legend.position = "none")
-
-p2 <- ggplot(gdm[threshold == 0.4],
-             aes(Session, pred_dist, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1.5, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab("Predicted slopes: Weighted local efficiency") +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank())
-
-cowplot::plot_grid(p1, p2, labels = "AUTO", nrow = 2)
-```
-
-### Local efficicency (weighted; no outlier)
-
-I tried exploring the same metric without the interference of the mentioned outlier (\@ref(fig:repmes-elocw2)).
-
-```{r repmes-elocw2, fig.cap = "Integrated metric of local efficicency (weighted) by group withouth the outlier."}
-repmesp2("E.local.wt", gdplots[!(Study.ID == "sub-024" & Session == "T1")])
-```
-
-Taking out the outlier didn't have any effect on the LRT.
-
-```{r lrt-elocw2}
-afex::mixed(E.local.wt ~ Session*Group + FD + VAS + BIS + Age + Sex +
-                   (1 + Session|Study.ID) + (1|threshold),
-                 data = gdmod[!(Study.ID == "sub-024" & Session == "T1")], method = 'LRT')
-```
-
-## Clustering coefficient
-
-This global metric is a measure of the degree in which the nodes in a network tend to form triangles clustering together.
-
-```{r repmes-cp, fig.cap = "Integrated metric of clustering coefficient by group."}
-repmesp2("Cp.norm")
-```
-
-We, again, see a difference in the baseline quantities of this metric between groups;
-this time, though, the active arm shows the higher values in comparison with the sham arm.
-There is also an obvios different pattern of change: those who received real treatment diminished their clustering coefficient, while the participants who received simulated stimulation increased theirs (fig \@ref(fig:repmes-cp)).
-
-### Likelihood Ratio Test
-
-The LRT gave evidence of the significance of the Group*Session interaction and Sex also appeared to be a significant covariate.
-
-```{r lrt-cp}
-afex::mixed(Cp.norm ~ Session*Group + FD + VAS + BIS + Age + Sex +
-                   (1 + Session|Study.ID) + (1|threshold),
-                 data = gdmod, method = 'LRT')
-```
-
-### Mixed effect model
-
-The final coefficients are represented in the table \@ref(tab:lmer-cp).
-
-The different changes between groups across the thresholding and the final predicted varying slopes of the model can be compared in figure \@ref(fig:eglob-cp).
-
-```{r lmer-cp, results = "asis"}
-mod <- lme4::lmer(Cp.norm ~ Session * Group + FD + Sex +
-                    (1+Session|Study.ID) + (1|threshold),
-                  data = gdmod)
-stargazer::stargazer(mod, header = FALSE, title = "(\\#tab:lmer-cp) Mixed Effects Model for Clustering Coefficient.")
-```
-
-```{r cp-plots, fig.cap = "A) Individual slopes across thresholds; B) Model's predicted slopes", fig.height = 9}
-gdm  <- copy(gdmod)
-gdm[, pred_dist := fitted(mod)]
-
-p1 <- ggplot(gdm, aes(Session, Cp.norm, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1, stroke = .3, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab(TeX("Clustering coefficient by $\\tau$")) +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  facet_wrap(vars(threshold), scales = "free_y") +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        legend.position = "none")
-
-p2 <- ggplot(gdm[threshold == 0.4],
-             aes(Session, pred_dist, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1.5, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab("Predicted slopes: clustering coefficient") +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank())
-
-cowplot::plot_grid(p1, p2, labels = "AUTO", nrow = 2)
-```
-
-## Characteristic path length
-
-The path length is the number of 'steps' that the information of a given node must traverse between arriving to a given node. This metric quantifies the average number of path lengths in the graph, giving a measure of how well integrated it is.
-
-```{r repmes-lp, fig.cap = "Integrated metric of characteristic path length by group."}
-repmesp2("Lp.norm")
-```
-
-Looking at figure \@ref(fig:repmes-lp), we see that the active arm showed no difference in this metric after the two weeks of stimulation. On the other hand, the sham armed showed an increase in this same metric and higher variance in their values.
-
-### Likelihood Ratio Test
-
-The model exploring the interaction of Group and Session was significantly different to the null-model, but no covariates improved the performance.
-
-```{r lrt-lp}
-afex::mixed(Lp.norm ~ Session*Group + FD + VAS + BIS + Age + Sex +
-                   (1 + Session|Study.ID) + (1|threshold),
-                 data = gdmod, method = 'LRT')
-```
-
-
-### Mixed effect model
-
-The final coefficients are represented in the table \@ref(tab:lmer-lp).
-
-The different changes between groups across the thresholding and the final predicted varying slopes of the model can be compared in figure \@ref(fig:eglob-lp).
-
-```{r lmer-lp, results = "asis"}
-mod <- lme4::lmer(Lp.norm ~ Session * Group +
-                    (1+Session|Study.ID) + (1|threshold),
-                  data = gdmod)
-stargazer::stargazer(mod, header = FALSE, title = "(\\#tab:lmer-lp) Mixed Effects Model for Char. Path Length.")
-```
-
-```{r lp-plots, fig.cap = "A) Individual slopes across thresholds; B) Model's predicted slopes", fig.height = 9}
-gdm  <- copy(gdmod)
-gdm[, pred_dist := fitted(mod)]
-
-p1 <- ggplot(gdm, aes(Session, Lp.norm, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1, stroke = .3, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab(TeX("Characteristic path length by $\\tau$")) +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  facet_wrap(vars(threshold), scales = "free_y") +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        legend.position = "none")
-
-p2 <- ggplot(gdm[threshold == 0.4],
-             aes(Session, pred_dist, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1.5, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab("Predicted slopes: characteristic path length") +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank())
-
-cowplot::plot_grid(p1, p2, labels = "AUTO", nrow = 2)
-```
-
-## Smallworldness
-
-This metric tries to quantify how much does a graph has the characteristics of a small-world network: a similar path length of a random graph with much higher clustering coefficient.
-
-Smallworldness seems to provide information of the communication efficiency of the network.
-
-```{r repmes-sw, fig.cap = "Integrated metric of smallworld by group."}
-repmesp2("sigma")
-```
-
-As with other metrics in this report, the real arm started with higher values at baseline compared to the other group, and showed a different pattern of change, decreasing after the two weeks in greater magnitude compared to the sham arm (\@ref(fig:repmes-sw)).
-
-### Likelihood Ratio Test
-
-While the model looking for the interaction between Group and Session was significantly different to the null model, none of the covariates improved the performance of the model.
-
-```{r lrt-sw}
-afex::mixed(sigma ~ Session*Group + FD + VAS + BIS + Age + Sex +
-                   (1 + Session|Study.ID) + (1|threshold),
-                 data = gdmod, method = 'LRT')
-```
-
-### Mixed effect model
-
-The final coefficients are represented in the table \@ref(tab:lmer-sw).
-
-The different changes between groups across the thresholding and the final predicted varying slopes of the model can be compared in figure \@ref(fig:eglob-sw).
-
-```{r lmer-sw, results = "asis"}
-mod <- lme4::lmer(sigma ~ Session * Group + FD +
-                    (1+Session|Study.ID) + (1|threshold),
-                  data = gdmod)
-stargazer::stargazer(mod, header = FALSE, title = "(\\#tab:lmer-sw) Mixed Effects Model for Smallworldness.")
-```
-
-```{r sw-plots, fig.cap = "A) Individual slopes across thresholds; B) Model's predicted slopes", fig.height = 9}
-gdm  <- copy(gdmod)
-gdm[, pred_dist := fitted(mod)]
-
-p1 <- ggplot(gdm, aes(Session, sigma, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1, stroke = .3, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab(TeX("Smallworldness by $\\tau$")) +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  facet_wrap(vars(threshold), scales = "free_y") +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        legend.position = "none")
-
-p2 <- ggplot(gdm[threshold == 0.4],
-             aes(Session, pred_dist, group = Study.ID, color = Group)) +
-  geom_point(shape = 21, size = 1.5, fill = "white") +
-  geom_line(size = 0.25) +
-  ylab("Predicted slopes: Smallworldness") +
-  theme_tufte(base_size = 12, base_family = ffont) +
-  scale_colour_manual(values = c("#00429d","#93003a")) +
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank())
-
-cowplot::plot_grid(p1, p2, labels = "AUTO", nrow = 2)
+stargazer(mod, header = false,
+          title = "(\\#tab:lmer-elocw) mixed effects model for Local Efficiency (weighted).")
 ```
 
 # Maintenance phase
