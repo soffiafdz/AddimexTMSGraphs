@@ -4,7 +4,7 @@ rc_repmes_2x2 <- function (data_2x2,
                            colors = c("dodgerblue", "darkorange"),
                            fills = c("dodgerblue", "darkorange"),
                            groups = c("g1", "g2"), line_color = "gray",
-                           line_alpha = 0.3, size = 2.5, alpha = 0.6) {
+                           line_alpha = 0.3, size = 2, alpha = 0.6) {
   figure_2x2 <-
     ggplot(data = data_2x2) +
     geom_line(data = dplyr::filter(data_2x2, x_axis %in% c("1", "2")),
@@ -69,7 +69,7 @@ rc_repmes_2x2 <- function (data_2x2,
 
 rc_repmes <- function (data, times = 2, colors = c("dodgerblue", "darkorange"),
                        fills = c("dodgerblue", "darkorange"),
-                       line_color = "gray", line_alpha = 0.3, size = 2.5,
+                       line_color = "gray", line_alpha = 0.3, size = 2,
                        alpha = 0.6) {
   figure <- ggplot(data) + geom_line(aes(x = jit, y = y_axis, group = id),
                                      color = line_color, alpha = line_alpha,
@@ -82,14 +82,14 @@ rc_repmes <- function (data, times = 2, colors = c("dodgerblue", "darkorange"),
     geom_half_boxplot(data = dplyr::filter(data, x_axis == i),
                       aes(x = x_axis, y = y_axis), color = colors[i],
                       fill = fills[i], side = "r", outlier.shape = NA,
-                      position = position_nudge(x = times - i + .05 + .05*i),
-                      errorbar.draw = FALSE, width = 0.08, alpha = alpha,
+                      position = position_nudge(x = times - i + .2 + .09*i),
+                      errorbar.draw = FALSE, width = 0.15, alpha = alpha,
                       center = TRUE, show.legend = FALSE) +
     geom_half_violin(data = dplyr::filter(data, x_axis == i),
                      aes(x = x_axis, y = y_axis), color = colors[i],
                      fill = fills[i], side = "r", alpha = alpha - .1,
                      position = position_nudge(
-                        x = times - i + .1*times),
+                        x = times - i + .2*times),
                      show.legend = FALSE)
   }
   return(figure)
