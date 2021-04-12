@@ -144,10 +144,10 @@ covars <- dsets[[11]][covars]
 
 
 ## Delete duplicate date and return keys to normal
-covars[, Date := NULL]
+covars[, date := NULL]
 setnames(covars, "i.date", "date")
 
-setcolorder(covars, c("participant_id", "session", "group", "excl",
+setcolorder(covars, c("participant_id", "session", "group", "exclusion",
   "sex", "age", "educ", "civ", "employment", "m_income", "substance",
   "tobacco", "tobacco_start", "tobacco_years", "cigs_day", "tx", "y_start",
   "t_cons", "date", "month", "use", "relapse", "cons_freq", "cons_grams",
