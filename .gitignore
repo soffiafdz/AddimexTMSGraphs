@@ -5,7 +5,6 @@
 .Ruserdata
 data/*
 figures/*
-reports/*
 *.html
 *.tex
 *.csv
