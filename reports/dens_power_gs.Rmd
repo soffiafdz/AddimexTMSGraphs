@@ -1,0 +1,802 @@
+
+```{r dpg}
+dt.main  <- dt.all[a == "power264" & t.m == "dens" & gs == "gs",
+                   -c("a", "t.m", "gs")]
+```
+
+### Acute phase
+
+```{r dpg-sparklines-acute, fig.cap = "Sparklines of the topology metrics across thresholds. Labels: Max and Min; Grey shadow: IQR.", fig.height = 9}
+columns <- c(dems, "t", metrics)
+dt.long <- data.table::melt(dt.main[session %in% c("T0", "T1"), ..columns],
+                              id.vars = c(dems, 't'), measure.vars = metrics,
+                              variable.name = "metric", value.name = "val")
+
+#Extract means, mins, max and quartiles
+dt.mean <- dt.long[, .(val = mean(val)), by = .(group, session, t, metric)]
+dt.min <- dt.mean[, .SD[which.min(val)], keyby = .(group, session, metric)]
+dt.max <- dt.mean[, .SD[which.max(val)], keyby = .(group, session, metric)]
+dt.min[, val.r := round(val, 2)]
+dt.max[, val.r := round(val, 2)]
+dt.labs <- unique(dt.min, by = c("group", "val", "metric"))
+dt.labs[, l := "Min"]
+dt.labs2 <- unique(dt.max, by = c("group", "val", "metric"))
+dt.labs2[, l := "Max"]
+dt.labs <- rbindlist(list(dt.labs, dt.labs2))
+dt.quarts <- dt.mean[,.(quart1 = quantile(val, 0.25),
+                      quart2 = quantile(val, 0.75)),
+              by = .(group, metric)]
+setkey(dt.mean, group, metric)
+dt.quarts <- dt.mean[dt.quarts]
+
+#Sparklines
+##Repeat with different atlas/parcelations and gs/ngs
+ggplot(dt.mean, aes(x = t, y = val, colour = session)) +
+  facet_grid(vars(metric), vars(group), scales = "free_y") +
+  geom_ribbon(data = dt.quarts,
+              aes(ymin = quart1, ymax = quart2, colour = NULL),
+              fill = "grey93", alpha = 0.75) +
+  geom_line(size = 0.5) +
+  geom_point(data = dt.labs, shape = 21, size = 1.5, fill = "white") +
+  geom_label_repel(data = dt.labs, aes(label = val.r), family = ffont,
+                   size = 3, force = 1.3, label.padding = 0.1,
+                   min.segment.length = 0, segment.size = .2,
+                   segment.alpha = 0.7, alpha = 0.7) +
+  scale_x_continuous(bquote(tau),breaks = seq(0, .4, .1)) +
+  scale_y_continuous(expand = c(0.1, 0)) +
+  scale_colour_manual(values = c("#00429d","#93003a")) +
+  ggtitle("Power-264; Dens; wGS") +
+  theme(text = element_text(size = 14, family = ffont)) +
+  theme_tufte(base_size = 14, base_family = ffont) +
+  theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        strip.text.y = element_text(angle = 0))
+```
+
+```{r dpg-integrals}
+columns <- c(dems, 't', metrics)
+dt.wide  <- dt.main[session %in% c("T0", "T1"), ..columns]
+
+dt.integrals <- dt.wide[, lapply(.SD, MESS::auc, x = t, type = 'spline'),
+              by = .(participant_id, session, group), .SDcols = metrics]
+```
+
+#### Density
+
+```{r dpg-repmes-density, fig.cap = "Integrated metric of density by group."}
+dens2x2 <- dt.integrals[, .(y_axis = density, id = participant_id, s = session, group)]
+dens2x2[
+  s == "T0", x_axis := 1][
+  s == "T1", x_axis := 2][
+  group == "Real", x_axis := x_axis + 0.01][  ## Change to 2 for double x axis
+  , jit := jitter(x_axis, amount = .1)]
+
+source(here('scripts/raincloudplots.R'))
+colrs <- c("#00429d","#93003a")
+rc_repmes_2x2(dens2x2, fills = colrs, colors = colrs,
+              groups = c("Sham", "Real")) +
+  scale_x_continuous(breaks = c(1,2), labels = c("Pre", "Post"),
+                     limits = c(0.4, 2.6)) +
+  guides(col = FALSE) +
+  ylab(TeX("$\\int_{0.02}^{0.4} density (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 14) +
+  theme(text = element_text(size = 14, family = ffont),
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
+
+##### Likelihood Ratio Test of Fixed effects
+
+```{r dpg-lrt-density}
+columns <- c(dems, "age", "sex", clins, "fd", 't', metrics)
+dt.mod <- dt.main[session %in% c("T0", "T1"), ..columns]
+mixed(density ~ session*group + fd + vas + bis + age + sex +
+                   (1 + session|participant_id) + (1|t),
+                 data = dt.mod, method = 'LRT')
+```
+
+##### Mixed Effect Model
+
+```{r dpg-lmer-density, results = "asis"}
+mod <- lme4::lmer(density ~ session*group + fd + sex +
+                  (1+session|participant_id) + (1|t), data = dt.mod)
+
+##Merge tables of mixed models???
+stargazer(mod, header = FALSE,
+          title = "(\\#tab:lmer-density) Mixed Effects Model for Density.")
+```
+
+#### Strength
+
+```{r dpg-repmes-strength, fig.cap = "Integrated metric of strength by group."}
+strength2x2 <- dt.integrals[,
+  .(y_axis = strength, id = participant_id, s = session, group)]
+
+strength2x2[
+  s == "T0", x_axis := 1 ][
+  s == "T1", x_axis := 2][
+  group == "Real", x_axis := x_axis + 0.01][  ## Change to 2 for double x axis
+  , jit := jitter(x_axis, amount = .1)]
+
+rc_repmes_2x2(strength2x2, fills = colrs, colors = colrs,
+              groups = c("Sham", "Real")) +
+  scale_x_continuous(breaks = c(1,2), labels = c("Pre", "Post"),
+                     limits = c(0.4, 2.6)) +
+  guides(col = FALSE) +
+  ylab(TeX("$\\int_{0.02}^{0.4} strength (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 14) +
+  theme(text = element_text(size = 14, family = ffont),
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
+
+##### Likelihood Ratio Test
+
+```{r dpg-lrt-strength}
+columns <- c(dems, "age", "sex", clins, "fd", 't', metrics)
+dt.mod <- dt.main[session %in% c("T0", "T1"), ..columns]
+mixed(strength ~ session*group + fd + vas + bis + age + sex +
+                   (1 + session|participant_id) + (1|t),
+                 data = dt.mod, method = 'LRT')
+```
+
+##### Mixed Effect Model
+
+```{r dpg-lmer-strength, results = "asis"}
+mod <- lme4::lmer(strength ~ session*group + fd + sex +
+                  (1+session|participant_id) + (1|t), data = dt.mod)
+
+stargazer(mod, header = FALSE,
+          title = "(\\#tab:lmer-strength) Mixed Effects Model for Strength.")
+```
+
+#### Modularity
+
+```{r dpg-repmes-mod, fig.cap = "Integrated metric of modularity by group."}
+mod2x2 <- dt.integrals[,
+  .(y_axis = mod.wt, id = participant_id, s = session, group)]
+
+mod2x2[
+  s == "T0", x_axis := 1 ][
+  s == "T1", x_axis := 2][
+  group == "Real", x_axis := x_axis + 0.01][  ## Change to 2 for double x axis
+  , jit := jitter(x_axis, amount = .1)]
+
+rc_repmes_2x2(mod2x2, fills = colrs, colors = colrs,
+              groups = c("Sham", "Real")) +
+  scale_x_continuous(breaks = c(1,2), labels = c("Pre", "Post"),
+                     limits = c(0.4, 2.6)) +
+  guides(col = FALSE) +
+  ylab(TeX("$\\int_{0.02}^{0.4} mod.wt (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 14) +
+  theme(text = element_text(size = 14, family = ffont),
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
+
+##### Likelihood Ratio Test
+
+```{r dpg-lrt-mod}
+columns <- c(dems, "age", "sex", clins, "fd", 't', metrics)
+dt.mod <- dt.main[session %in% c("T0", "T1"), ..columns]
+mixed(mod.wt ~ session*group + fd + vas + bis + age + sex +
+                   (1 + session|participant_id) + (1|t),
+                 data = dt.mod, method = 'LRT')
+```
+
+##### Mixed Effect Model
+
+```{r dpg-lmer-mod, results = "asis"}
+mod <- lme4::lmer(mod.wt ~ session*group + fd + sex +
+                  (1+session|participant_id) + (1|t), data = dt.mod)
+
+stargazer(mod, header = FALSE,
+          title = "(\\#tab:lmer-mod) mixed effects model for modularity.")
+```
+
+
+#### Number of hubs
+
+```{r dpg-repmes-nhubs, fig.cap = "Integrated metric of the number of hubs by group."}
+nhubs2x2 <- dt.integrals[,
+  .(y_axis = num.hubs.wt, id = participant_id, s = session, group)]
+
+nhubs2x2[
+  s == "T0", x_axis := 1 ][
+  s == "T1", x_axis := 2][
+  group == "Real", x_axis := x_axis + 0.01][  ## Change to 2 for double x axis
+  , jit := jitter(x_axis, amount = .1)]
+
+rc_repmes_2x2(nhubs2x2, fills = colrs, colors = colrs,
+              groups = c("Sham", "Real")) +
+  scale_x_continuous(breaks = c(1,2), labels = c("Pre", "Post"),
+                     limits = c(0.4, 2.6)) +
+  guides(col = FALSE) +
+  ylab(TeX("$\\int_{0.02}^{0.4} n.hubs.wt (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 14) +
+  theme(text = element_text(size = 14, family = ffont),
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
+
+##### Likelihood Ratio Test
+
+```{r dpg-lrt-nhubs}
+columns <- c(dems, "age", "sex", clins, "fd", 't', metrics)
+dt.mod <- dt.main[session %in% c("T0", "T1"), ..columns]
+mixed(num.hubs.wt ~ session*group + fd + vas + bis + age + sex +
+                   (1 + session|participant_id) + (1|t),
+                 data = dt.mod, method = 'LRT')
+```
+
+##### Mixed Effect Model
+
+```{r dpg-lmer-nhubs, results = 'asis'}
+mod <- lme4::lmer(num.hubs.wt ~ session*group + fd + sex +
+                  (1+session|participant_id) + (1|t), data = dt.mod)
+
+stargazer(mod, header = FALSE,
+          title = "(\\#tab:lmer-nhubs) mixed effects model for number of hubs.")
+```
+
+#### Global efficiency
+
+```{r dpg-repmes-eglob, fig.cap = "Integrated metric of global efficiency by group."}
+eglob2x2 <- dt.integrals[,
+  .(y_axis = E.global, id = participant_id, s = session, group)]
+
+eglob2x2[
+  s == "T0", x_axis := 1 ][
+  s == "T1", x_axis := 2][
+  group == "Real", x_axis := x_axis + 0.01][  ## Change to 2 for double x axis
+  , jit := jitter(x_axis, amount = .1)]
+
+rc_repmes_2x2(eglob2x2, fills = colrs, colors = colrs,
+              groups = c("Sham", "Real")) +
+  scale_x_continuous(breaks = c(1,2), labels = c("Pre", "Post"),
+                     limits = c(0.4, 2.6)) +
+  guides(col = FALSE) +
+  ylab(TeX("$\\int_{0.02}^{0.4} E.global (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 14) +
+  theme(text = element_text(size = 14, family = ffont),
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
+
+##### Likelihood Ratio Test
+
+```{r dpg-lrt-eglob}
+columns <- c(dems, "age", "sex", clins, "fd", 't', metrics)
+dt.mod <- dt.main[session %in% c("T0", "T1"), ..columns]
+mixed(E.global ~ session*group + fd + vas + bis + age + sex +
+                   (1 + session|participant_id) + (1|t),
+                 data = dt.mod, method = 'LRT')
+```
+
+##### Mixed Effect Model
+
+```{r dpg-lmer-eglob, results = "asis"}
+mod <- lme4::lmer(E.global ~ session*group + fd + sex +
+                  (1+session|participant_id) + (1|t), data = dt.mod)
+
+stargazer(mod, header = FALSE,
+          title = "(\\#tab:lmer-ge) mixed effects model for Global Efficiency.")
+```
+
+#### Global efficiency (weighted)
+
+```{r dpg-repmes-eglobw, fig.cap = "Integrated metric of global efficiency by group (weighted)."}
+eglobw2x2 <- dt.integrals[,
+  .(y_axis = E.global.wt, id = participant_id, s = session, group)]
+
+eglobw2x2[
+  s == "T0", x_axis := 1 ][
+  s == "T1", x_axis := 2][
+  group == "Real", x_axis := x_axis + 0.01][  ## Change to 2 for double x axis
+  , jit := jitter(x_axis, amount = .1)]
+
+rc_repmes_2x2(eglobw2x2, fills = colrs, colors = colrs,
+              groups = c("Sham", "Real")) +
+  scale_x_continuous(breaks = c(1,2), labels = c("Pre", "Post"),
+                     limits = c(0.4, 2.6)) +
+  guides(col = FALSE) +
+  ylab(TeX("$\\int_{0.02}^{0.4} E.global.wt (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 14) +
+  theme(text = element_text(size = 14, family = ffont),
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
+
+##### Likelihood Ratio Test
+
+```{r dpg-lrt-eglobw}
+columns <- c(dems, "age", "sex", clins, "fd", 't', metrics)
+dt.mod <- dt.main[session %in% c("T0", "T1"), ..columns]
+mixed(E.global.wt ~ session*group + fd + vas + bis + age + sex +
+                   (1 + session|participant_id) + (1|t),
+                 data = dt.mod, method = 'LRT')
+```
+
+##### Mixed Effect Model
+
+```{r dpg-lmer-eglobw, results = "asis"}
+mod <- lme4::lmer(E.global.wt ~ session*group + fd + sex +
+                  (1+session|participant_id) + (1|t), data = dt.mod)
+
+stargazer(mod, header = FALSE,
+          title = "(\\#tab:lmer-gew) mixed effects model for Global Efficiency (weighted).")
+```
+
+#### Local efficiency
+
+```{r dpg-repmes-eloc, fig.cap = "Integrated metric of local efficiency by group."}
+eloc2x2 <- dt.integrals[,
+  .(y_axis = E.local, id = participant_id, s = session, group)]
+
+eloc2x2[
+  s == "T0", x_axis := 1 ][
+  s == "T1", x_axis := 2][
+  group == "Real", x_axis := x_axis + 0.01][  ## Change to 2 for double x axis
+  , jit := jitter(x_axis, amount = .1)]
+
+rc_repmes_2x2(eloc2x2, fills = colrs, colors = colrs,
+              groups = c("Sham", "Real")) +
+  scale_x_continuous(breaks = c(1,2), labels = c("Pre", "Post"),
+                     limits = c(0.4, 2.6)) +
+  guides(col = FALSE) +
+  ylab(TeX("$\\int_{0.02}^{0.4} E.local (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 14) +
+  theme(text = element_text(size = 14, family = ffont),
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
+
+##### Likelihood Ratio Test
+
+```{r dpg-lrt-eloc}
+columns <- c(dems, "age", "sex", clins, "fd", 't', metrics)
+dt.mod <- dt.main[session %in% c("T0", "T1"), ..columns]
+mixed(E.local ~ session*group + fd + vas + bis + age + sex +
+                   (1 + session|participant_id) + (1|t),
+                 data = dt.mod, method = 'LRT')
+```
+
+##### Mixed Effect Model
+
+```{r dpg-lmer-eloc, results = "asis"}
+mod <- lme4::lmer(E.local ~ session*group + fd + sex +
+                  (1+session|participant_id) + (1|t), data = dt.mod)
+
+stargazer(mod, header = FALSE,
+          title = "(\\#tab:lmer-eloc) mixed effects model for Local Efficiency.")
+```
+
+#### Local efficiency (weighted)
+
+```{r dpg-repmes-elocw, fig.cap = "Integrated metric of local efficicency (weighted) by group."}
+elocw2x2 <- dt.integrals[,
+  .(y_axis = E.local.wt, id = participant_id, s = session, group)]
+
+elocw2x2[
+  s == "T0", x_axis := 1 ][
+  s == "T1", x_axis := 2][
+  group == "Real", x_axis := x_axis + 0.01][  ## Change to 2 for double x axis
+  , jit := jitter(x_axis, amount = .1)]
+
+rc_repmes_2x2(elocw2x2, fills = colrs, colors = colrs,
+              groups = c("Sham", "Real")) +
+  scale_x_continuous(breaks = c(1,2), labels = c("Pre", "Post"),
+                     limits = c(0.4, 2.6)) +
+  guides(col = FALSE) +
+  ylab(TeX("$\\int_{0.02}^{0.4} E.local.wt (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 14) +
+  theme(text = element_text(size = 14, family = ffont),
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
+
+##### Likelihood Ratio Test
+
+```{r dpg-lrt-elocw}
+columns <- c(dems, "age", "sex", clins, "fd", 't', metrics)
+dt.mod <- dt.main[session %in% c("T0", "T1"), ..columns]
+mixed(E.local.wt ~ session*group + fd + vas + bis + age + sex +
+                   (1 + session|participant_id) + (1|t),
+                 data = dt.mod, method = 'LRT')
+```
+
+##### Mixed Effect Model
+
+```{r dpg-lmer-elocw, results= "asis"}
+mod <- lme4::lmer(E.local.wt ~ session*group + fd + sex +
+                  (1+session|participant_id) + (1|t), data = dt.mod)
+
+stargazer(mod, header = FALSE,
+          title = "(\\#tab:lmer-elocw) mixed effects model for Local Efficiency (weighted).")
+```
+
+### Maintenance phase
+
+```{r dpg-sparklines-long, fig.cap = "Sparklines of the topology metrics across thresholds in the maintenance phase. Labels: Max and Min; Grey shadow: IQR.", fig.height = 9}
+#Reshape to Long
+columns <- c(dems, "t", metrics)
+dt.long   <- data.table::melt(dt.main[group == "Real", ..columns],
+                              id.vars = c(dems[-3], "t"), measure.vars = metrics,
+                              variable.name = "metric", value.name = "val")
+
+dt.mean <- dt.long[, .(val = mean(val)), by = .(session, t, metric)]
+dt.min <- dt.mean[, .SD[which.min(val)], keyby = .(session, metric)]
+dt.max <- dt.mean[, .SD[which.max(val)], keyby = .(session, metric)]
+dt.min[, val.r := round(val, 3)]
+dt.max[, val.r := round(val, 3)]
+dt.labs <- unique(dt.min, by = c("metric", "val"))
+dt.labs[, l := "Min"]
+dt.labs2    <- unique(dt.max, by = c("metric", "val"))
+dt.labs2[, l := "Max"]
+dt.labs <- rbindlist(list(dt.labs, dt.labs2))
+dt.quarts <- dt.mean[,.(quart1 = quantile(val, 0.25),
+                      quart2 = quantile(val, 0.75)),
+                      by = .(metric)]
+setkey(dt.mean, metric)
+dt.quarts <- dt.mean[dt.quarts]
+
+#Sparklines
+ggplot(dt.mean, aes(x = t, y = val, colour = session)) +
+  facet_wrap(vars(metric), ncol = 4, scales = "free_y") +
+  geom_ribbon(data = dt.quarts,
+              aes(ymin = quart1, ymax = quart2, colour = NULL),
+              fill = "grey93", alpha = 0.75) +
+  geom_line(size = 0.3) +
+  geom_point(data = dt.labs, shape = 21, size = 1.5, fill = "white") +
+  geom_label_repel(data = dt.labs, aes(label = val.r), family = ffont,
+                   size = 3.5, force = 1.3, label.padding = 0.1,
+                   min.segment.length = 0, segment.size = .2,
+                   segment.alpha = 0.7, alpha = 0.7) +
+  scale_x_continuous(bquote(tau),breaks = seq(0, .4, .1)) +
+  scale_y_continuous(expand = c(0.1, 0)) +
+  scale_colour_manual(values = c("#00429d", "#35739a", "#c8004c", "#93003a"),
+                      name = "Session") +
+  ggtitle("Power-264; Dens; wGS") +
+  theme(text = element_text(size = 14, family = ffont)) +
+  theme_tufte(base_size = 14, base_family = ffont) +
+  theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        strip.text.y = element_text(angle = 45),
+        legend.position = c(.06,.09))
+```
+
+```{r dpg-integrals2}
+columns <- c(dems, 't', metrics)
+dt.wide  <- dt.main[group == 'Real', ..columns]
+
+dt.integrals <- dt.wide[, lapply(.SD, MESS::auc, x = t, type = 'spline'),
+              by = .(participant_id, session), .SDcols = metrics]
+```
+
+#### Density
+
+```{r dpg-repmesl-density, fig.cap = "Integrated metric of density by session."}
+denslong <- dt.integrals[, .(y_axis = density, id = participant_id, s = session)]
+denslong[
+  s == "T0", x_axis := 1][
+  s == "T1", x_axis := 2][
+  s == "T2", x_axis := 3][
+  s == "T3", x_axis := 4][
+  , jit := jitter(x_axis, amount = .09)]
+
+source(here('scripts/raincloudplots.R'))
+colrsl <- c("#00429d", "#35739a", "#c8004c", "#93003a")
+rc_repmes(denslong, times = 4, fills = colrsl, colors = colrsl) +
+  scale_x_continuous(breaks = c(1:4), labels = unique(covars[,session]),
+                     limits = c(0.9, 5.2)) +
+  ylab(TeX("$\\int_{0.02}^{0.4} density (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 14) +
+  theme(text = element_text(size = 14, family = ffont),
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
+
+##### Likelihood Ratio Test
+
+```{r dpg-lrtl-density}
+columns <- c(dems, "age", "sex", clins, "fd", 't', metrics)
+dt.mod <- dt.main[group == "Real", ..columns]
+mixed(density ~ session + fd + vas + bis + age + sex +
+                   (1 + session|participant_id) + (1|t),
+                 data = dt.mod, method = 'LRT')
+```
+
+##### Mixed Effect Model
+
+```{r dpg-lmerl-density, eval = F, results = "asis"}
+mod <- lme4::lmer(density ~ session + fd + sex +
+                    (1+session|participant_id) + (1|t), data = dt.mod)
+
+stargazer(mod, header = FALSE,
+          title = "(\\#tab:lmerl-density) Longitudinal Mixed Effects Model for Density.")
+```
+
+#### Strength
+
+```{r dpg-repmesl-strength, fig.cap = "Integrated metric of strength by session."}
+strengthlong <- dt.integrals[, .(y_axis = strength, id = participant_id, s = session)]
+strengthlong[
+  s == "T0", x_axis := 1][
+  s == "T1", x_axis := 2][
+  s == "T2", x_axis := 3][
+  s == "T3", x_axis := 4][
+  , jit := jitter(x_axis, amount = .09)]
+
+source(here('scripts/raincloudplots.R'))
+colrsl <- c("#00429d", "#35739a", "#c8004c", "#93003a")
+rc_repmes(strengthlong, times = 4, fills = colrsl, colors = colrsl) +
+  scale_x_continuous(breaks = c(1:4), labels = unique(covars[,session]),
+                     limits = c(0.9, 5.5)) +
+  ylab(TeX("$\\int_{0.02}^{0.4} strength (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 14) +
+  theme(text = element_text(size = 14, family = ffont),
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
+
+##### Likelihood Ratio Test
+
+```{r dpg-lrtl-strength}
+mixed(strength ~ session + fd + vas + bis + age + sex +
+      (1 + session|participant_id) + (1|t), data = dt.mod, method = 'LRT')
+```
+
+##### Mixed Effect Model
+
+```{r dpg-lmerl-strength, eval = F, results = "asis"}
+mod <- lme4::lmer(strength ~ session +
+                    (1+session|participant_id) + (1|t), data = dt.mod)
+
+stargazer(mod, header = FALSE,
+          title = "(\\#tab:lmerl-strength) Longitudinal Mixed Effects Model for Strength.")
+```
+
+#### Modularity
+
+```{r dpg-repmesl-mod, fig.cap = "Integrated metric of modularity by session."}
+modlong <- dt.integrals[, .(y_axis = mod.wt, id = participant_id, s = session)]
+modlong[
+  s == "T0", x_axis := 1][
+  s == "T1", x_axis := 2][
+  s == "T2", x_axis := 3][
+  s == "T3", x_axis := 4][
+  , jit := jitter(x_axis, amount = .09)]
+
+source(here('scripts/raincloudplots.R'))
+colrsl <- c("#00429d", "#35739a", "#c8004c", "#93003a")
+rc_repmes(modlong, times = 4, fills = colrsl, colors = colrsl) +
+  scale_x_continuous(breaks = c(1:4), labels = unique(covars[,session]),
+                     limits = c(0.9, 5.2)) +
+  ylab(TeX("$\\int_{0.02}^{0.4} mod.wt (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 14) +
+  theme(text = element_text(size = 14, family = ffont),
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
+
+##### Likelihood Ratio Test
+
+```{r dpg-lrtl-mod}
+mixed(mod.wt ~ session + fd + vas + bis + age + sex +
+      (1 + session|participant_id) + (1|t), data = dt.mod, method = 'LRT')
+```
+
+##### Mixed Effect Model
+
+```{r dpg-lmerl-mod, eval = F, results = "asis"}
+mod <- lme4::lmer(mod.wt ~ session + fd +
+                    (1+session|participant_id) + (1|t),
+                  data = dt.mod)
+
+stargazer(mod, header = FALSE,
+          title = "(\\#tab:lmerl-mod) Longitudinal Mixed Effects Model for Modularity.")
+```
+
+#### Number of hubs
+
+```{r dpg-repmesl-hubs, fig.cap = "Integrated metric of number of hubs by session."}
+nhubslong <- dt.integrals[, .(y_axis = num.hubs.wt, id = participant_id, s = session)]
+nhubslong[
+  s == "T0", x_axis := 1][
+  s == "T1", x_axis := 2][
+  s == "T2", x_axis := 3][
+  s == "T3", x_axis := 4][
+  , jit := jitter(x_axis, amount = .09)]
+
+source(here('scripts/raincloudplots.R'))
+colrsl <- c("#00429d", "#35739a", "#c8004c", "#93003a")
+rc_repmes(nhubslong, times = 4, fills = colrsl, colors = colrsl) +
+  scale_x_continuous(breaks = c(1:4), labels = unique(covars[,session]),
+                     limits = c(0.9, 5.2)) +
+  ylab(TeX("$\\int_{0.02}^{0.4} nhubs.wt (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 14) +
+  theme(text = element_text(size = 14, family = ffont),
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
+
+##### Likelihood Ratio Test
+
+```{r dpg-lrtl-nhubs}
+mixed(num.hubs.wt ~ session + fd + vas + bis + age + sex +
+      (1 + session|participant_id) + (1|t),
+    data = dt.mod, method = 'LRT')
+```
+
+##### Mixed Effect Model
+
+```{r dpg-lmerl-nhubs, eval = F, results = "asis"}
+mod <- lme4::lmer(num.hubs.wt ~ session + bis +
+                  (1+session|participant_id) + (1|t), data = dt.mod)
+
+stargazer(mod, header = FALSE,
+          title = "(\\#tab:lmerl-nhubs) Longitudinal Mixed Effects Model for Number of hubs.")
+```
+
+#### Global efficiency
+
+```{r dpg-repmesl-eglob, fig.cap = "Integrated metric of global efficiency by session."}
+egloblong <- dt.integrals[, .(y_axis = E.global, id = participant_id, s = session)]
+egloblong[
+  s == "T0", x_axis := 1][
+  s == "T1", x_axis := 2][
+  s == "T2", x_axis := 3][
+  s == "T3", x_axis := 4][
+  , jit := jitter(x_axis, amount = .09)]
+
+source(here('scripts/raincloudplots.R'))
+colrsl <- c("#00429d", "#35739a", "#c8004c", "#93003a")
+rc_repmes(egloblong, times = 4, fills = colrsl, colors = colrsl) +
+  scale_x_continuous(breaks = c(1:4), labels = unique(covars[,session]),
+                     limits = c(0.9, 5.2)) +
+  ylab(TeX("$\\int_{0.02}^{0.4} E.glob (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 14) +
+  theme(text = element_text(size = 14, family = ffont),
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
+
+##### Likelihood Ratio Test
+
+```{r dpg-lrtl-eglob}
+mixed(E.global ~ session + fd + vas + bis + age + sex +
+      (1 + session|participant_id) + (1|t), data = dt.mod, method = 'LRT')
+```
+
+##### Mixed Effect Model
+
+```{r dpg-lmerl-eglob, eval = F, results = "asis"}
+mod <- lme4::lmer(E.global ~ session + bis +
+                  (1+session|participant_id) + (1|t), data = dt.mod)
+
+stargazer(mod, header = FALSE,
+          title = "(\\#tab:lmerl-eglob) Longitudinal Mixed Effects Model for Global Efficiency.")
+```
+
+#### Global efficiency (weighted)
+
+```{r dpg-repmesl-eglobw, fig.cap = "Integrated metric of global efficiency (weighted) by session."}
+egloblongw <- dt.integrals[, .(y_axis = E.global.wt, id = participant_id, s = session)]
+egloblongw[
+  s == "T0", x_axis := 1][
+  s == "T1", x_axis := 2][
+  s == "T2", x_axis := 3][
+  s == "T3", x_axis := 4][
+  , jit := jitter(x_axis, amount = .09)]
+
+source(here('scripts/raincloudplots.R'))
+colrsl <- c("#00429d", "#35739a", "#c8004c", "#93003a")
+rc_repmes(egloblongw, times = 4, fills = colrsl, colors = colrsl) +
+  scale_x_continuous(breaks = c(1:4), labels = unique(covars[,session]),
+                     limits = c(0.9, 5.2)) +
+  ylab(TeX("$\\int_{0.02}^{0.4} E.glob.w (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 14) +
+  theme(text = element_text(size = 14, family = ffont),
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
+
+##### Likelihood Ratio Test
+
+```{r dpg-lrtl-eglobw}
+mixed(E.global.wt ~ session + fd + vas + bis + age + sex +
+      (1 + session|participant_id) + (1|t), data = dt.mod, method = 'LRT')
+```
+
+##### Mixed Effect Model
+
+```{r dpg-lmerl-eglobw, eval = F, results = "asis"}
+mod <- lme4::lmer(E.global.wt ~ session + sex +
+                    (1+session|participant_id) + (1|t), data = dt.mod)
+
+stargazer(mod, header = FALSE,
+          title = "(\\#tab:lmerl-eglobw) Longitudinal Mixed Effects Model for Global Efficiency (weighted).")
+```
+
+#### Local efficiency
+
+```{r dpg-repmesl-eloc, fig.cap = "Integrated metric of local efficiency by session."}
+eloclong <- dt.integrals[, .(y_axis = E.local, id = participant_id, s = session)]
+eloclong[
+  s == "T0", x_axis := 1][
+  s == "T1", x_axis := 2][
+  s == "T2", x_axis := 3][
+  s == "T3", x_axis := 4][
+  , jit := jitter(x_axis, amount = .09)]
+
+source(here('scripts/raincloudplots.R'))
+colrsl <- c("#00429d", "#35739a", "#c8004c", "#93003a")
+rc_repmes(eloclong, times = 4, fills = colrsl, colors = colrsl) +
+  scale_x_continuous(breaks = c(1:4), labels = unique(covars[,session]),
+                     limits = c(0.9, 5.2)) +
+  ylab(TeX("$\\int_{0.02}^{0.4} E.loc (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 14) +
+  theme(text = element_text(size = 14, family = ffont),
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
+
+##### Likelihood Ratio Test
+
+```{r dpg-lrtl-eloc}
+mixed(E.local ~ session + fd + vas + bis + age + sex +
+      (1 + session|participant_id) + (1|t), data = dt.mod, method = 'LRT')
+```
+
+##### Mixed Effect Model
+
+```{r dpg-lmerl-eloc, eval = F, results = "asis"}
+mod <- lme4::lmer(E.local ~ session +
+                  (1+session|participant_id) + (1|t), data = dt.mod)
+
+stargazer(mod, header = FALSE,
+          title = "(\\#tab:lmerl-eloc) Longitudinal Mixed Effects Model for Local Efficiency.")
+```
+
+#### Local efficiency (weighted)
+
+```{r dpg-repmesl-elocw, fig.cap = "Integrated metric of local efficiency (weighted) by session."}
+eloclongw <- dt.integrals[, .(y_axis = E.local.wt, id = participant_id, s = session)]
+eloclongw[
+  s == "T0", x_axis := 1][
+  s == "T1", x_axis := 2][
+  s == "T2", x_axis := 3][
+  s == "T3", x_axis := 4][
+  , jit := jitter(x_axis, amount = .09)]
+
+source(here('scripts/raincloudplots.R'))
+colrsl <- c("#00429d", "#35739a", "#c8004c", "#93003a")
+rc_repmes(eloclong, times = 4, fills = colrsl, colors = colrsl) +
+  scale_x_continuous(breaks = c(1:4), labels = unique(covars[,session]),
+                     limits = c(0.9, 5.2)) +
+  ylab(TeX("$\\int_{0.02}^{0.4} E.loc.w (\\tau) d_{\\tau}")) +
+  theme_tufte(base_size = 14) +
+  theme(text = element_text(size = 14, family = ffont),
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
+
+##### Likelihood Ratio Test
+
+```{r dpg-lrtl-elocw}
+mixed(E.local.wt ~ session + fd + vas + bis + age + sex +
+      (1 + session|participant_id) + (1|t), data = dt.mod, method = 'LRT')
+```
+
+##### Mixed Effect Model
+
+```{r dpg-lmerl-elocw, eval = F, results = "asis"}
+mod <- lme4::lmer(E.local.wt ~ session + sex +
+                  (1+session|participant_id) + (1|t), data = dt.mod)
+
+stargazer(mod, header = FALSE,
+          title = "(\\#tab:lmerl-elocw) Longitudinal Mixed Effects Model for Local Efficiency (weighted).")
+```
+
