@@ -125,7 +125,7 @@ for (i in seq_along(mats_bal)) {
 }
 
 out_dir <- here(rds_dir, "graphs")
-if (!dir.exists(out_dir)  dir.create(out_dir)
+if (!dir.exists(out_dir)) dir.create(out_dir)
 
 for (i in seq_along(mats_bal)) {
   lt <- length(thresholds[[i]])

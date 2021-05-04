@@ -799,4 +799,4 @@ mod <- lme4::lmer(E.local.wt ~ session + sex +
 
 stargazer(mod, header = FALSE,
           title = "(\\#tab:lmerl-elocw) Longitudinal Mixed Effects Model for Local Efficiency (weighted).")
-``e
+```
