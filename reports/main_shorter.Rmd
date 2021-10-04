@@ -1,0 +1,171 @@
+---
+title: "Functional Connectivity Networks' Topology Changes after rTMS in Cocaine Addiction 2.0"
+subtitle: "Electric Boogaloo"
+author: "Sofia Fernandez"
+date: '`r format(Sys.time(), "%d %B, %Y")`'
+output:
+  bookdown::pdf_document2:
+    toc: true
+    fig_caption: true
+    keep_md: true
+    # includes:
+    #     in_header: my_header.tex
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.width = 8, collapse = TRUE)
+
+library(data.table)
+library(readr)
+library(here)
+library(arsenal)
+library(afex)
+library(lme4)
+library(stargazer)
+library(ggplot2)
+library(gghalves)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(latex2exp)
+
+X11.options(type = "cairo")
+ffont  <- "Merriweather"
+```
+
+# Introduction
+
+In this report I present and analyse the data of the ADDIMEX_TMS
+project. For the project, participants diagnosed with Cocaine Use
+Disorder (CUD) volunteered to take part into a double-blind randomized
+clinical trial (Active/Sham) exploring the efficacy of rTMS diminishing
+the clinical symptoms of addiction.
+
+Participants were randomly assigned to receive two daily sessions of
+either active or sham rTMS over the left-DLPFC for two weeks (10
+weekdays). This consisted in the **closed-label** phase of the study.
+After the last day of treatment the group assignment was revealed. To
+those of the sham arm we offered to retake 20 more sessions of real rTMS
+under the same parameters as the active group.
+
+We acquired both clinical and MRI data at Baseline (T0), two weeks (T1),
+three (T2) and six (T3) months. For this **longitudinal phase** only the
+participants who started with active stimulation were included in the
+analysis.
+
+Here I explore the brain functional connectivity of the participants in
+the form of global networks constructed from the BOLD signal of their
+MRI data. Different metrics of topology are calculated and compared at
+the different time-points to see how they are affected by the treatment
+in the closed-label, and how they evolve over time in the Longitudinal
+phase.
+
+```{r, child = here('reports/demog_clin.Rmd')}
+```
+
+# Graphs: Raw Thresholding
+
+## Power-264 (with Global Signal)
+
+```{r, child = here('reports/raw_power_gs.Rmd')}
+```
+
+## Power-264 (without Global Signal)
+
+```{r, child = here('reports/raw_power_ngs.Rmd')}
+```
+
+<!-- ## Gordon-333 (with Global Signal) -->
+
+<!-- ```{r, child = here('reports/raw_gordon_gs.Rmd')} -->
+<!-- ``` -->
+
+<!-- ## Gordon-333 (without Global Signal) -->
+
+<!-- ```{r, child = here('reports/raw_gordon_ngs.Rmd')} -->
+<!-- ``` -->
+
+<!-- ## Schaefer-100 (with Global Signal) -->
+
+<!-- ```{r, child = here('reports/raw_schaefer100_gs.Rmd')} -->
+<!-- ``` -->
+
+<!-- ## Schaefer-100 (without Global Signal) -->
+
+<!-- ```{r, child = here('reports/raw_schaefer100_ngs.Rmd')} -->
+<!-- ``` -->
+
+## Schaefer-200 (with Global Signal)
+
+```{r, child = here('reports/raw_schaefer200_gs.Rmd')}
+```
+
+## Schaefer-200 (without Global Signal)
+
+```{r, child = here('reports/raw_schaefer200_ngs.Rmd')}
+```
+
+<!-- ## Schaefer-400 (with Global Signal) -->
+
+<!-- ```{r, child = here('reports/raw_schaefer400_gs.Rmd')} -->
+<!-- ``` -->
+
+<!-- ## Schaefer-400 (without Global Signal) -->
+
+<!-- ```{r, child = here('reports/raw_schaefer400_ngs.Rmd')} -->
+<!-- ``` -->
+
+# Graphs: Density Thresholding
+
+## Power-264 (with Global Signal)
+
+```{r, child = here('reports/dens_power_gs.Rmd')}
+```
+
+## Power-264 (without Global Signal)
+
+```{r, child = here('reports/dens_power_ngs.Rmd')}
+```
+
+<!-- ## Gordon-333 (with Global Signal) -->
+
+<!-- ```{r, child = here('reports/dens_gordon_gs.Rmd')} -->
+<!-- ``` -->
+
+<!-- ## Gordon-333 (without Global Signal) -->
+
+<!-- ```{r, child = here('reports/dens_gordon_ngs.Rmd')} -->
+<!-- ``` -->
+
+<!-- ## Schaefer-100 (with Global Signal) -->
+
+<!-- ```{r, child = here('reports/dens_schaefer100_gs.Rmd')} -->
+<!-- ``` -->
+
+<!-- ## Schaefer-100 (without Global Signal) -->
+
+<!-- ```{r, child = here('reports/dens_schaefer100_ngs.Rmd')} -->
+<!-- ``` -->
+
+## Schaefer-200 (with Global Signal)
+
+```{r, child = here('reports/dens_schaefer200_gs.Rmd')}
+```
+
+## Schaefer-200 (without Global Signal)
+
+```{r, child = here('reports/dens_schaefer200_ngs.Rmd')}
+```
+
+<!-- ## Schaefer-400 (with Global Signal) -->
+
+<!-- ```{r, child = here('reports/dens_schaefer400_gs.Rmd')} -->
+<!-- ``` -->
+
+<!-- ## Schaefer-400 (without Global Signal) -->
+
+<!-- ```{r, child = here('reports/dens_schaefer400_ngs.Rmd')} -->
+<!-- ``` -->

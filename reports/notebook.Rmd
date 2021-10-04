@@ -1,3 +1,29 @@
+---
+title: "Functional Connectivity Networks' Topology Changes after rTMS in Cocaine Addiction 2.5"
+output: html_notebook
+---
+
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.width = 8, collapse = TRUE)
+
+library(data.table)
+library(readr)
+library(here)
+library(arsenal)
+library(afex)
+library(lme4)
+library(stargazer)
+library(ggplot2)
+library(gghalves)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(latex2exp)
+
+X11.options(type = "cairo")
+ffont  <- "Merriweather"
+```
+
 # Demographics and Clinical data
 
 ```{r rds-data}
@@ -5,8 +31,8 @@ covars <- read_rds(here("data/processed/rds/clin+covars.rds"))
 setkey(covars, participant_id, session, group)
 att.G <- read_rds(here("data/processed/rds/g_vars_G.rds"))
 setkey(att.G, participant_id, session, group)
-# att.V <- read_rds(here("data/processed/rds/g_vars_V.rds"))
-# setkey(att.V, participant_id, session, group)
+att.V <- read_rds(here("data/processed/rds/g_vars_V.rds"))
+setkey(att.V, participant_id, session, group)
 ```
 
 ```{r derivated-data}

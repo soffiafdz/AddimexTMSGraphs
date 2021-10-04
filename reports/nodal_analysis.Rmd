@@ -1,0 +1,47 @@
+---
+title: "Functional Connectivity Networks' Topology Changes after rTMS in Cocaine Addiction 2.5"
+subtitle: "Nodal analysis"
+author: "Sofia Fernandez"
+date: '`r format(Sys.time(), "%d %B, %Y")`'
+output:
+  bookdown::pdf_document2:
+    toc: true
+    fig_caption: true
+    keep_md: true
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.width = 8, collapse = TRUE)
+
+library(data.table)
+library(readr)
+library(here)
+library(brainGraph)
+library(purrr)
+```
+
+```{r vertex-test}
+options(bg.subject_id='participant_id', bg.group="group", bg.session="session")
+```
+
+# Raw
+
+## Power264
+```{r, child = here('reports/nodal_raw_power.Rmd')}
+```
+
+## Schaefer-200
+```{r, child = here('reports/nodal_raw_schaefer.Rmd')}
+```
+
+# Density
+
+## Power264
+```{r, child = here('reports/nodal_dens_power.Rmd')}
+```
+
+## Schaefer-200
+```{r, child = here('reports/nodal_dens_schaefer.Rmd')}
+```
