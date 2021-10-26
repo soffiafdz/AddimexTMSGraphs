@@ -1,0 +1,93 @@
+```{r}
+options(bg.subject_id='participant_id', bg.group="group", bg.session="session")
+```
+
+```{r}
+inds <- read_rds(here("data/processed/rds/inds.rds"))
+covars <- read_rds(here("data/processed/rds/clin+covars.rds"))
+thresholds <- read_rds(here("data/processed/rds/thresholds.rds"))
+setkey(covars, participant_id, session, group)
+
+count_sess <- map_int(map(inds, unlist, use.names = FALSE), length)
+sess <- unlist(map2(count_sess, names(count_sess), ~rep(.y, .x)), use.names = F)
+
+cols <- c("participant_id", "group", "session", "sex", "age", "bis", "vas", "fd")
+
+covars_clean <- covars[session %in% c("T0", "T1") & exclusion == 0, ..cols]
+covars_clean[, participant_id := paste(participant_id, session, sep = "_")]
+```
+
+
+### Global Signal
+
+```{r}
+g <- read_rds(here("data/processed/rds/graphs/raw_gs_schaefer200x7.rds"))
+```
+
+```{r}
+old_names <- names(g[[1]]$graphs)
+new_names <- stringr::str_c(old_names, sess, sep = "_")
+
+x <- g[[13]]
+names(x$graphs) <- new_names
+walk2(x$graphs, new_names, ~set_graph_attr(.x, "name", .y))
+```
+
+```{r}
+X <- brainGraph_GLM_design(covars_clean, coding = "effects",
+                           int = c("group", "session"))
+
+con.mat <- matrix(c(0, 0, 0, 0, 0, 0, 0, 0, 1), nrow = 1,
+                  dimnames = list('Group x Session interaction'))
+```
+
+#### Local Efficiency
+
+```{r}
+summary(brainGraph_GLM(x, measure = "E.local.wt", covars=covars_clean,
+                       X = X, contrasts = con.mat, alt = "two.sided"))
+```
+
+#### Number of hubs
+
+```{r}
+summary(brainGraph_GLM(x, measure = "hubs.wt", covars=covars_clean,
+                       X = X, contrasts = con.mat, alt = "two.sided"))
+```
+
+### No Global Signal
+
+```{r}
+g <- read_rds(here("data/processed/rds/graphs/raw_ngs_schaefer200x7.rds"))
+```
+
+```{r}
+old_names <- names(g[[1]]$graphs)
+new_names <- stringr::str_c(old_names, sess, sep = "_")
+
+x <- g[[13]]
+names(x$graphs) <- new_names
+walk2(x$graphs, new_names, ~set_graph_attr(.x, "name", .y))
+```
+
+```{r}
+X <- brainGraph_GLM_design(covars_clean, coding = "effects",
+                           int = c("group", "session"))
+
+con.mat <- matrix(c(0, 0, 0, 0, 0, 0, 0, 0, 1), nrow = 1,
+                  dimnames = list('Group x Session interaction'))
+```
+
+#### Local Efficiency
+
+```{r}
+summary(brainGraph_GLM(x, measure = "E.local.wt", covars=covars_clean,
+                       X = X, contrasts = con.mat, alt = "two.sided"))
+```
+
+#### Number of hubs
+
+```{r}
+summary(brainGraph_GLM(x, measure = "hubs.wt", covars=covars_clean,
+                       X = X, contrasts = con.mat, alt = "two.sided"))
+```
