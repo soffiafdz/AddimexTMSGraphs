@@ -2,6 +2,7 @@
 
 ## Packages
 library("here")
+suppressMessages(library("magrittr"))
 suppressMessages(library("data.table"))
 suppressMessages(library("purrr"))
 suppressMessages(library("brainGraph"))
@@ -84,9 +85,9 @@ for (parcel in parcels) {
         T0 = filter_ts("*ses-t0", gs, parcel),
         T1 = filter_ts("*ses-t1", gs, parcel),
         T2 = filter_ts("*ses-t2", gs, parcel),
-        T3 = filter_ts("*ses-t3", gs, parcel)) |>
-        create_ts() |>
-        ts2mats() |>
+        T3 = filter_ts("*ses-t3", gs, parcel)) %>%
+        create_ts() %>%
+        ts2mats() %>%
         mats2files(outdir)
         rm(ts_dirs)
     }
@@ -98,9 +99,9 @@ for (parcel in parcels) {
     for (matfile in list.files(here(outdir), full.names = T, recursive = T)) {
       mat <- fread(matfile)
       for (subnet in subnets) {
-        safename <- subnet |>
-          str_replace_all("/", "-") |>
-          str_replace_all(" ", "_") |>
+        safename <- subnet %>%
+          str_replace_all("/", "-") %>%
+          str_replace_all(" ", "_") %>%
           str_to_lower()
         submatfile <- str_replace(matfile, "global", safename)
         outdir_sub <- str_remove(submatfile, "/sub-\\d{3}.tsv")
@@ -149,9 +150,9 @@ for (i in seq_along(gsignal)) {
                           parcels[j], "global", x),
                      y, full.names = TRUE))))
 
-    subnets <- get(parcels[j])[, levels(network)] |>
-      str_replace_all("/", "-") |>
-      str_replace_all(" ", "_") |>
+    subnets <- get(parcels[j])[, levels(network)] %>%
+      str_replace_all("/", "-") %>%
+      str_replace_all(" ", "_") %>%
       str_to_lower()
 
     submatfiles[[i]][[j]] <- vector("list", length = length(subnets))
