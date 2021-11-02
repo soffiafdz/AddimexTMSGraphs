@@ -174,6 +174,19 @@ matfiles <- map(matfiles, set_names, parcels)
 submatfiles <- set_names(submatfiles, gsignal)
 submatfiles <- map(submatfiles, set_names, parcels)
 
+# Remove some subnetworks:
+for (i in seq_along(submatfiles)) {
+  submatfiles[[i]][[1]] <- list_modify(submatfiles[[i]][[1]],
+                                       "cerebellar" = NULL)
+  submatfiles[[i]][[1]] <- list_modify(submatfiles[[i]][[1]],
+                                       "memory_retrieval" = NULL)
+  submatfiles[[i]][[1]] <- list_modify(submatfiles[[i]][[1]],
+                                       "sensory-somatomotor_hand" = NULL)
+  submatfiles[[i]][[1]] <- list_modify(submatfiles[[i]][[1]],
+                                       "sensory-somatomotor_mouth" = NULL)
+  submatfiles[[i]][[2]] <- list_modify(submatfiles[[i]][[2]], "limbic" = NULL)
+}
+
 
 rm("gsignal", "parcels")
 
@@ -217,7 +230,7 @@ for (i in 1:2) { # Raw vs density
   } else {
     message(sprintf("%s - Creating brainGraph subnetwork matrices (%s)",
                     Sys.time(), thresh_by[[i]]))
-    mats <- map_depth(matfiles, 3, create_mats,
+    mats <- map_depth(submatfiles, 3, create_mats,
                       modality = "fmri",
                       threshold.by = thresh_by[[i]],
                       mat.thresh = thresholds[[i]],
@@ -230,4 +243,4 @@ for (i in 1:2) { # Raw vs density
   }
 }
 
-rm("matfile", "matfiles", "thresh_by", "thresholds", "mats")
+rm("matfiles", "thresh_by", "thresholds")
